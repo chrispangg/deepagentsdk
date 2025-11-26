@@ -1,0 +1,55 @@
+{
+  "name": "ai-sdk-deep-agent",
+  "version": "0.1.0",
+  "description": "Deep Agents implementation using Vercel AI SDK - build controllable AI agents with planning, filesystem, and subagent capabilities",
+  "module": "src/index.ts",
+  "type": "module",
+  "bin": {
+    "deep-agent": "./src/cli/index.ts"
+  },
+  "exports": {
+    ".": {
+      "import": "./src/index.ts",
+      "types": "./src/index.ts"
+    },
+    "./cli": {
+      "import": "./src/cli/index.ts"
+    }
+  },
+  "scripts": {
+    "test": "bun test",
+    "typecheck": "tsc --noEmit",
+    "cli": "bun src/cli/index.ts",
+    "cli-ink": "bun src/cli-ink/index.tsx"
+  },
+  "dependencies": {
+    "@ai-sdk/anthropic": "^2.0.0",
+    "@ai-sdk/openai": "^3.0.0-beta.70",
+    "@ai-sdk/react": "^3.0.0-beta.120",
+    "@inkjs/ui": "^1.0.0",
+    "ai": "^6.0.0-beta.120",
+    "fast-glob": "^3.3.3",
+    "ink": "^5.1.0",
+    "micromatch": "^4.0.8",
+    "react": "^18.2.0",
+    "react-devtools-core": "^5.3.2",
+    "zod": "^3.25.0"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@types/micromatch": "^4.0.9",
+    "@types/react": "^18.3.18"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "keywords": [
+    "ai",
+    "agents",
+    "deep-agents",
+    "vercel-ai-sdk",
+    "llm",
+    "typescript"
+  ],
+  "license": "MIT"
+}
