@@ -385,21 +385,22 @@ for await (const event of agent.streamWithEvents({
 The interactive CLI is built with [Ink](https://github.com/vadimdemedes/ink) and requires Bun:
 
 ```bash
-# If installed globally
-deep-agent
-
-# Or use bunx to run without installing
+# Run without installing (recommended)
 bunx ai-sdk-deep-agent
 
-# Or run locally after installing
-bun add ai-sdk-deep-agent
+# Or install globally and run
+bun add -g ai-sdk-deep-agent
 deep-agent
+
+# Or install locally in a project
+bun add ai-sdk-deep-agent
+bunx deep-agent
 
 # During development, run from source
 bun run cli
 
 # With options
-deep-agent --model anthropic/claude-haiku-4-5-20251001 --work-dir ./my-project
+bunx ai-sdk-deep-agent --model anthropic/claude-haiku-4-5-20251001 --work-dir ./my-project
 ```
 
 ### CLI Commands

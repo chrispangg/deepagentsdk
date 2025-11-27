@@ -7,7 +7,7 @@
   "types": "./src/index.ts",
   "type": "module",
   "bin": {
-    "deep-agent": "./src/cli/index.ts"
+    "deep-agent": "./src/cli/index.tsx"
   },
   "exports": {
     ".": {
