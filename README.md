@@ -1,5 +1,9 @@
 # AI SDK Deep Agent
 
+<p align="center">
+  <img src="assets/ai-sdk-deep-agent.png" alt="AI SDK Deep Agent" width="380" />
+</p>
+
 [![npm version](https://badge.fury.io/js/ai-sdk-deep-agent.svg)](https://www.npmjs.com/package/ai-sdk-deep-agent)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
@@ -96,6 +100,7 @@ const agent4 = createDeepAgent({
 ```
 
 This approach allows you to:
+
 - Configure API keys, base URLs, and timeouts per provider
 - Use any AI SDK-compatible provider (Anthropic, OpenAI, Azure, Bedrock, Groq, etc.)
 - Mix and match models for main agent vs. subagents
