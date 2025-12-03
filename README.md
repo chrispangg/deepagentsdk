@@ -1,7 +1,7 @@
 # AI SDK Deep Agent
 
 <p align="center">
-  <img src="assets/ai-sdk-deep-agent.png" alt="AI SDK Deep Agent" width="380" />
+  <img src="assets/ai-sdk-deep-agent.png" alt="AI SDK Deep Agent" width="500" />
 </p>
 
 [![npm version](https://badge.fury.io/js/ai-sdk-deep-agent.svg)](https://www.npmjs.com/package/ai-sdk-deep-agent)
