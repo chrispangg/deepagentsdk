@@ -8,6 +8,37 @@ This is **ai-sdk-deep-agent**, a TypeScript library implementing "Deep Agents" a
 
 **Key architectural pattern**: This library wraps AI SDK v6's `ToolLoopAgent` with a state management layer and specialized tools to enable complex, multi-step agent behaviors. The agent maintains a virtual filesystem and todo list across multiple tool-calling steps.
 
+## Feature Parity Tracking
+
+**IMPORTANT**: This project aims to reimplement LangChain's DeepAgents framework using Vercel AI SDK.
+
+- **Reference implementations**: `.refs/deepagentsjs/` (JS) and `.refs/deepagents/` (Python)
+- **Feature tracker**: `.agent/PROJECT-STATE.md`
+- **Implementation framework**: `.agent/RPI-FRAMEWORK.md`
+
+### Implementing New Features (RPI Framework)
+
+**Before implementing any feature from `PROJECT-STATE.md`, you MUST read `.agent/RPI-FRAMEWORK.md`** — this document details the Research → Plan → Implement (RPI) framework used in this project.
+
+**Quick summary of RPI**:
+
+1. **Research** — Create `.agent/{feature-name}/research/findings.md` documenting how the system works, reference implementation analysis, and files to modify
+2. **Plan** — Create `.agent/{feature-name}/plan/implementation-plan.md` with exact steps, file names, code snippets, and testing strategy
+3. **Implement** — Execute the plan mechanically, validate, then update `PROJECT-STATE.md`
+
+**Why RPI?** It prevents "AI slop" (low-quality code requiring rework) through intentional context compaction — keeping each phase focused and accurate.
+
+**When to use full RPI**:
+
+- Complex features spanning multiple files → Full RPI
+- Simple self-contained changes → Light plan only
+- Trivial fixes (typos, renames) → Direct implementation
+
+After completing a feature:
+
+1. Move it from "To Implement" to "Implemented" in `PROJECT-STATE.md`
+2. If unsupportable due to AI SDK limitations, add to "Won't Support" with reasoning
+
 ## Development Commands
 
 ```bash

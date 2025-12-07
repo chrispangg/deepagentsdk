@@ -20,16 +20,20 @@ import type {
   EventCallback,
   StreamWithEventsOptions,
   ModelMessage,
+  SandboxBackendProtocol,
 } from "./types.ts";
+import { isSandboxBackend } from "./types.ts";
 import {
   BASE_PROMPT,
   TODO_SYSTEM_PROMPT,
   FILESYSTEM_SYSTEM_PROMPT,
   TASK_SYSTEM_PROMPT,
+  EXECUTE_SYSTEM_PROMPT,
 } from "./prompts.ts";
 import { createTodosTool } from "./tools/todos.ts";
 import { createFilesystemTools } from "./tools/filesystem.ts";
 import { createSubagentTool } from "./tools/subagent.ts";
+import { createExecuteTool } from "./tools/execute.ts";
 import { StateBackend } from "./backends/state.ts";
 import { patchToolCalls } from "./utils/patch-tool-calls.ts";
 import { summarizeIfNeeded } from "./utils/summarization.ts";
@@ -40,7 +44,8 @@ import type { SummarizationConfig } from "./types.ts";
  */
 function buildSystemPrompt(
   customPrompt?: string,
-  hasSubagents?: boolean
+  hasSubagents?: boolean,
+  hasSandbox?: boolean
 ): string {
   const parts = [
     customPrompt || "",
@@ -48,6 +53,10 @@ function buildSystemPrompt(
     TODO_SYSTEM_PROMPT,
     FILESYSTEM_SYSTEM_PROMPT,
   ];
+
+  if (hasSandbox) {
+    parts.push(EXECUTE_SYSTEM_PROMPT);
+  }
 
   if (hasSubagents) {
     parts.push(TASK_SYSTEM_PROMPT);
@@ -75,6 +84,7 @@ export class DeepAgent {
   private toolResultEvictionLimit?: number;
   private enablePromptCaching: boolean;
   private summarizationConfig?: SummarizationConfig;
+  private hasSandboxBackend: boolean;
 
   constructor(params: CreateDeepAgentParams) {
     const {
@@ -98,11 +108,15 @@ export class DeepAgent {
     this.enablePromptCaching = enablePromptCaching;
     this.summarizationConfig = summarization;
 
+    // Check if backend is a sandbox (supports execute)
+    // For factory functions, we can't know until runtime, so we check if it's an instance
+    this.hasSandboxBackend = typeof backend !== "function" && backend !== undefined && isSandboxBackend(backend);
+
     // Determine if we have subagents
     const hasSubagents =
       includeGeneralPurposeAgent || (subagents && subagents.length > 0);
 
-    this.systemPrompt = buildSystemPrompt(systemPrompt, hasSubagents);
+    this.systemPrompt = buildSystemPrompt(systemPrompt, hasSubagents, this.hasSandboxBackend);
 
     // Store user-provided tools
     this.userTools = tools;
@@ -134,6 +148,15 @@ export class DeepAgent {
       ...filesystemTools,
       ...this.userTools,
     };
+
+    // Add execute tool if backend is a sandbox
+    if (this.hasSandboxBackend) {
+      const sandboxBackend = this.backend as SandboxBackendProtocol;
+      allTools.execute = createExecuteTool({
+        backend: sandboxBackend,
+        onEvent,
+      });
+    }
 
     // Add subagent tool if configured
     if (

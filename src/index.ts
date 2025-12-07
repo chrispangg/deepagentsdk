@@ -29,6 +29,9 @@ export type {
   BackendProtocol,
   BackendFactory,
   SummarizationConfig,
+  // Sandbox types
+  ExecuteResponse,
+  SandboxBackendProtocol,
   // Event types for streaming
   DeepAgentEvent,
   EventCallback,
@@ -41,11 +44,16 @@ export type {
   FileWriteStartEvent,
   FileWrittenEvent,
   FileEditedEvent,
+  ExecuteStartEvent,
+  ExecuteFinishEvent,
   SubagentStartEvent,
   SubagentFinishEvent,
   DoneEvent,
   ErrorEvent,
 } from "./types.ts";
+
+// Type guard for sandbox backends
+export { isSandboxBackend } from "./types.ts";
 
 // Backends
 export {
@@ -56,6 +64,10 @@ export {
   InMemoryStore,
   type KeyValueStore,
   type PersistentBackendOptions,
+  // Sandbox backends
+  BaseSandbox,
+  LocalSandbox,
+  type LocalSandboxOptions,
 } from "./backends/index.ts";
 
 // Tools (for advanced usage)
@@ -64,6 +76,10 @@ export {
   createFilesystemTools,
   createSubagentTool,
   type CreateSubagentToolOptions,
+  // Execute tool for sandbox backends
+  createExecuteTool,
+  createExecuteToolFromBackend,
+  type CreateExecuteToolOptions,
 } from "./tools/index.ts";
 
 // Prompts (for customization)
@@ -72,6 +88,7 @@ export {
   TODO_SYSTEM_PROMPT,
   FILESYSTEM_SYSTEM_PROMPT,
   TASK_SYSTEM_PROMPT,
+  EXECUTE_SYSTEM_PROMPT,
   getTaskToolDescription,
   DEFAULT_GENERAL_PURPOSE_DESCRIPTION,
   DEFAULT_SUBAGENT_PROMPT,

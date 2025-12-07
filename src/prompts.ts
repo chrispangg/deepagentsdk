@@ -136,3 +136,32 @@ export const DEFAULT_GENERAL_PURPOSE_DESCRIPTION =
 export const DEFAULT_SUBAGENT_PROMPT =
   "In order to complete the objective that the user asks of you, you have access to a number of standard tools.";
 
+export const EXECUTE_SYSTEM_PROMPT = `## \`execute\` (shell command execution)
+
+You have access to an \`execute\` tool to run shell commands in the sandbox environment.
+
+### When to Use This Tool
+
+Use for:
+- Running build commands (npm install, npm run build, bun install)
+- Running tests (npm test, bun test, pytest)
+- Executing scripts (node script.js, python script.py)
+- Installing dependencies
+- Checking system state (ls, cat, pwd, which)
+- Any shell command that helps accomplish the task
+
+### Important Notes
+
+1. **Exit Codes**: Always check the exit code to determine success
+   - 0 = success
+   - non-zero = failure
+   - null = possibly timed out
+
+2. **Command Chaining**:
+   - Use \`&&\` to chain commands that depend on each other
+   - Use \`;\` to run commands sequentially regardless of success
+
+3. **Timeouts**: Long-running commands may timeout
+
+4. **Working Directory**: Commands run in the sandbox's working directory`;
+

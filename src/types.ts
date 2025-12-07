@@ -552,6 +552,135 @@ export interface BackendProtocol {
 export type BackendFactory = (state: DeepAgentState) => BackendProtocol;
 
 // ============================================================================
+// Sandbox Backend Protocol
+// ============================================================================
+
+/**
+ * Result of command execution in a sandbox.
+ *
+ * This is the return type for the `execute()` method on sandbox backends.
+ * It provides a simplified interface optimized for LLM consumption.
+ *
+ * @example Success case
+ * ```typescript
+ * const result: ExecuteResponse = {
+ *   output: "Hello, world!\n",
+ *   exitCode: 0,
+ *   truncated: false,
+ * };
+ * ```
+ *
+ * @example Error case
+ * ```typescript
+ * const result: ExecuteResponse = {
+ *   output: "bash: command not found: foo\n",
+ *   exitCode: 127,
+ *   truncated: false,
+ * };
+ * ```
+ */
+export interface ExecuteResponse {
+  /** Combined stdout and stderr output of the executed command */
+  output: string;
+  /** Exit code (0 = success, non-zero = failure, null = unknown/timeout) */
+  exitCode: number | null;
+  /** Whether the output was truncated due to size limits */
+  truncated: boolean;
+}
+
+/**
+ * Protocol for sandbox backends with command execution capability.
+ *
+ * Extends BackendProtocol with the ability to execute shell commands
+ * in an isolated environment (container, VM, or local process).
+ *
+ * Sandbox backends are useful for:
+ * - Running code in isolated environments
+ * - Executing build/test commands
+ * - Interacting with external tools and CLIs
+ *
+ * @example Using LocalSandbox for local development
+ * ```typescript
+ * import { LocalSandbox } from 'ai-sdk-deep-agent';
+ *
+ * const sandbox = new LocalSandbox({ cwd: './workspace' });
+ *
+ * // Execute a command
+ * const result = await sandbox.execute('npm install');
+ * console.log(result.output);
+ * console.log('Exit code:', result.exitCode);
+ *
+ * // File operations work the same as other backends
+ * await sandbox.write('/src/index.ts', 'console.log("hello")');
+ * const content = await sandbox.read('/src/index.ts');
+ * ```
+ *
+ * @example Using with DeepAgent (future Execute Tool)
+ * ```typescript
+ * const agent = createDeepAgent({
+ *   model: anthropic('claude-sonnet-4-20250514'),
+ *   backend: new LocalSandbox({ cwd: './workspace' }),
+ *   // Execute tool will be added automatically when backend is SandboxBackendProtocol
+ * });
+ * ```
+ */
+export interface SandboxBackendProtocol extends BackendProtocol {
+  /**
+   * Execute a shell command in the sandbox.
+   *
+   * @param command - Full shell command string to execute (e.g., "npm install", "ls -la")
+   * @returns ExecuteResponse with combined output, exit code, and truncation status
+   *
+   * @example
+   * ```typescript
+   * const result = await sandbox.execute('echo "Hello" && ls -la');
+   * if (result.exitCode === 0) {
+   *   console.log('Success:', result.output);
+   * } else {
+   *   console.log('Failed:', result.output);
+   * }
+   * ```
+   */
+  execute(command: string): Promise<ExecuteResponse>;
+
+  /**
+   * Unique identifier for this sandbox instance.
+   *
+   * Used for tracking, debugging, and correlating logs across
+   * multiple sandbox operations.
+   *
+   * @example
+   * ```typescript
+   * console.log(`Running in sandbox: ${sandbox.id}`);
+   * // Output: "Running in sandbox: local-1701234567890-abc123"
+   * ```
+   */
+  readonly id: string;
+}
+
+/**
+ * Type guard to check if a backend is a SandboxBackendProtocol.
+ *
+ * @param backend - The backend to check
+ * @returns True if the backend supports command execution
+ *
+ * @example
+ * ```typescript
+ * if (isSandboxBackend(backend)) {
+ *   const result = await backend.execute('ls -la');
+ * }
+ * ```
+ */
+export function isSandboxBackend(
+  backend: BackendProtocol
+): backend is SandboxBackendProtocol {
+  return (
+    typeof (backend as SandboxBackendProtocol).execute === "function" &&
+    typeof (backend as SandboxBackendProtocol).id === "string"
+  );
+}
+
+// ============================================================================
 // Event Types for Streaming
 // ============================================================================
 
@@ -680,6 +809,32 @@ export interface GrepEvent {
 }
 
 /**
+ * Event emitted when a command execution starts.
+ */
+export interface ExecuteStartEvent {
+  type: "execute-start";
+  /** The command being executed */
+  command: string;
+  /** The sandbox ID where the command is running */
+  sandboxId: string;
+}
+
+/**
+ * Event emitted when a command execution finishes.
+ */
+export interface ExecuteFinishEvent {
+  type: "execute-finish";
+  /** The command that was executed */
+  command: string;
+  /** Exit code (0 = success, non-zero = failure, null = unknown/timeout) */
+  exitCode: number | null;
+  /** Whether the output was truncated */
+  truncated: boolean;
+  /** The sandbox ID where the command ran */
+  sandboxId: string;
+}
+
+/**
  * Event emitted when a subagent starts.
  */
 export interface SubagentStartEvent {
@@ -750,6 +905,8 @@ export type DeepAgentEvent =
   | LsEvent
   | GlobEvent
   | GrepEvent
+  | ExecuteStartEvent
+  | ExecuteFinishEvent
   | SubagentStartEvent
   | SubagentFinishEvent
   | TextSegmentEvent
