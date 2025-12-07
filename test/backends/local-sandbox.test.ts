@@ -1,5 +1,5 @@
 import { test, expect, describe, beforeAll, afterAll } from "bun:test";
-import { LocalSandbox } from "./local-sandbox.ts";
+import { LocalSandbox } from "../../src/backends/local-sandbox.ts";
 import * as fs from "fs";
 import * as path from "path";
 
