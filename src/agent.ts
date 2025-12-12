@@ -349,14 +349,7 @@ export class DeepAgent {
     const hasInterruptOn = !!this.interruptOn;
     const hasApprovalCallback = !!options.onApprovalRequest;
     
-    // Debug logging
-    console.error(`[DEBUG] streamWithEvents - hasInterruptOn: ${hasInterruptOn}, hasApprovalCallback: ${hasApprovalCallback}`);
-    if (this.interruptOn) {
-      console.error(`[DEBUG] interruptOn config:`, JSON.stringify(this.interruptOn));
-    }
-    
     if (hasInterruptOn && hasApprovalCallback) {
-      console.error(`[DEBUG] Wrapping tools with approval checking`);
       tools = wrapToolsWithApproval(tools, this.interruptOn, options.onApprovalRequest);
     }
 
