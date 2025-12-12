@@ -40,7 +40,9 @@ The Research-Plan-Implement Framework is a structured approach to AI-assisted so
 ```bash
 # From the .claude-framework-adoption directory
 cp -r .claude your-repo/
-cp -r thoughts your-repo/
+# Create docs directory structure
+mkdir -p your-repo/docs/tickets
+mkdir -p your-repo/docs/notes
 ```
 
 2. **Customize for your project:**
@@ -61,7 +63,7 @@ cp -r thoughts your-repo/
 > I need to add two-factor authentication
 
 /3_implement_plan
-> thoughts/NNN_two_factor_auth/plan.md
+> docs/tickets/TICKET-NAME/plan.md
 ```
 
 **Test-Driven Approach:**
@@ -71,7 +73,7 @@ cp -r thoughts your-repo/
 > Two-factor authentication for user login
 
 # Design tests, then implement feature
-/4_implement_plan
+/3_implement_plan
 > Implement 2FA to make tests pass
 ```
 
@@ -87,20 +89,21 @@ your-repo/
 │   └── commands/                 # Numbered workflow commands
 │       ├── 1_research_codebase.md
 │       ├── 2_create_plan.md
-│       ├── 3_validate_plan.md
-│       ├── 4_implement_plan.md
+│       ├── 3_implement_plan.md
+│       ├── 4_validate_plan.md
 │       ├── 5_save_progress.md   # Save work session
 │       ├── 6_resume_work.md     # Resume saved work
 │       ├── 7_research_cloud.md  # Cloud infrastructure analysis
 │       └── 8_define_test_cases.md # Design acceptance test cases
-├── thoughts/                     # Persistent Context Storage
-│   ├── 001_feature-name/        # Feature folders
-│   │   ├── plan.md
-│   │   └── research.md
-│   ├── sessions/                # Work session summaries
-│   │   └── NNN_feature.md
-│   └── cloud/                   # Cloud infrastructure analyses
-│       └── NNN_platform.md
+├── docs/                         # Persistent Context Storage
+│   ├── tickets/                  # Ticket-associated documentation
+│   │   └── TICKET-NAME/         # Feature/ticket folders
+│   │       ├── plan.md
+│   │       ├── research.md
+│   │       └── sessions/        # Work session summaries
+│   │           └── NNN_feature.md
+│   └── notes/                    # General notes and meetings
+│       └── YYYY-MM-DD-meeting.md
 └── CLAUDE.md                    # Project-specific instructions
 ```
 
@@ -115,7 +118,7 @@ your-repo/
 1. Invoke command with research question
 2. AI spawns parallel agents to investigate
 3. Findings compiled into structured document
-4. Saved to `thoughts/NNN_topic/research.md` (creates folder if needed)
+4. Saved to `docs/tickets/TICKET-NAME/research.md` or `docs/{research-topic}.md` (creates folder if needed)
 
 **Example**:
 
@@ -140,7 +143,7 @@ your-repo/
 1. Read requirements and research
 2. Interactive planning with user
 3. Generate phased approach
-4. Save to `thoughts/NNN_descriptive-name/plan.md` (creates folder if needed)
+4. Save to `docs/tickets/TICKET-NAME/plan.md` (creates folder if needed)
 
 **Example**:
 
@@ -171,7 +174,7 @@ your-repo/
 [...]
 ```
 
-### Phase 3: Implementation (`/4_implement_plan`)
+### Phase 3: Implementation (`/3_implement_plan`)
 
 **Purpose**: Execute plan systematically
 
@@ -186,7 +189,7 @@ your-repo/
 
 ```
 /3_implement_plan
-> thoughts/NNN_stripe_integration/plan.md
+> docs/tickets/TICKET-NAME/plan.md
 ```
 
 **Progress Tracking**:
@@ -195,7 +198,7 @@ your-repo/
 - TodoWrite for task management
 - Communicates blockers clearly
 
-### Phase 4: Validation (`/3_validate_plan`)
+### Phase 4: Validation (`/4_validate_plan`)
 
 **Purpose**: Verify implementation matches plan
 
@@ -210,7 +213,7 @@ your-repo/
 **Example**:
 
 ```
-/3_validate_plan
+/4_validate_plan
 > Validate the Stripe integration implementation
 ```
 
@@ -296,17 +299,17 @@ your-repo/
 - **Output**: Phased plan document
 - **Interactive**: Yes
 
-### `/3_validate_plan`
-
-- **Purpose**: Verify implementation
-- **Input**: Plan path (optional)
-- **Output**: Validation report
-
-### `/4_implement_plan`
+### `/3_implement_plan`
 
 - **Purpose**: Execute implementation
 - **Input**: Plan path
 - **Output**: Completed implementation
+
+### `/4_validate_plan`
+
+- **Purpose**: Verify implementation
+- **Input**: Plan path (optional)
+- **Output**: Validation report
 
 ## Session Management
 
@@ -317,7 +320,7 @@ The framework supports saving and resuming work through persistent documentation
 - **Purpose**: Save work progress and context
 - **Input**: Current work state
 - **Output**: Session summary and checkpoint
-- **Creates**: `thoughts/sessions/` document
+- **Creates**: `docs/tickets/TICKET-NAME/sessions/` document
 
 ### `/6_resume_work`
 
@@ -335,7 +338,7 @@ When you need to pause work:
 > Need to stop working on the payment feature
 
 # Creates:
-- Session summary in thoughts/sessions/
+- Session summary in docs/tickets/TICKET-NAME/sessions/
 - Progress checkpoint in the plan
 - Work status documentation
 ```
@@ -346,7 +349,7 @@ To continue where you left off:
 
 ```
 /6_resume_work
-> thoughts/sessions/2025-01-06_payment_feature.md
+> docs/tickets/TICKET-NAME/sessions/2025-01-06_payment_feature.md
 
 # Restores:
 - Full context from session
@@ -382,7 +385,7 @@ This enables seamless context switching between features or across days/weeks.
 - **Purpose**: Analyze cloud infrastructure (READ-ONLY)
 - **Input**: Cloud platform and focus area
 - **Output**: Infrastructure analysis document
-- **Creates**: `thoughts/cloud/` documents
+- **Creates**: `docs/tickets/TICKET-NAME/cloud-platform-environment.md` or `docs/cloud-platform-environment.md` documents
 
 ### `/8_define_test_cases`
 
@@ -412,6 +415,24 @@ This enables seamless context switching between features or across days/weeks.
 - **Tools**: Grep, Glob, Read, LS
 - **Returns**: Code patterns and examples
 
+### codebase-online-researcher
+
+- **Role**: Research external documentation and web resources
+- **Tools**: DeepWiki, Playwright browser tools
+- **Returns**: External documentation findings with links
+
+### codebase-research-locator
+
+- **Role**: Find existing documentation in docs/ directory
+- **Tools**: Read, Grep, Glob, LS
+- **Returns**: Categorized document listings
+
+### codebase-research-analyzer
+
+- **Role**: Extract insights from research documents
+- **Tools**: Read, Grep, Glob, LS
+- **Returns**: Key decisions, constraints, and actionable insights
+
 ## Best Practices
 
 ### 1. Research First
@@ -437,7 +458,7 @@ This enables seamless context switching between features or across days/weeks.
 
 ### 4. Document Everything
 
-- Research findings persist in `thoughts/`
+- Research findings persist in `docs/tickets/TICKET-NAME/` or `docs/`
 - Plans serve as technical specs
 - Session summaries maintain continuity
 
@@ -466,7 +487,7 @@ This enables seamless context switching between features or across days/weeks.
 Run `cli thoughts sync`
 
 # After (Generic)
-Save to thoughts/NNN_topic/research.md
+Save to docs/tickets/TICKET-NAME/research.md or docs/{research-topic}.md
 ```
 
 2. **Adjust tool commands:**
@@ -574,9 +595,9 @@ For complex features, chain commands:
 > Based on research, plan OAuth integration
 
 /3_implement_plan
-> thoughts/NNN_oauth_integration/plan.md
+> docs/tickets/TICKET-NAME/plan.md
 
-/3_validate_plan
+/4_validate_plan
 > Verify OAuth implementation
 
 # Then manually commit using git
@@ -635,16 +656,16 @@ Design tests before implementation:
 
 # Step 5: Implement the feature
 /3_implement_plan
-> thoughts/NNN_partner_enrollment/plan.md
+> docs/tickets/TICKET-NAME/plan.md
 
 # Step 6: Validate tests pass
-/3_validate_plan
+/4_validate_plan
 ```
 
 **Key Benefit**: Tests are designed with existing patterns in mind, ensuring consistency across the test suite.
 
 ## Conclusion
 
-This framework provides structure without rigidity. It scales from simple features to complex architectural changes. The key is consistent use - the more you use it, the more valuable your `thoughts/` directory becomes as organizational knowledge.
+This framework provides structure without rigidity. It scales from simple features to complex architectural changes. The key is consistent use - the more you use it, the more valuable your `docs/tickets/` directory becomes as organizational knowledge.
 
 Remember: The framework is a tool to enhance development, not replace thinking. Use it to augment your capabilities, not as a rigid process.

@@ -25,9 +25,9 @@ Then wait for the user's input.
 
 1. **Read all mentioned files immediately and FULLY**
 2. **Spawn initial research tasks to gather context**:
-   - Use codebase-locator to find all related files
-   - Use codebase-analyzer to understand current implementation
-   - Use pattern-finder to find similar features to model after
+   - Use the **codebase-locator** agent to find all related files
+   - Use the **codebase-analyzer** agent to understand current implementation
+   - Use the **codebase-pattern-finder** agent to find similar features to model after
 
 3. **Present informed understanding and focused questions**:
    Based on research, present findings and ask only questions that require human judgment
@@ -59,9 +59,10 @@ Does this phasing make sense?
 
 ### Step 4: Detailed Plan Writing
 
-Check existing topic folders to determine next sequence number, then:
-- Create folder `thoughts/NNN_{descriptive_name}/` where NNN is a 3-digit sequential number (001, 002, etc.)
-- Write the plan to `thoughts/NNN_{descriptive_name}/plan.md`
+Check existing ticket folders to determine the ticket name, then:
+
+- Create folder `docs/tickets/TICKET-NAME/` if it doesn't exist
+- Write the plan to `docs/tickets/TICKET-NAME/plan.md`
 
 ```markdown
 # [Feature/Task Name] Implementation Plan

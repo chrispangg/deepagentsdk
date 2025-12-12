@@ -1,6 +1,6 @@
 # Implement Plan
 
-You are tasked with implementing an approved technical plan from `thoughts/NNN_topic/plan.md`. These plans contain phases with specific changes and success criteria.
+You are tasked with implementing an approved technical plan from `docs/tickets/TICKET-NAME/plan.md`. These plans contain phases with specific changes and success criteria.
 
 ## Getting Started
 
@@ -25,7 +25,7 @@ Plans are carefully designed, but reality can be messy. Your job is to:
 
 When things don't match the plan exactly:
 
-```
+```text
 Issue in Phase [N]:
 Expected: [what the plan says]
 Found: [actual situation]
@@ -60,6 +60,41 @@ After implementing a phase:
    - Update plan file with [x] checkmarks as you complete items
    - Keep user informed of progress
 
+4. **Documenting New Requirements and Requests**:
+   - When the user requests new features, changes, or clarifications during implementation:
+     - Create a note file in the ticket folder: `docs/tickets/TICKET-NAME/notes-YYYY-MM-DD.md`
+     - Use descriptive filenames if multiple notes per day: `docs/tickets/TICKET-NAME/notes-YYYY-MM-DD-{topic}.md`
+     - Document the request, context, and any decisions made
+     - If the request affects the plan, update the plan document accordingly
+
+   - Note file structure:
+
+     ```markdown
+     ---
+     date: [ISO timestamp]
+     context: [What phase/task we were working on]
+     ---
+     
+     # Implementation Notes - [Date]
+     
+     ## New Requirements/Requests
+     - [Description of what was requested]
+     - [Context and reasoning]
+     
+     ## Decisions Made
+     - [Any decisions or clarifications]
+     
+     ## Impact on Plan
+     - [How this affects the current plan, if applicable]
+     ```
+
+   - Examples of when to create notes:
+     - User requests additional features mid-implementation
+     - User clarifies requirements or changes direction
+     - User provides new constraints or preferences
+     - Important decisions are made during implementation
+     - Discoveries that affect future phases
+
 ## Resuming Work
 
 If the plan has existing checkmarks:
@@ -67,5 +102,17 @@ If the plan has existing checkmarks:
 - Trust that completed work is done
 - Pick up from the first unchecked item
 - Verify previous work only if something seems off
+- **Read all note files** in the ticket folder to understand any new requirements or decisions made since the plan was created
+
+## Ticket Folder Structure
+
+When working on a ticket, maintain documentation in `docs/tickets/TICKET-NAME/`:
+
+- `plan.md` - The implementation plan (updated with checkboxes as you progress)
+- `research.md` - Research findings (if applicable)
+- `notes-YYYY-MM-DD.md` - Implementation notes, new requirements, and decisions
+- `sessions/` - Session summaries (created by `/5_save_progress`)
+
+All files in the ticket folder should be considered part of the implementation context.
 
 Remember: You're implementing a solution, not just checking boxes. Keep the end goal in mind and maintain forward momentum.

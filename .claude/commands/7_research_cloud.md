@@ -141,8 +141,8 @@ Then wait for the user's specifications.
 
 7. **Save and Present Findings:**
    - Check existing cloud research files for sequence number
-   - Save to `thoughts/cloud/NNN_platform_environment.md`
-   - Create cost analysis in `thoughts/cloud/costs/`
+   - Save to `docs/tickets/TICKET-NAME/cloud-platform-environment.md` if associated with a ticket, or `docs/cloud-platform-environment.md` for general research
+   - Create cost analysis in `docs/tickets/TICKET-NAME/cloud-costs.md` if associated with a ticket, or `docs/cloud-costs.md` for general research
    - Generate security report if issues found
    - Present summary with actionable recommendations
 

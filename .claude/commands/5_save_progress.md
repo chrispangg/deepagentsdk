@@ -74,21 +74,21 @@ If working from a plan, update it with:
 # To continue exactly where we left off:
 cd /path/to/repo
 git status
-/3_implement_plan thoughts/NNN_topic/plan.md
+/3_implement_plan docs/tickets/TICKET-NAME/plan.md
 ```
 
 ```
 
 ### Step 4: Create Session Summary
 
-Check existing session files to determine next sequence number, then save to `thoughts/sessions/NNN_feature.md` where NNN is a 3-digit sequential number (001, 002, etc.):
+Check existing session files to determine next sequence number, then save to `docs/tickets/TICKET-NAME/sessions/NNN_feature.md` where NNN is a 3-digit sequential number (001, 002, etc.):
 
 ```markdown
 ---
 date: [ISO timestamp]
 feature: [Feature name]
-plan: thoughts/NNN_topic/plan.md
-research: thoughts/NNN_topic/research.md
+plan: docs/tickets/TICKET-NAME/plan.md
+research: docs/tickets/TICKET-NAME/research.md
 status: in_progress
 last_commit: [git hash]
 ---
@@ -171,11 +171,11 @@ To continue this work:
    ```
    ✅ Progress saved successfully!
 
-   📁 Session summary: thoughts/sessions/[...]
-   📋 Plan updated: thoughts/NNN_topic/plan.md
+   📁 Session summary: docs/tickets/TICKET-NAME/sessions/[...]
+   📋 Plan updated: docs/tickets/TICKET-NAME/plan.md
    💾 Commits created: [list]
 
-   To resume: /6_resume_work thoughts/sessions/[...]
+   To resume: /6_resume_work docs/tickets/TICKET-NAME/sessions/[...]
    ```
 
 ## Important Guidelines
@@ -191,6 +191,6 @@ To continue this work:
 
 This command works with:
 
-- `/4_implement_plan` - Updates plan progress
+- `/3_implement_plan` - Updates plan progress
 - `/6_resume_work` - Paired resume command
-- `/3_validate_plan` - Can validate partial progress
+- `/4_validate_plan` - Can validate partial progress

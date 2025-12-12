@@ -19,13 +19,13 @@ Invoke this when:
 
    ```
    /6_resume_work
-   > thoughts/sessions/2025-01-06_user_management.md
+   > docs/tickets/TICKET-NAME/sessions/2025-01-06_user_management.md
    ```
 
 2. **Or discover recent sessions**:
 
    ```bash
-   ls -la thoughts/sessions/
+   ls -la docs/tickets/TICKET-NAME/sessions/
    # Show user recent sessions to choose from
    ```
 
@@ -143,7 +143,7 @@ I'll continue with [specific next action]...
 
 ```markdown
 /6_resume_work
-> thoughts/sessions/2025-01-03_auth_refactor.md
+> docs/tickets/TICKET-NAME/sessions/2025-01-03_auth_refactor.md
 
 # Claude:
 1. Reads full session summary
@@ -171,9 +171,9 @@ I'll continue with [specific next action]...
 This command connects with:
 
 - `/5_save_progress` - Reads saved progress
-- `/4_implement_plan` - Continues implementation
+- `/3_implement_plan` - Continues implementation
 - `/1_research_codebase` - Refreshes understanding if needed
-- `/3_validate_plan` - Checks what's been completed
+- `/4_validate_plan` - Checks what's been completed
 
 ## Advanced Features
 
