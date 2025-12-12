@@ -21,6 +21,8 @@ interface StatusBarProps {
   status?: "idle" | "thinking" | "streaming" | "tool-call" | "subagent" | "done" | "error";
   /** Feature flags to display */
   features?: FeatureFlags;
+  /** Whether auto-approve mode is enabled */
+  autoApproveEnabled?: boolean;
 }
 
 export function StatusBar({
@@ -28,6 +30,7 @@ export function StatusBar({
   model,
   status = "idle",
   features,
+  autoApproveEnabled = false,
 }: StatusBarProps): React.ReactElement {
   // Get short model name
   const shortModel = model.split("/").pop() || model;
@@ -63,6 +66,12 @@ export function StatusBar({
       <Text dimColor>
         {getStatusDisplay()} {shortModel}
         {featureBadges.length > 0 && ` ${featureBadges.join(" ")}`}
+        {" · "}
+        {autoApproveEnabled ? (
+          <Text color={colors.success}>🟢 Auto-approve</Text>
+        ) : (
+          <Text color={colors.warning}>🔴 Safe mode</Text>
+        )}
         {" · "}? for shortcuts
       </Text>
     </Box>

@@ -25,4 +25,8 @@ export {
 export {
   parseModelString,
 } from "./model-parser.js";
+export {
+  applyInterruptConfig,
+  hasApprovalTools,
+} from "./approval.js";
 

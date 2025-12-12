@@ -40,6 +40,7 @@ import {
   StatusBar,
   ModelSelectionPanel,
   ApiKeyInputPanel,
+  ToolApproval,
   type MessageData,
 } from "./components/index.js";
 import { parseCommand, colors, SLASH_COMMANDS } from "./theme.js";
@@ -212,6 +213,12 @@ function App({ options, backend }: AppProps): React.ReactElement {
     enablePromptCaching: options.enablePromptCaching,
     toolResultEvictionLimit: options.toolResultEvictionLimit,
     summarization: summarizationConfig,
+    // Default interruptOn config for CLI - safe defaults
+    interruptOn: {
+      execute: true,
+      write_file: true,
+      edit_file: true,
+    },
   });
 
   // UI state
@@ -375,6 +382,12 @@ function App({ options, backend }: AppProps): React.ReactElement {
         setPanel({ view: "features" });
         break;
 
+      case "approve":
+        const newValue = !agent.autoApproveEnabled;
+        agent.setAutoApprove(newValue);
+        // Show a brief message (could be improved with a toast/notification)
+        return;
+
       case "help":
       case "h":
       case "?":
@@ -475,6 +488,20 @@ function App({ options, backend }: AppProps): React.ReactElement {
       {/* Error display */}
       {agent.error && <ErrorDisplay error={agent.error} />}
 
+      {/* Approval UI - show when pending and not in auto-approve mode */}
+      {agent.pendingApproval && !agent.autoApproveEnabled && (
+        <ToolApproval
+          toolName={agent.pendingApproval.toolName}
+          args={agent.pendingApproval.args}
+          onApprove={() => agent.respondToApproval(true)}
+          onDeny={() => agent.respondToApproval(false)}
+          onApproveAll={() => {
+            agent.setAutoApprove(true);
+            agent.respondToApproval(true);
+          }}
+        />
+      )}
+
       {/* Input - hidden when interactive panels are active */}
       {!isInteractivePanel && (
         <Box marginTop={1}>
@@ -488,6 +515,7 @@ function App({ options, backend }: AppProps): React.ReactElement {
         model={agent.currentModel}
         status={agent.status}
         features={agent.features}
+        autoApproveEnabled={agent.autoApproveEnabled}
       />
     </Box>
   );

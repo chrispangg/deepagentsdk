@@ -10,7 +10,9 @@ import type {
   BackendProtocol,
   BackendFactory,
   EventCallback,
+  InterruptOnConfig,
 } from "../types.ts";
+import { applyInterruptConfig } from "../utils/approval.ts";
 import {
   getTaskToolDescription,
   DEFAULT_GENERAL_PURPOSE_DESCRIPTION,
@@ -40,6 +42,8 @@ export interface CreateSubagentToolOptions {
   taskDescription?: string | null;
   /** Optional callback for emitting events */
   onEvent?: EventCallback;
+  /** Interrupt config to pass to subagents */
+  interruptOn?: InterruptOnConfig;
 }
 
 /**
@@ -70,6 +74,7 @@ export function createSubagentTool(
     backend,
     taskDescription = null,
     onEvent,
+    interruptOn,
   } = options;
 
   // Build subagent registry
@@ -127,6 +132,10 @@ export function createSubagentTool(
 
       const subagentConfig = subagentRegistry[subagent_type]!;
 
+      // Find the subagent spec to get its interruptOn config
+      const subagentSpec = subagents.find((sa) => sa.name === subagent_type);
+      const subagentInterruptOn = subagentSpec?.interruptOn ?? interruptOn;
+
       // Emit subagent start event
       if (onEvent) {
         onEvent({
@@ -136,7 +145,7 @@ export function createSubagentTool(
         });
       }
 
-      // Create a fresh state for the subagent (shares files but has own todos)
+      // Create a fresh state for the subagent (shares files but have own todos)
       const subagentState: DeepAgentState = {
         todos: [],
         files: state.files, // Share files with parent
@@ -146,22 +155,25 @@ export function createSubagentTool(
       const todosTool = createTodosTool(subagentState, onEvent);
       const filesystemTools = createFilesystemTools(subagentState, backend, onEvent);
 
-      const allTools: ToolSet = {
+      let allTools: ToolSet = {
         write_todos: todosTool,
         ...filesystemTools,
         ...subagentConfig.tools,
       };
 
+      // Apply interruptOn config - use subagent's own config if provided, otherwise parent's
+      allTools = applyInterruptConfig(allTools, subagentInterruptOn);
+
       try {
         // Create and run a ToolLoopAgent for the subagent
-        const subagent = new ToolLoopAgent({
+        const subagentAgent = new ToolLoopAgent({
           model: subagentConfig.model,
           instructions: subagentConfig.systemPrompt,
           tools: allTools,
           stopWhen: stepCountIs(50), // Allow substantial work
         });
 
-        const result = await subagent.generate({ prompt: description });
+        const result = await subagentAgent.generate({ prompt: description });
 
         // Merge any file changes back to parent state
         state.files = { ...state.files, ...subagentState.files };

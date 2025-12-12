@@ -8,6 +8,7 @@ import type {
   TodoItem,
   ModelMessage,
   SummarizationConfig,
+  InterruptOnConfig,
 } from "../../types.js";
 import { createDeepAgent } from "../../agent.js";
 import { parseModelString } from "../../utils/model-parser.js";
@@ -41,6 +42,11 @@ export interface UseAgentOptions {
   toolResultEvictionLimit?: number;
   /** Summarization configuration */
   summarization?: SummarizationConfig;
+  /** 
+   * Default interruptOn config for CLI.
+   * Default: { execute: true, write_file: true, edit_file: true }
+   */
+  interruptOn?: InterruptOnConfig;
 }
 
 export interface UseAgentReturn {
@@ -86,6 +92,18 @@ export interface UseAgentReturn {
   setEviction: (enabled: boolean) => void;
   /** Toggle summarization */
   setSummarization: (enabled: boolean) => void;
+  /** Current approval request if any */
+  pendingApproval: {
+    approvalId: string;
+    toolName: string;
+    args: unknown;
+  } | null;
+  /** Respond to approval request */
+  respondToApproval: (approved: boolean) => void;
+  /** Whether auto-approve mode is enabled */
+  autoApproveEnabled: boolean;
+  /** Toggle auto-approve mode */
+  setAutoApprove: (enabled: boolean) => void;
 }
 
 let eventCounter = 0;
@@ -93,6 +111,13 @@ let eventCounter = 0;
 function createEventId(): string {
   return `event-${++eventCounter}`;
 }
+
+// Default interruptOn config for CLI - safe defaults
+const DEFAULT_CLI_INTERRUPT_ON: InterruptOnConfig = {
+  execute: true,
+  write_file: true,
+  edit_file: true,
+};
 
 export function useAgent(options: UseAgentOptions): UseAgentReturn {
   const [status, setStatus] = useState<AgentStatus>("idle");
@@ -113,6 +138,17 @@ export function useAgent(options: UseAgentOptions): UseAgentReturn {
   const [evictionLimit, setEvictionLimit] = useState(options.toolResultEvictionLimit ?? 0);
   const [summarizationEnabled, setSummarizationEnabled] = useState(options.summarization?.enabled ?? false);
   const [summarizationConfig, setSummarizationConfig] = useState(options.summarization);
+  
+  // Auto-approve mode state
+  const [autoApproveEnabled, setAutoApproveEnabled] = useState(false);
+  
+  // Pending approval state
+  const [pendingApproval, setPendingApproval] = useState<{
+    approvalId: string;
+    toolName: string;
+    args: unknown;
+  } | null>(null);
+  const approvalResolverRef = useRef<((approved: boolean) => void) | null>(null);
 
   const abortControllerRef = useRef<AbortController | null>(null);
   // Use a ref to track accumulated text during streaming (current segment, gets flushed)
@@ -142,6 +178,7 @@ export function useAgent(options: UseAgentOptions): UseAgentReturn {
       enablePromptCaching: promptCachingEnabled,
       toolResultEvictionLimit: evictionLimit,
       summarization: summarizationConfig,
+      interruptOn: autoApproveEnabled ? undefined : (options.interruptOn ?? DEFAULT_CLI_INTERRUPT_ON),
     })
   );
 
@@ -197,6 +234,35 @@ export function useAgent(options: UseAgentOptions): UseAgentReturn {
           state,
           messages: messagesRef.current,
           abortSignal: abortControllerRef.current.signal,
+          // Approval callback - auto-approve or prompt user
+          onApprovalRequest: async (request) => {
+            // If auto-approve is enabled, immediately approve
+            if (autoApproveEnabled) {
+              addEvent({ 
+                type: "approval-requested", 
+                ...request,
+              });
+              addEvent({ 
+                type: "approval-response", 
+                approvalId: request.approvalId, 
+                approved: true 
+              });
+              return true;
+            }
+            
+            // Otherwise, show approval UI and wait for user response
+            setPendingApproval({
+              approvalId: request.approvalId,
+              toolName: request.toolName,
+              args: request.args,
+            });
+            addEvent({ type: "approval-requested", ...request });
+            
+            // Return a promise that resolves when user responds
+            return new Promise<boolean>((resolve) => {
+              approvalResolverRef.current = resolve;
+            });
+          },
         })) {
           // Handle different event types
           switch (event.type) {
@@ -303,6 +369,16 @@ export function useAgent(options: UseAgentOptions): UseAgentReturn {
               addEvent(event);
               break;
 
+            case "approval-requested":
+              // Approval request is handled in onApprovalRequest callback
+              // Event is already emitted there, no need to duplicate
+              break;
+
+            case "approval-response":
+              // Approval response is handled in respondToApproval callback
+              // Event is already emitted there, no need to duplicate
+              break;
+
             case "done":
               // Flush any remaining text as a final text-segment
               // This captures the last part of the response that was being streamed
@@ -356,9 +432,10 @@ export function useAgent(options: UseAgentOptions): UseAgentReturn {
       } finally {
         abortControllerRef.current = null;
       }
-    },
-    [state, messages, addEvent, flushTextSegment]
+        },
+    [state, messages, addEvent, flushTextSegment, autoApproveEnabled]
   );
+
 
   const abort = useCallback(() => {
     if (abortControllerRef.current) {
@@ -396,11 +473,15 @@ export function useAgent(options: UseAgentOptions): UseAgentReturn {
       promptCaching?: boolean;
       evictionLimit?: number;
       summarization?: SummarizationConfig;
+      interruptOn?: InterruptOnConfig | undefined;
     } = {}) => {
       const newModel = overrides.model ?? currentModel;
       const newPromptCaching = overrides.promptCaching ?? promptCachingEnabled;
       const newEvictionLimit = overrides.evictionLimit ?? evictionLimit;
       const newSummarization = overrides.summarization ?? summarizationConfig;
+      const newInterruptOn = overrides.interruptOn !== undefined 
+        ? overrides.interruptOn 
+        : (autoApproveEnabled ? undefined : (options.interruptOn ?? DEFAULT_CLI_INTERRUPT_ON));
 
       agentRef.current = createDeepAgent({
         model: parseModelString(newModel),
@@ -410,9 +491,10 @@ export function useAgent(options: UseAgentOptions): UseAgentReturn {
         enablePromptCaching: newPromptCaching,
         toolResultEvictionLimit: newEvictionLimit,
         summarization: newSummarization,
+        interruptOn: newInterruptOn,
       });
     },
-    [currentModel, promptCachingEnabled, evictionLimit, summarizationConfig, options.maxSteps, options.systemPrompt, options.backend]
+    [currentModel, promptCachingEnabled, evictionLimit, summarizationConfig, autoApproveEnabled, options.maxSteps, options.systemPrompt, options.backend, options.interruptOn]
   );
 
   const setModel = useCallback(
@@ -452,6 +534,38 @@ export function useAgent(options: UseAgentOptions): UseAgentReturn {
     [recreateAgent, options.summarization]
   );
 
+  // Respond to approval request
+  const respondToApproval = useCallback((approved: boolean) => {
+    if (approvalResolverRef.current) {
+      approvalResolverRef.current(approved);
+      approvalResolverRef.current = null;
+      const currentApproval = pendingApproval;
+      setPendingApproval(null);
+      if (currentApproval) {
+        addEvent({ 
+          type: "approval-response", 
+          approvalId: currentApproval.approvalId, 
+          approved 
+        });
+      }
+    }
+  }, [addEvent]);
+
+  // Toggle auto-approve and recreate agent
+  const setAutoApprove = useCallback((enabled: boolean) => {
+    setAutoApproveEnabled(enabled);
+    
+    // When enabling auto-approve, immediately approve any pending request
+    if (enabled && approvalResolverRef.current) {
+      respondToApproval(true);
+    }
+    
+    // Recreate agent with/without interruptOn config
+    recreateAgent({ 
+      interruptOn: enabled ? undefined : (options.interruptOn ?? DEFAULT_CLI_INTERRUPT_ON)
+    });
+  }, [recreateAgent, options.interruptOn, respondToApproval]);
+
   return {
     status,
     streamingText,
@@ -472,6 +586,10 @@ export function useAgent(options: UseAgentOptions): UseAgentReturn {
     setPromptCaching,
     setEviction,
     setSummarization,
+    pendingApproval,
+    respondToApproval,
+    autoApproveEnabled,
+    setAutoApprove,
   };
 }
 

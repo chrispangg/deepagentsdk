@@ -48,8 +48,13 @@ export type {
   ExecuteFinishEvent,
   SubagentStartEvent,
   SubagentFinishEvent,
+  ApprovalRequestedEvent,
+  ApprovalResponseEvent,
   DoneEvent,
   ErrorEvent,
+  // Approval configuration types
+  InterruptOnConfig,
+  DynamicApprovalConfig,
 } from "./types.ts";
 
 // Type guard for sandbox backends

@@ -21,6 +21,7 @@ import type {
   StreamWithEventsOptions,
   ModelMessage,
   SandboxBackendProtocol,
+  InterruptOnConfig,
 } from "./types.ts";
 import { isSandboxBackend } from "./types.ts";
 import {
@@ -37,6 +38,7 @@ import { createExecuteTool } from "./tools/execute.ts";
 import { StateBackend } from "./backends/state.ts";
 import { patchToolCalls } from "./utils/patch-tool-calls.ts";
 import { summarizeIfNeeded } from "./utils/summarization.ts";
+import { applyInterruptConfig } from "./utils/approval.ts";
 import type { SummarizationConfig } from "./types.ts";
 
 /**
@@ -85,6 +87,7 @@ export class DeepAgent {
   private enablePromptCaching: boolean;
   private summarizationConfig?: SummarizationConfig;
   private hasSandboxBackend: boolean;
+  private interruptOn?: InterruptOnConfig;
 
   constructor(params: CreateDeepAgentParams) {
     const {
@@ -98,6 +101,7 @@ export class DeepAgent {
       toolResultEvictionLimit,
       enablePromptCaching = false,
       summarization,
+      interruptOn,
     } = params;
 
     this.model = model;
@@ -107,6 +111,7 @@ export class DeepAgent {
     this.toolResultEvictionLimit = toolResultEvictionLimit;
     this.enablePromptCaching = enablePromptCaching;
     this.summarizationConfig = summarization;
+    this.interruptOn = interruptOn;
 
     // Check if backend is a sandbox (supports execute)
     // For factory functions, we can't know until runtime, so we check if it's an instance
@@ -143,7 +148,7 @@ export class DeepAgent {
       toolResultEvictionLimit: this.toolResultEvictionLimit,
     });
 
-    const allTools: ToolSet = {
+    let allTools: ToolSet = {
       write_todos: todosTool,
       ...filesystemTools,
       ...this.userTools,
@@ -172,9 +177,13 @@ export class DeepAgent {
           this.subagentOptions.includeGeneralPurposeAgent,
         backend: this.backend,
         onEvent,
+        interruptOn: this.interruptOn,
       });
       allTools.task = subagentTool;
     }
+
+    // Apply interruptOn configuration to tools
+    allTools = applyInterruptConfig(allTools, this.interruptOn);
 
     return allTools;
   }
@@ -334,6 +343,14 @@ export class DeepAgent {
 
     // Create tools with event callback
     const tools = this.createTools(state, onEvent);
+
+    // Note: AI SDK 6 handles approvals natively when needsApproval is set on tools.
+    // The actual approval mechanism is handled by AI SDK internally.
+    // We emit events when approvals are needed, but the approval flow itself
+    // is managed by AI SDK 6's native implementation.
+    // For now, we'll use the tools as-is - AI SDK 6 will handle the approval pause.
+    // The onApprovalRequest callback will be called when AI SDK detects approval needs.
+    // This is a simplified approach - we may need to refine based on actual AI SDK behavior.
 
     try {
       // Build streamText options

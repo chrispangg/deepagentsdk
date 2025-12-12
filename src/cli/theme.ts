@@ -127,6 +127,11 @@ export const SLASH_COMMANDS: SlashCommand[] = [
     description: "Toggle auto-summarization (usage: /summarize on|off)",
   },
   {
+    command: "/approve",
+    aliases: [],
+    description: "Toggle auto-approve mode for tool executions",
+  },
+  {
     command: "/clear",
     aliases: ["/c"],
     description: "Clear chat history",

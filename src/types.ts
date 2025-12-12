@@ -155,6 +155,11 @@ export interface SubAgent {
    * Useful for using faster/cheaper models for specific tasks.
    */
   model?: LanguageModel;
+  /** 
+   * Optional interrupt configuration for this subagent.
+   * If not provided, uses the parent agent's interruptOn config.
+   */
+  interruptOn?: InterruptOnConfig;
 }
 
 /**
@@ -209,6 +214,36 @@ export interface SummarizationConfig {
    */
   model?: LanguageModel;
 }
+
+/**
+ * Configuration for dynamic tool approval.
+ */
+export interface DynamicApprovalConfig {
+  /**
+   * Function to determine if approval is needed based on tool arguments.
+   * Return true to require approval, false to auto-approve.
+   */
+  shouldApprove?: (args: unknown) => boolean | Promise<boolean>;
+}
+
+/**
+ * Configuration for human-in-the-loop tool approval.
+ * Maps tool names to approval configurations.
+ * 
+ * - `true`: Always require approval
+ * - `false`: Never require approval (same as not including)
+ * - `DynamicApprovalConfig`: Dynamic approval based on arguments
+ * 
+ * @example
+ * ```typescript
+ * interruptOn: {
+ *   execute: true,  // Always require approval
+ *   write_file: true,
+ *   edit_file: { shouldApprove: (args) => !args.file_path.startsWith('/tmp/') },
+ * }
+ * ```
+ */
+export type InterruptOnConfig = Record<string, boolean | DynamicApprovalConfig>;
 
 /**
  * Configuration parameters for creating a Deep Agent.
@@ -329,6 +364,25 @@ export interface CreateDeepAgentParams {
    * @see {@link SummarizationConfig} for detailed configuration options
    */
   summarization?: SummarizationConfig;
+  
+  /**
+   * Configuration for human-in-the-loop tool approval.
+   * 
+   * Maps tool names to approval configurations. When a tool requires approval,
+   * the agent will pause and emit an `approval-requested` event before execution.
+   * 
+   * @example
+   * ```typescript
+   * interruptOn: {
+   *   execute: true,        // Always require approval
+   *   write_file: true,     // Always require approval
+   *   edit_file: {          // Dynamic approval
+   *     shouldApprove: (args) => !args.file_path.startsWith('/tmp/')
+   *   },
+   * }
+   * ```
+   */
+  interruptOn?: InterruptOnConfig;
 }
 
 /**
@@ -889,6 +943,32 @@ export interface ErrorEvent {
 }
 
 /**
+ * Event emitted when a tool requires approval before execution.
+ */
+export interface ApprovalRequestedEvent {
+  type: "approval-requested";
+  /** Unique ID for this approval request */
+  approvalId: string;
+  /** The tool call ID */
+  toolCallId: string;
+  /** Name of the tool requiring approval */
+  toolName: string;
+  /** Arguments that will be passed to the tool */
+  args: unknown;
+}
+
+/**
+ * Event emitted when user responds to an approval request.
+ */
+export interface ApprovalResponseEvent {
+  type: "approval-response";
+  /** The approval ID being responded to */
+  approvalId: string;
+  /** Whether the tool was approved */
+  approved: boolean;
+}
+
+/**
  * Union type of all possible Deep Agent events.
  */
 export type DeepAgentEvent =
@@ -911,6 +991,8 @@ export type DeepAgentEvent =
   | SubagentFinishEvent
   | TextSegmentEvent
   | UserMessageEvent
+  | ApprovalRequestedEvent
+  | ApprovalResponseEvent
   | DoneEvent
   | ErrorEvent;
 
@@ -940,5 +1022,16 @@ export interface StreamWithEventsOptions {
   messages?: ModelMessage[];
   /** Signal to abort the generation */
   abortSignal?: AbortSignal;
+  /**
+   * Callback to handle tool approval requests.
+   * Return true to approve, false to deny.
+   * If not provided, tools requiring approval will be auto-denied.
+   */
+  onApprovalRequest?: (request: {
+    approvalId: string;
+    toolCallId: string;
+    toolName: string;
+    args: unknown;
+  }) => Promise<boolean>;
 }
 

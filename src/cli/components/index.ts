@@ -20,4 +20,5 @@ export { StatusBar } from "./StatusBar.js";
 export { ToolCallSummary, InlineToolCall } from "./ToolCallSummary.js";
 export { ModelSelectionPanel } from "./ModelSelection.js";
 export { ApiKeyInputPanel, ApiKeyStatus } from "./ApiKeyInput.js";
+export { ToolApproval } from "./ToolApproval.js";
 
