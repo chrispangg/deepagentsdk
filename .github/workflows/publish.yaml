@@ -1,0 +1,121 @@
+name: Publish to npm
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      # Include code-related files
+      - 'src/**'
+      - 'package.json'
+      - 'tsconfig.json'
+      - 'bun.lockb'
+      # Exclude documentation-only changes
+      - '!examples/**'
+      - '!**.md'
+      - '!.github/**'
+      - '!.agent/**'
+      - '!.refs/**'
+      - '!docs/**'
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write  # For pushing version bump
+      id-token: write  # For npm provenance
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Run type checking
+        run: bun run typecheck
+
+      - name: Run tests
+        run: bun test
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Determine version bump type
+        id: version-bump
+        run: |
+          # Get the latest version tag
+          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+
+          if [ -z "$LATEST_TAG" ]; then
+            echo "No previous tags found, getting all commit messages"
+            COMMIT_MESSAGES=$(git log --pretty=%B)
+          else
+            echo "Latest tag: $LATEST_TAG"
+            echo "Getting commit messages since $LATEST_TAG"
+            COMMIT_MESSAGES=$(git log $LATEST_TAG..HEAD --pretty=%B)
+          fi
+
+          echo "Analyzing commits:"
+          echo "$COMMIT_MESSAGES"
+
+          # Determine bump type by checking all commits (highest priority wins)
+          # Priority: major > minor > patch
+          BUMP_TYPE="patch"
+
+          if echo "$COMMIT_MESSAGES" | grep -qiE '(breaking|major)'; then
+            BUMP_TYPE="major"
+            echo "Found breaking/major change - will bump major version"
+          elif echo "$COMMIT_MESSAGES" | grep -qiE '(feat|feature|minor)'; then
+            BUMP_TYPE="minor"
+            echo "Found feature - will bump minor version"
+          else
+            echo "No major/minor keywords found - will bump patch version"
+          fi
+
+          echo "type=$BUMP_TYPE" >> $GITHUB_OUTPUT
+
+      - name: Bump version
+        id: bump
+        run: |
+          # Get current version
+          CURRENT_VERSION=$(node -p "require('./package.json').version")
+          echo "Current version: $CURRENT_VERSION"
+
+          # Bump version
+          BUMP_TYPE=${{ steps.version-bump.outputs.type }}
+          npm version $BUMP_TYPE -m "chore: bump version to %s [skip ci]"
+
+          # Get new version
+          NEW_VERSION=$(node -p "require('./package.json').version")
+          echo "New version: $NEW_VERSION"
+          echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
+
+      - name: Push version bump
+        run: |
+          git push origin main --follow-tags
+
+      - name: Publish to npm
+        run: npm publish --access public --provenance
+
+      - name: Create GitHub Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ steps.bump.outputs.version }}
+          release_name: v${{ steps.bump.outputs.version }}
+          body: |
+            Release ${{ steps.bump.outputs.version }}
+
+            See [CHANGELOG](https://github.com/chrispangg/ai-sdk-deepagent/blob/main/CHANGELOG.md) for details.
+          draft: false
+          prerelease: false
