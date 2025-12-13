@@ -4,9 +4,34 @@ This repository uses GitHub Actions to automatically publish to npm when code ch
 
 ## Setup
 
-### Configure npm Trusted Publisher (Recommended)
+You need to configure npm authentication for automated publishing. Choose **ONE** of these methods:
 
-This repository uses **npm Trusted Publishers** (via GitHub OIDC) for secure, token-free publishing. No secrets needed!
+### Option 1: npm Token (Simplest for First-Time Setup)
+
+**Steps:**
+
+1. **Create an npm access token**:
+   - Log in to [npmjs.com](https://www.npmjs.com/)
+   - Go to **Access Tokens** → **Generate New Token**
+   - Select **"Automation"** type
+   - Copy the token (starts with `npm_...`)
+
+2. **Add the token to GitHub Secrets**:
+   - Go to your GitHub repo: Settings → Secrets and variables → Actions
+   - Click **"New repository secret"**
+   - Name: `NPM_TOKEN`
+   - Value: Paste your npm token
+   - Click **"Add secret"**
+
+3. **Done!** The workflow will use this token to publish
+
+### Option 2: npm Trusted Publishers (Advanced, More Secure)
+
+**npm Trusted Publishers** use GitHub OIDC for secure, token-free publishing.
+
+**Requirements:**
+- Package must exist on npm (do a manual first publish)
+- More complex initial setup
 
 **Steps:**
 
