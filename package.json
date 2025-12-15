@@ -1,6 +1,6 @@
 {
   "name": "ai-sdk-deep-agent",
-  "version": "0.1.14",
+  "version": "0.2.0",
   "description": "Deep Agents implementation using Vercel AI SDK - build controllable AI agents with planning, filesystem, and subagent capabilities",
   "main": "./src/index.ts",
   "module": "./src/index.ts",
