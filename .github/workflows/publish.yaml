@@ -147,14 +147,16 @@ jobs:
           echo "$CHANGELOG" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
-      - uses: actions/setup-node@v4
+      - name: Setup Node.js
         if: steps.version-bump.outputs.type != ''  # Only setup if version was bumped
+        uses: actions/setup-node@v4
         with:
           node-version: '20'
           registry-url: 'https://registry.npmjs.org'
 
       # Ensure npm 11.5.1 or later is installed
       - name: Update npm
+        if: steps.version-bump.outputs.type != ''  # Only update npm if version was bumped
         run: npm install -g npm@latest
 
       - name: Publish to npm
