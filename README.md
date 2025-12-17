@@ -225,6 +225,159 @@ const agent6 = createDeepAgent({
 });
 ```
 
+### Middleware
+
+Deep Agents support AI SDK middleware for intercepting and modifying model behavior. Middleware allows you to add cross-cutting concerns like logging, caching, telemetry, and custom memory systems without modifying agent logic.
+
+#### How Middleware Works
+
+Middleware wraps the model's `generate` function to intercept calls and responses:
+
+```typescript
+import type { LanguageModelMiddleware } from 'ai';
+
+const myMiddleware: LanguageModelMiddleware = {
+  specificationVersion: 'v3',
+  wrapGenerate: async ({ doGenerate, params }) => {
+    // Before: inspect/modify params
+    console.log('Model called with prompt:', params.prompt?.[0]?.content);
+
+    // Call the model
+    const result = await doGenerate();
+
+    // After: inspect/modify result
+    console.log('Model responded with:', result.content);
+
+    return result;
+  },
+};
+
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-5-20250929'),
+  middleware: myMiddleware,
+});
+```
+
+#### Multiple Middleware
+
+Chain multiple middleware in order:
+
+```typescript
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-5-20250929'),
+  middleware: [
+    loggingMiddleware,
+    cachingMiddleware,
+    telemetryMiddleware,
+  ],
+});
+```
+
+#### Common Middleware Patterns
+
+**Logging Middleware:**
+
+```typescript
+const loggingMiddleware: LanguageModelMiddleware = {
+  specificationVersion: 'v3',
+  wrapGenerate: async ({ doGenerate, params }) => {
+    const startTime = Date.now();
+    console.log('📝 Calling model...');
+
+    try {
+      const result = await doGenerate();
+      const duration = Date.now() - startTime;
+      console.log(`✅ Model responded in ${duration}ms`);
+      return result;
+    } catch (error) {
+      console.error('❌ Model call failed:', error);
+      throw error;
+    }
+  },
+};
+```
+
+**Caching Middleware:**
+
+```typescript
+const cache = new Map<string, any>();
+
+const cachingMiddleware: LanguageModelMiddleware = {
+  specificationVersion: 'v3',
+  wrapGenerate: async ({ doGenerate, params }) => {
+    const cacheKey = JSON.stringify(params.prompt);
+
+    if (cache.has(cacheKey)) {
+      console.log('💾 Cache hit!');
+      return cache.get(cacheKey);
+    }
+
+    console.log('📥 Cache miss, calling model...');
+    const result = await doGenerate();
+    cache.set(cacheKey, result);
+    return result;
+  },
+};
+```
+
+**Request/Response Transformation:**
+
+```typescript
+const transformationMiddleware: LanguageModelMiddleware = {
+  specificationVersion: 'v3',
+  wrapGenerate: async ({ doGenerate, params }) => {
+    // Modify request
+    const modifiedParams = {
+      ...params,
+      system: (params.system || []).map(msg => ({
+        ...msg,
+        content: msg.content + '\n\n[Added by middleware]',
+      })),
+    };
+
+    // Call model with modified params
+    const result = await doGenerate();
+
+    // Modify response
+    return {
+      ...result,
+      content: result.content.map(block => ({
+        ...block,
+        text: block.type === 'text'
+          ? block.text + '\n[Processed by middleware]'
+          : block.text,
+      })),
+    };
+  },
+};
+```
+
+#### Prebuilt: Agent Memory Middleware
+
+The library includes a prebuilt middleware for managing user-level agent memory. It automatically loads memory files before each generation and makes them available to the agent:
+
+```typescript
+import { createDeepAgent, createAgentMemoryMiddleware } from 'ai-sdk-deep-agent';
+
+const memoryMiddleware = createAgentMemoryMiddleware({
+  agentId: 'my-agent',
+  // Optional: custom directory for memory files
+  userDeepagentsDir: '~/.deepagents',
+  // Optional: request approval before creating directories
+  requestProjectApproval: async (projectPath) => {
+    console.log(`Create memory directory in ${projectPath}?`);
+    return true;
+  },
+});
+
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-5-20250929'),
+  middleware: memoryMiddleware,
+});
+```
+
+See the [Agent Memory](#agent-memory) section below for more details on using memory files.
+
 ### Agent Memory
 
 Give your agent persistent memory across conversations using the agent memory middleware:
