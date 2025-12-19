@@ -42,21 +42,38 @@ Tracks feature parity with LangChain's DeepAgents framework. Reference implement
 
 ### Critical
 
-_No critical features pending_
+- [ ] **Fix `options.messages` Implementation** ⚠️ **[BUG]**
+  - **Why**: `DeepAgentOptions.messages` is defined in types but NOT used in implementation; library only supports checkpoint-based persistence (threadId + checkpointer)
+  - **Impact**: Users expect to pass conversation history via `messages` parameter (standard AI SDK pattern), but it's silently ignored
+  - **Effort**: 1 day, add message handling to agent initialization
+  - **Workaround**: Manually prepend message history to prompt or use checkpointer
+  - **Note**: Should support both patterns: explicit `messages` array AND checkpoint-based persistence
 
 ### High Priority
 
-- [ ] **ToolLoopAgent Constructor Passthrough** - Allow users to pass all ToolLoopAgent constructor options
+- [ ] **ToolLoopAgent Constructor Passthrough** [in_progress]
   - **Why**: Enable full AI SDK v6 ToolLoopAgent features (custom stopWhen, maxRetries, etc.) while keeping DeepAgent harness
   - **Impact**: Better flexibility for advanced users, maintains AI SDK compatibility
   - **Effort**: 1-2 days, add passthrough options to DeepAgentOptions
   - **Note**: Should preserve DeepAgent defaults (systemPrompt, tools) but allow overrides
+
+- [ ] **Subagent Web Tools Access** ⚠️ **[BUG]**
+  - **Why**: Subagents spawned via `task` tool don't inherit web tools (`web_search`, `http_request`, `fetch_url`), limiting their capabilities
+  - **Impact**: Subagents cannot perform web research or API calls, forcing parent agent to handle all web operations
+  - **Effort**: 1 day, ensure web tools are passed to subagent creation in `src/tools/subagent.ts`
+  - **Note**: Should respect parent's `interruptOn` config for web tool approvals
 
 - [ ] **Async Backend Methods** ⚠️ **[BREAKING]** - Full async variants of all backend operations
   - **Why**: Current sync methods block event loop, limits scalability
   - **Impact**: Better performance for I/O-heavy operations
   - **Effort**: 2-3 days, requires refactoring all backends + tests
   - **Note**: Schedule for next major version (v0.2.0 or v1.0.0)
+
+- [ ] **Remove `as any` Type Assertions** - Eliminate unsafe type casts throughout codebase
+  - **Why**: `as any` bypasses TypeScript's type safety, hiding potential bugs and reducing code quality
+  - **Impact**: Better type safety, fewer runtime errors, improved developer experience
+  - **Effort**: 1-2 days, audit all files and replace with proper types/generics
+  - **Note**: Focus on `src/` directory first, then examples and tests
 
 ### Medium Priority
 

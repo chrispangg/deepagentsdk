@@ -13,7 +13,9 @@ import {
   type StopCondition,
   type LanguageModel,
   type LanguageModelMiddleware,
+  type ToolLoopAgentSettings,
 } from "ai";
+import type { LanguageModelV3 } from "@ai-sdk/provider";
 import type { z } from "zod";
 import type {
   CreateDeepAgentParams,
@@ -26,9 +28,10 @@ import type {
   ModelMessage,
   SandboxBackendProtocol,
   InterruptOnConfig,
-} from "./types.ts";
-import type { BaseCheckpointSaver, Checkpoint, InterruptData } from "./checkpointer/types.ts";
-import { isSandboxBackend } from "./types.ts";
+  PrepareStepFunction,
+} from "./types";
+import type { BaseCheckpointSaver, Checkpoint, InterruptData } from "./checkpointer/types";
+import { isSandboxBackend } from "./types";
 import {
   BASE_PROMPT,
   TODO_SYSTEM_PROMPT,
@@ -36,17 +39,17 @@ import {
   TASK_SYSTEM_PROMPT,
   EXECUTE_SYSTEM_PROMPT,
   buildSkillsPrompt,
-} from "./prompts.ts";
-import { createTodosTool } from "./tools/todos.ts";
-import { createFilesystemTools } from "./tools/filesystem.ts";
-import { createSubagentTool } from "./tools/subagent.ts";
-import { createExecuteTool } from "./tools/execute.ts";
-import { createWebTools } from "./tools/web.ts";
-import { StateBackend } from "./backends/state.ts";
-import { patchToolCalls } from "./utils/patch-tool-calls.ts";
-import { summarizeIfNeeded } from "./utils/summarization.ts";
-import { applyInterruptConfig, wrapToolsWithApproval, type ApprovalCallback } from "./utils/approval.ts";
-import type { SummarizationConfig } from "./types.ts";
+} from "./prompts";
+import { createTodosTool } from "./tools/todos";
+import { createFilesystemTools } from "./tools/filesystem";
+import { createSubagentTool } from "./tools/subagent";
+import { createExecuteTool } from "./tools/execute";
+import { createWebTools } from "./tools/web";
+import { StateBackend } from "./backends/state";
+import { patchToolCalls } from "./utils/patch-tool-calls";
+import { summarizeIfNeeded } from "./utils/summarization";
+import { applyInterruptConfig, wrapToolsWithApproval, type ApprovalCallback } from "./utils/approval";
+import type { SummarizationConfig } from "./types";
 
 /**
  * Build the full system prompt from components.
@@ -105,6 +108,11 @@ export class DeepAgent {
   private skillsMetadata: Array<{ name: string; description: string; path: string }> = [];
   private outputConfig?: { schema: z.ZodType<any>; description?: string };
 
+  // AI SDK ToolLoopAgent passthrough options
+  private loopControl?: CreateDeepAgentParams["loopControl"];
+  private generationOptions?: CreateDeepAgentParams["generationOptions"];
+  private advancedOptions?: CreateDeepAgentParams["advancedOptions"];
+
   constructor(params: CreateDeepAgentParams) {
     const {
       model,
@@ -123,6 +131,9 @@ export class DeepAgent {
       skillsDir,
       agentId,
       output,
+      loopControl,
+      generationOptions,
+      advancedOptions,
     } = params;
 
     // Wrap model with middleware if provided
@@ -132,7 +143,7 @@ export class DeepAgent {
         : [middleware];
 
       this.model = wrapLanguageModel({
-        model: model as any, // Cast required since wrapLanguageModel expects LanguageModelV3
+        model: model as LanguageModelV3, // Cast required since DeepAgent accepts LanguageModel
         middleware: middlewares,
       }) as LanguageModel;
     } else {
@@ -147,6 +158,11 @@ export class DeepAgent {
     this.interruptOn = interruptOn;
     this.checkpointer = checkpointer;
     this.outputConfig = output;
+
+    // Store AI SDK passthrough options
+    this.loopControl = loopControl;
+    this.generationOptions = generationOptions;
+    this.advancedOptions = advancedOptions;
 
     // Load skills - prefer agentId over legacy skillsDir
     if (agentId) {
@@ -244,6 +260,8 @@ export class DeepAgent {
         backend: this.backend,
         onEvent,
         interruptOn: this.interruptOn,
+        parentGenerationOptions: this.generationOptions,
+        parentAdvancedOptions: this.advancedOptions,
       });
       allTools.task = subagentTool;
     }
@@ -255,6 +273,69 @@ export class DeepAgent {
   }
 
   /**
+   * Build stop conditions with maxSteps safety limit.
+   * Combines user-provided stop conditions with the maxSteps limit.
+   */
+  private buildStopConditions(maxSteps?: number): StopCondition<any>[] {
+    const conditions: StopCondition<any>[] = [];
+
+    // Always add maxSteps safety limit
+    conditions.push(stepCountIs(maxSteps ?? this.maxSteps));
+
+    // Add user-provided stop conditions
+    if (this.loopControl?.stopWhen) {
+      if (Array.isArray(this.loopControl.stopWhen)) {
+        conditions.push(...this.loopControl.stopWhen);
+      } else {
+        conditions.push(this.loopControl.stopWhen);
+      }
+    }
+
+    return conditions;
+  }
+
+  /**
+   * Build agent settings by combining passthrough options with defaults.
+   */
+  private buildAgentSettings(onEvent?: EventCallback) {
+    const settings: any = {
+      model: this.model,
+      instructions: this.systemPrompt,
+      tools: undefined, // Will be set by caller
+    };
+
+    // Add generation options if provided
+    if (this.generationOptions) {
+      Object.assign(settings, this.generationOptions);
+    }
+
+    // Add advanced options if provided
+    if (this.advancedOptions) {
+      Object.assign(settings, this.advancedOptions);
+    }
+
+    // Add composed loop control callbacks if provided
+    if (this.loopControl) {
+      if (this.loopControl.prepareStep) {
+        settings.prepareStep = this.composePrepareStep(this.loopControl.prepareStep);
+      }
+      if (this.loopControl.onStepFinish) {
+        settings.onStepFinish = this.composeOnStepFinish(this.loopControl.onStepFinish);
+      }
+      if (this.loopControl.onFinish) {
+        settings.onFinish = this.composeOnFinish(this.loopControl.onFinish);
+      }
+    }
+
+    // Add output configuration if provided using AI SDK Output helper
+    if (this.outputConfig) {
+      settings.output = Output.object(this.outputConfig);
+    }
+
+    return settings;
+  }
+
+  /**
    * Create a ToolLoopAgent for a given state.
    * @param state - The shared agent state
    * @param maxSteps - Optional max steps override
@@ -262,15 +343,14 @@ export class DeepAgent {
    */
   private createAgent(state: DeepAgentState, maxSteps?: number, onEvent?: EventCallback) {
     const tools = this.createTools(state, onEvent);
+    const settings = this.buildAgentSettings(onEvent);
+    const stopConditions = this.buildStopConditions(maxSteps);
 
     return new ToolLoopAgent({
-      model: this.model,
-      instructions: this.systemPrompt,
+      ...settings,
       tools,
-      stopWhen: stepCountIs(maxSteps ?? this.maxSteps),
-      // Pass output configuration if provided using AI SDK Output helper
-      ...(this.outputConfig ? { output: Output.object(this.outputConfig) } : {}),
-    } as any);
+      stopWhen: stopConditions,
+    });
   }
 
   /**
@@ -278,7 +358,7 @@ export class DeepAgent {
    * Supports both legacy skillsDir and new agentId modes.
    */
   private async loadSkills(options: { skillsDir?: string; agentId?: string }) {
-    const { listSkills } = await import("./skills/load.ts");
+    const { listSkills } = await import("./skills/load");
 
     const skills = await listSkills(
       options.agentId
@@ -405,6 +485,71 @@ export class DeepAgent {
    * }
    * ```
    */
+
+  /**
+   * Compose user's onStepFinish callback with DeepAgent's internal checkpointing logic.
+   * User callback executes first, errors are caught to prevent breaking checkpointing.
+   */
+  private composeOnStepFinish(userOnStepFinish?: ToolLoopAgentSettings['onStepFinish']) {
+    return async (params: any) => {
+      // Execute user callback first if provided
+      if (userOnStepFinish) {
+        try {
+          await userOnStepFinish(params);
+        } catch (error) {
+          // Log error but don't let it break DeepAgent's internal logic
+          console.error("[DeepAgent] User onStepFinish callback failed:", error);
+        }
+      }
+
+      // TODO: Add DeepAgent's internal checkpointing logic here
+      // This will be implemented when we migrate from streamText to ToolLoopAgent
+    };
+  }
+
+  /**
+   * Compose user's onFinish callback with DeepAgent's internal cleanup logic.
+   */
+  private composeOnFinish(userOnFinish?: ToolLoopAgentSettings['onFinish']) {
+    return async (params: any) => {
+      // Execute user callback first if provided
+      if (userOnFinish) {
+        try {
+          await userOnFinish(params);
+        } catch (error) {
+          console.error("[DeepAgent] User onFinish callback failed:", error);
+        }
+      }
+
+      // TODO: Add DeepAgent's internal cleanup logic here
+    };
+  }
+
+  /**
+   * Compose user's prepareStep callback with DeepAgent's internal step preparation.
+   * Returns a function typed as `any` to avoid AI SDK's strict toolName inference.
+   */
+  private composePrepareStep(userPrepareStep?: PrepareStepFunction): any {
+    return async (params: any) => {
+      // Execute user callback first if provided
+      if (userPrepareStep) {
+        try {
+          const result = await userPrepareStep(params);
+          // Merge user's prepareStep result with DeepAgent's requirements
+          return {
+            ...result,
+            // TODO: Add DeepAgent's internal step preparation here
+          };
+        } catch (error) {
+          console.error("[DeepAgent] User prepareStep callback failed:", error);
+          return params; // Return original params on error
+        }
+      }
+
+      return params;
+    };
+  }
+
   async *streamWithEvents(
     options: StreamWithEventsOptions
   ): AsyncGenerator<DeepAgentEvent, void, unknown> {
@@ -607,7 +752,7 @@ export class DeepAgent {
       ];
 
       // Extract output if present (from ToolLoopAgent's native output parsing)
-      const output = 'output' in result ? (result as any).output : undefined;
+      const output = 'output' in result ? (result as { output: unknown }).output : undefined;
 
       // Yield done event with updated messages
       yield {

@@ -11,8 +11,9 @@ import type {
   BackendFactory,
   EventCallback,
   InterruptOnConfig,
-} from "../types.ts";
-import { applyInterruptConfig } from "../utils/approval.ts";
+  CreateDeepAgentParams,
+} from "../types";
+import { applyInterruptConfig } from "../utils/approval";
 import {
   getTaskToolDescription,
   DEFAULT_GENERAL_PURPOSE_DESCRIPTION,
@@ -20,9 +21,9 @@ import {
   TODO_SYSTEM_PROMPT,
   FILESYSTEM_SYSTEM_PROMPT,
   BASE_PROMPT,
-} from "../prompts.ts";
-import { createTodosTool } from "./todos.ts";
-import { createFilesystemTools } from "./filesystem.ts";
+} from "../prompts";
+import { createTodosTool } from "./todos";
+import { createFilesystemTools } from "./filesystem";
 
 /**
  * Options for creating the subagent tool.
@@ -44,6 +45,9 @@ export interface CreateSubagentToolOptions {
   onEvent?: EventCallback;
   /** Interrupt config to pass to subagents */
   interruptOn?: InterruptOnConfig;
+  /** Parent agent options to pass through to subagents */
+  parentGenerationOptions?: CreateDeepAgentParams["generationOptions"];
+  parentAdvancedOptions?: CreateDeepAgentParams["advancedOptions"];
 }
 
 /**
@@ -75,6 +79,8 @@ export function createSubagentTool(
     taskDescription = null,
     onEvent,
     interruptOn,
+    parentGenerationOptions,
+    parentAdvancedOptions,
   } = options;
 
   // Build subagent registry
@@ -138,9 +144,20 @@ export function createSubagentTool(
 
       const subagentConfig = subagentRegistry[subagent_type]!;
 
-      // Find the subagent spec to get its interruptOn config
+      // Find the subagent spec to get its specific options
       const subagentSpec = subagents.find((sa) => sa.name === subagent_type);
       const subagentInterruptOn = subagentSpec?.interruptOn ?? interruptOn;
+
+      // Merge options: subagent-specific options override parent options
+      const mergedGenerationOptions = {
+        ...parentGenerationOptions,
+        ...subagentSpec?.generationOptions,
+      };
+
+      const mergedAdvancedOptions = {
+        ...parentAdvancedOptions,
+        ...subagentSpec?.advancedOptions,
+      };
 
       // Emit subagent start event
       if (onEvent) {
@@ -172,14 +189,27 @@ export function createSubagentTool(
 
       try {
         // Create and run a ToolLoopAgent for the subagent
-        const subagentAgent = new ToolLoopAgent({
+        const subagentSettings: any = {
           model: subagentConfig.model,
           instructions: subagentConfig.systemPrompt,
           tools: allTools,
-          stopWhen: stepCountIs(50), // Allow substantial work
+          stopWhen: stepCountIs(50), // Enforce 50-step limit for subagents
           // Pass output configuration if subagent has one using AI SDK Output helper
           ...(subagentConfig.output ? { output: Output.object(subagentConfig.output) } : {}),
-        } as any);
+        };
+
+        // Add merged generation options
+        if (Object.keys(mergedGenerationOptions).length > 0) {
+          Object.assign(subagentSettings, mergedGenerationOptions);
+        }
+
+        // Add merged advanced options (excluding toolChoice and activeTools as per plan)
+        if (mergedAdvancedOptions) {
+          const { toolChoice, activeTools, ...safeAdvancedOptions } = mergedAdvancedOptions;
+          Object.assign(subagentSettings, safeAdvancedOptions);
+        }
+
+        const subagentAgent = new ToolLoopAgent(subagentSettings);
 
         const result = await subagentAgent.generate({ prompt: description });
 
