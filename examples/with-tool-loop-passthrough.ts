@@ -8,7 +8,7 @@
  */
 
 import { createDeepAgent, type DeepAgentEvent, type BackendProtocol } from "../src";
-import { openai } from "@ai-sdk/openai";
+import { anthropic } from "@ai-sdk/anthropic";
 import { hasToolCall } from "ai";
 import { FilesystemBackend } from "../src/backends/filesystem";
 
@@ -16,7 +16,7 @@ async function main() {
   console.log("🚀 Creating DeepAgent with ToolLoopAgent passthrough options...\n");
 
   const agent = createDeepAgent({
-    model: openai("gpt-5-mini"),
+    model: anthropic("claude-haiku-4-5-20251001"),
     systemPrompt: "You are a helpful research assistant. Use the task tool to delegate work when needed.",
     backend: new FilesystemBackend({ rootDir: process.cwd() + "/workspace" }) as BackendProtocol,
 
@@ -62,37 +62,37 @@ async function main() {
     },
 
     // Subagent with different settings
-    // subagents: [
-    //   {
-    //     name: "research-agent",
-    //     description: "Focused research specialist for finding information",
-    //     systemPrompt: "You are a research specialist. Conduct thorough, focused research and provide detailed findings.",
+    subagents: [
+      {
+        name: "research-agent",
+        description: "Focused research specialist for finding information",
+        systemPrompt: "You are a research specialist. Conduct thorough, focused research and provide detailed findings.",
 
-    //     // Override generation options for this subagent
-    //     generationOptions: {
-    //       maxOutputTokens: 2000,
-    //     },
+        // Override generation options for this subagent
+        generationOptions: {
+          maxOutputTokens: 2000,
+        },
 
-    //     // Inherit telemetry from parent
-    //   },
+        // Inherit telemetry from parent
+      },
 
-    //   {
-    //     name: "writer-agent",
-    //     description: "Writing specialist for creating content",
-    //     systemPrompt: "You are a writing specialist. Create clear, well-structured content based on the research provided.",
+      {
+        name: "writer-agent",
+        description: "Writing specialist for creating content",
+        systemPrompt: "You are a writing specialist. Create clear, well-structured content based on the research provided.",
 
-    //     generationOptions: {
-    //       maxOutputTokens: 3000,
-    //     },
-    //   },
-    // ],
+        generationOptions: {
+          maxOutputTokens: 3000,
+        },
+      },
+    ],
   });
 
   console.log("🔍 Researching the latest AI trends...\n");
 
   // Stream with events
   for await (const event of agent.streamWithEvents({
-    prompt: "Research the latest trends in large language models and create a summary. Use the research-agent to gather information, then use the writer-agent to create a well-structured summary.",
+    prompt: "Research the latest trends in large language models and create a summary. Do not use subagents.",
   })) {
     handleEvent(event);
   }
