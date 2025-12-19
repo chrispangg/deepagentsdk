@@ -2,8 +2,16 @@
  * Shared type definitions for AI SDK Deep Agent.
  */
 
-import type { ToolSet, ModelMessage, LanguageModel, LanguageModelMiddleware } from "ai";
-import type { BaseCheckpointSaver, ResumeOptions } from "./checkpointer/types.ts";
+import type {
+  ToolSet,
+  ModelMessage,
+  LanguageModel,
+  LanguageModelMiddleware,
+  ToolLoopAgent,
+  StopCondition,
+  ToolLoopAgentSettings,
+} from "ai";
+import type { BaseCheckpointSaver, ResumeOptions } from "./checkpointer/types";
 import type { z } from "zod";
 
 // Re-export for convenience
@@ -53,6 +61,247 @@ export interface TodoItem {
   content: string;
   /** Current status */
   status: "pending" | "in_progress" | "completed" | "cancelled";
+}
+
+// ============================================================================
+// ToolLoopAgent Passthrough Types
+// ============================================================================
+
+/**
+ * Tool choice type for prepareStep. More permissive than AI SDK's generic version
+ * to allow specifying tool names as strings (e.g., for built-in tools like 'write_todos').
+ */
+export type DeepAgentToolChoice =
+  | "auto"
+  | "none"
+  | "required"
+  | { type: "tool"; toolName: string };
+
+/**
+ * Result from prepareStep callback. More permissive version that allows
+ * toolName to be any string rather than requiring exact tool name inference.
+ */
+export interface PrepareStepResult {
+  toolChoice?: DeepAgentToolChoice;
+  model?: LanguageModel;
+  // Allow additional properties from ToolLoopAgentSettings
+  [key: string]: unknown;
+}
+
+/**
+ * Arguments passed to prepareStep callback.
+ */
+export interface PrepareStepArgs {
+  stepNumber: number;
+  steps: unknown[];
+  model: LanguageModel;
+  messages: ModelMessage[];
+  experimental_context?: unknown;
+}
+
+/**
+ * Prepare step function type with permissive tool choice typing.
+ */
+export type PrepareStepFunction = (
+  args: PrepareStepArgs
+) => PrepareStepResult | PromiseLike<PrepareStepResult>;
+
+/**
+ * Loop control callbacks for agent iteration.
+ *
+ * These callbacks allow customization of agent behavior during execution.
+ * User callbacks execute BEFORE DeepAgent's internal logic (checkpointing, events).
+ *
+ * @see https://v6.ai-sdk.dev/docs/agents/loop-control
+ */
+export interface LoopControlOptions {
+  /**
+   * Called before each step to dynamically adjust settings.
+   *
+   * Use cases:
+   * - Dynamic model switching based on step complexity
+   * - Tool availability control at different phases
+   * - Message transformation before sending to model
+   *
+   * @example Force planning tool on first step
+   * ```typescript
+   * prepareStep: ({ stepNumber }) => {
+   *   if (stepNumber === 0) {
+   *     return { toolChoice: { type: 'tool', toolName: 'write_todos' } };
+   *   }
+   *   return {}; // Use defaults
+   * }
+   * ```
+   */
+  prepareStep?: PrepareStepFunction;
+
+  /**
+   * Called after each step finishes.
+   *
+   * Your callback runs BEFORE DeepAgent's internal checkpointing and event emission.
+   * Errors in your callback are caught and logged, but don't break checkpointing.
+   *
+   * @example Log step progress
+   * ```typescript
+   * onStepFinish: (stepResult) => {
+   *   console.log(`Step completed with ${stepResult.toolCalls.length} tool calls`);
+   * }
+   * ```
+   */
+  onStepFinish?: ToolLoopAgentSettings['onStepFinish'];
+
+  /**
+   * Called when all steps are finished.
+   *
+   * Receives aggregated information about the entire run including all steps
+   * and total token usage.
+   *
+   * @example Log total usage
+   * ```typescript
+   * onFinish: (event) => {
+   *   console.log(`Completed in ${event.steps.length} steps`);
+   *   console.log(`Total tokens: ${event.totalUsage.totalTokens}`);
+   * }
+   * ```
+   */
+  onFinish?: ToolLoopAgentSettings['onFinish'];
+
+  /**
+   * Custom stop conditions (composed with maxSteps safety limit).
+   *
+   * When provided, agent stops if ANY condition is met (OR logic):
+   * - Your custom condition(s) return true, OR
+   * - maxSteps limit is reached
+   *
+   * @example Stop when specific tool is called
+   * ```typescript
+   * import { hasToolCall } from 'ai';
+   *
+   * stopWhen: hasToolCall('submit_final_answer')
+   * ```
+   *
+   * @example Multiple conditions
+   * ```typescript
+   * stopWhen: [
+   *   hasToolCall('done'),
+   *   ({ steps }) => steps.some(s => s.text.includes('[COMPLETE]'))
+   * ]
+   * ```
+   */
+  stopWhen?: StopCondition<ToolSet> | StopCondition<ToolSet>[];
+}
+
+/**
+ * Sampling and generation parameters for model calls.
+ *
+ * These are passed directly to the ToolLoopAgent and affect how the model
+ * generates responses. Safe for direct passthrough with no conflicts.
+ */
+export interface GenerationOptions {
+  /**
+   * Sampling temperature (0-2). Higher = more creative, lower = more focused.
+   * Recommended to set either temperature or topP, not both.
+   */
+  temperature?: number;
+
+  /**
+   * Nucleus sampling (0-1). Only tokens with cumulative probability <= topP are considered.
+   * Recommended to set either temperature or topP, not both.
+   */
+  topP?: number;
+
+  /**
+   * Top-K sampling. Only the top K tokens are considered for each step.
+   */
+  topK?: number;
+
+  /**
+   * Maximum number of tokens to generate per response.
+   */
+  maxOutputTokens?: number;
+
+  /**
+   * Presence penalty (-1 to 1). Positive values reduce repetition of topics.
+   */
+  presencePenalty?: number;
+
+  /**
+   * Frequency penalty (-1 to 1). Positive values reduce repetition of exact phrases.
+   */
+  frequencyPenalty?: number;
+
+  /**
+   * Random seed for deterministic generation (if supported by model).
+   */
+  seed?: number;
+
+  /**
+   * Sequences that stop generation when encountered.
+   */
+  stopSequences?: string[];
+
+  /**
+   * Maximum number of retries for failed API calls (default: 2).
+   */
+  maxRetries?: number;
+}
+
+/**
+ * Advanced options for power users.
+ *
+ * These options provide access to experimental and provider-specific features.
+ * Use with caution - some may affect DeepAgent's behavior.
+ */
+export interface AdvancedAgentOptions {
+  /**
+   * OpenTelemetry configuration for observability.
+   *
+   * @example Enable telemetry
+   * ```typescript
+   * experimental_telemetry: { isEnabled: true }
+   * ```
+   */
+  experimental_telemetry?: ToolLoopAgentSettings['experimental_telemetry'];
+
+  /**
+   * Provider-specific options passed through to the model provider.
+   *
+   * @example Anthropic prompt caching
+   * ```typescript
+   * providerOptions: {
+   *   anthropic: { cacheControl: { type: 'ephemeral' } }
+   * }
+   * ```
+   */
+  providerOptions?: ToolLoopAgentSettings['providerOptions'];
+
+  /**
+   * Custom context passed to tool executions.
+   *
+   * WARNING: Experimental - may change in patch releases.
+   */
+  experimental_context?: ToolLoopAgentSettings['experimental_context'];
+
+  /**
+   * Control which tool the model should call.
+   *
+   * Options:
+   * - 'auto' (default): Model decides
+   * - 'none': No tool calls
+   * - 'required': Must call a tool
+   * - { type: 'tool', toolName: string }: Must call specific tool
+   */
+  toolChoice?: ToolLoopAgentSettings['toolChoice'];
+
+  /**
+   * Limit which tools are available for the model to call.
+   *
+   * @example Only allow read operations
+   * ```typescript
+   * activeTools: ['read_file', 'ls', 'grep', 'glob']
+   * ```
+   */
+  activeTools?: string[];
 }
 
 /**
@@ -224,6 +473,19 @@ export interface SubAgent {
     /** Optional description of the output format */
     description?: string;
   };
+
+  /**
+   * Advanced AI SDK ToolLoopAgent passthrough options for generation parameters.
+   * These options control the LLM's text generation behavior for this subagent.
+   * Note: Loop control options are not available for subagents as they are managed by the parent.
+   */
+  generationOptions?: GenerationOptions;
+
+  /**
+   * Advanced AI SDK ToolLoopAgent passthrough options for advanced agent features.
+   * These options provide access to experimental and advanced AI SDK features for this subagent.
+   */
+  advancedOptions?: AdvancedAgentOptions;
 }
 
 /**
@@ -564,6 +826,24 @@ export interface CreateDeepAgentParams {
     /** Optional description of the output format (helps LLM understand structure) */
     description?: string;
   };
+
+  /**
+   * Advanced AI SDK ToolLoopAgent passthrough options for loop control.
+   * These options provide fine-grained control over the agent execution loop.
+   */
+  loopControl?: LoopControlOptions;
+
+  /**
+   * Advanced AI SDK ToolLoopAgent passthrough options for generation parameters.
+   * These options control the LLM's text generation behavior.
+   */
+  generationOptions?: GenerationOptions;
+
+  /**
+   * Advanced AI SDK ToolLoopAgent passthrough options for advanced agent features.
+   * These options provide access to experimental and advanced AI SDK features.
+   */
+  advancedOptions?: AdvancedAgentOptions;
 }
 
 /**

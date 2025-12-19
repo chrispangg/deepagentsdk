@@ -2,7 +2,7 @@
  * In-memory checkpoint saver for testing and single-session use.
  */
 
-import type { Checkpoint, BaseCheckpointSaver, CheckpointSaverOptions } from "./types.ts";
+import type { Checkpoint, BaseCheckpointSaver, CheckpointSaverOptions } from "./types";
 
 /**
  * In-memory checkpoint saver.

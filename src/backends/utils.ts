@@ -4,7 +4,7 @@
 
 import micromatch from "micromatch";
 import { basename } from "path";
-import type { FileData, GrepMatch } from "../types.ts";
+import type { FileData, GrepMatch } from "../types";
 
 // Constants
 export const EMPTY_CONTENT_WARNING =

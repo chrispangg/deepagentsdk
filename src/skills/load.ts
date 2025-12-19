@@ -1,7 +1,7 @@
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
 import os from "node:os";
-import type { SkillMetadata, SkillLoadOptions } from "./types.ts";
+import type { SkillMetadata, SkillLoadOptions } from "./types";
 import { findGitRoot } from "../utils/project-detection.js";
 
 /**

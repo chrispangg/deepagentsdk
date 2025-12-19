@@ -8,7 +8,7 @@
  * Requires: OPENAI_API_KEY environment variable in .env file
  */
 
-import { createDeepAgent } from "../src/index.ts";
+import { createDeepAgent } from "../src/index";
 import { openai } from "@ai-sdk/openai";
 import { z } from "zod";
 

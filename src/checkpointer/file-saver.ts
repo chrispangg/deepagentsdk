@@ -4,7 +4,7 @@
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync, unlinkSync, readdirSync } from "node:fs";
 import { join } from "node:path";
-import type { Checkpoint, BaseCheckpointSaver } from "./types.ts";
+import type { Checkpoint, BaseCheckpointSaver } from "./types";
 
 /**
  * Options for FileSaver.

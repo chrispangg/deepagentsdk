@@ -6,7 +6,7 @@
  * Requires ANTHROPIC_API_KEY environment variable.
  */
 
-import { createDeepAgent, type SubAgent } from "../src/index.ts";
+import { createDeepAgent, type SubAgent } from "../src/index";
 import { anthropic } from "@ai-sdk/anthropic";
 
 // Define a specialized research subagent

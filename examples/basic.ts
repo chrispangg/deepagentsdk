@@ -4,13 +4,13 @@
  * Run with: ANTHROPIC_API_KEY=your-key bun examples/basic.ts
  */
 
-import { createDeepAgent } from "../src/index.ts";
-import { anthropic } from "@ai-sdk/anthropic";
+import { createDeepAgent } from "../src/index";
+import { openai } from "@ai-sdk/openai";
 
 async function main() {
   // Create a deep agent with default settings
   const agent = createDeepAgent({
-    model: anthropic("claude-sonnet-4-20250514"),
+    model: openai("gpt-5-mini"),
     systemPrompt: `You are an expert researcher. Your job is to:
 1. Break down complex questions into manageable tasks
 2. Research each component thoroughly

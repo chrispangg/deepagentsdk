@@ -9,7 +9,7 @@ import type {
   FileInfo,
   GrepMatch,
   WriteResult,
-} from "../types.ts";
+} from "../types";
 
 /**
  * Backend that routes file operations to different backends based on path prefix.

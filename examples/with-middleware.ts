@@ -2,7 +2,7 @@
  * Example: Using middleware with DeepAgent
  * Demonstrates logging and caching middleware
  */
-import { createDeepAgent } from "../src/index.ts";
+import { createDeepAgent } from "../src/index";
 import { anthropic } from "@ai-sdk/anthropic";
 import type { LanguageModelMiddleware } from "ai";
 

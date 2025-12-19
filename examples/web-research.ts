@@ -10,7 +10,7 @@
  * Run: bun examples/web-research.ts
  */
 
-import { createDeepAgent } from "../src/index.ts";
+import { createDeepAgent } from "../src/index";
 import { anthropic } from "@ai-sdk/anthropic";
 
 // Check for required API keys

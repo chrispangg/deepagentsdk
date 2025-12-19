@@ -3,20 +3,20 @@
  */
 
 // Standard backends (BackendProtocol)
-export { StateBackend } from "./state.ts";
-export { FilesystemBackend } from "./filesystem.ts";
-export { CompositeBackend } from "./composite.ts";
+export { StateBackend } from "./state";
+export { FilesystemBackend } from "./filesystem";
+export { CompositeBackend } from "./composite";
 export {
   PersistentBackend,
   InMemoryStore,
   type KeyValueStore,
   type PersistentBackendOptions,
-} from "./persistent.ts";
+} from "./persistent";
 
 // Sandbox backends (SandboxBackendProtocol)
-export { BaseSandbox } from "./sandbox.ts";
-export { LocalSandbox, type LocalSandboxOptions } from "./local-sandbox.ts";
+export { BaseSandbox } from "./sandbox";
+export { LocalSandbox, type LocalSandboxOptions } from "./local-sandbox";
 
 // Re-export utilities
-export * from "./utils.ts";
+export * from "./utils";
 

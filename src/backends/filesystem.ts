@@ -15,12 +15,12 @@ import type {
   FileInfo,
   GrepMatch,
   WriteResult,
-} from "../types.ts";
+} from "../types";
 import {
   checkEmptyContent,
   formatContentWithLineNumbers,
   performStringReplacement,
-} from "./utils.ts";
+} from "./utils";
 
 const SUPPORTS_NOFOLLOW = fsSync.constants.O_NOFOLLOW !== undefined;
 

@@ -2,7 +2,7 @@
  * Type definitions for checkpointer support.
  */
 
-import type { DeepAgentState, ModelMessage } from "../types.ts";
+import type { DeepAgentState, ModelMessage } from "../types";
 
 /**
  * Data stored in a checkpoint.

@@ -6,7 +6,7 @@
 
 import { tool } from "ai";
 import { z } from "zod";
-import type { SandboxBackendProtocol, EventCallback } from "../types.ts";
+import type { SandboxBackendProtocol, EventCallback } from "../types";
 
 /**
  * Tool description for the execute tool.

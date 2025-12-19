@@ -17,7 +17,7 @@ import {
   LocalSandbox,
   isSandboxBackend,
   type DeepAgentEvent,
-} from "../src/index.ts";
+} from "../src/index";
 import { anthropic } from "@ai-sdk/anthropic";
 import * as fs from "fs";
 import * as path from "path";

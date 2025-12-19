@@ -6,7 +6,7 @@
 
 import { tool } from "ai";
 import { z } from "zod";
-import { createDeepAgent } from "../src/index.ts";
+import { createDeepAgent } from "../src/index";
 import { anthropic } from "@ai-sdk/anthropic";
 
 // Custom tool: Get current date/time

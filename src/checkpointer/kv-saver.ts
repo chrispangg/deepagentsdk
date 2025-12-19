@@ -5,8 +5,8 @@
  * for checkpoint storage.
  */
 
-import type { KeyValueStore } from "../backends/persistent.ts";
-import type { Checkpoint, BaseCheckpointSaver, CheckpointSaverOptions } from "./types.ts";
+import type { KeyValueStore } from "../backends/persistent";
+import type { Checkpoint, BaseCheckpointSaver, CheckpointSaverOptions } from "./types";
 
 /**
  * Options for KeyValueStoreSaver.

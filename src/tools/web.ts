@@ -14,8 +14,8 @@ import type {
   BackendFactory,
   DeepAgentState,
   EventCallback,
-} from "../types.ts";
-import { evictToolResult } from "../utils/eviction.ts";
+} from "../types";
+import { evictToolResult } from "../utils/eviction";
 
 // ============================================================================
 // Helper Functions

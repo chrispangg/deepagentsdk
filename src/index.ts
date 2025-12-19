@@ -10,7 +10,7 @@
  */
 
 // Main agent
-export { createDeepAgent, DeepAgent } from "./agent.ts";
+export { createDeepAgent, DeepAgent } from "./agent";
 
 // Re-export AI SDK v6 primitives for convenience
 export { ToolLoopAgent, stepCountIs, hasToolCall } from "ai";
@@ -63,10 +63,10 @@ export type {
   // Approval configuration types
   InterruptOnConfig,
   DynamicApprovalConfig,
-} from "./types.ts";
+} from "./types";
 
 // Type guard for sandbox backends
-export { isSandboxBackend } from "./types.ts";
+export { isSandboxBackend } from "./types";
 
 // Backends
 export {
@@ -81,7 +81,7 @@ export {
   BaseSandbox,
   LocalSandbox,
   type LocalSandboxOptions,
-} from "./backends/index.ts";
+} from "./backends/index";
 
 // Tools (for advanced usage)
 export {
@@ -97,7 +97,7 @@ export {
   createWebTools,
   htmlToMarkdown,
   type CreateWebToolsOptions,
-} from "./tools/index.ts";
+} from "./tools/index";
 
 // Prompts (for customization)
 export {
@@ -109,7 +109,7 @@ export {
   getTaskToolDescription,
   DEFAULT_GENERAL_PURPOSE_DESCRIPTION,
   DEFAULT_SUBAGENT_PROMPT,
-} from "./prompts.ts";
+} from "./prompts";
 
 // Utilities
 export {
@@ -129,22 +129,22 @@ export {
   DEFAULT_KEEP_MESSAGES,
   type SummarizationOptions,
   type SummarizationResult,
-} from "./utils/index.ts";
+} from "./utils/index";
 
 // Checkpointer
-export * from "./checkpointer/index.ts";
+export * from "./checkpointer/index";
 
 // Re-export AI SDK middleware types for user convenience
 export type { LanguageModelMiddleware } from 'ai';
 export { wrapLanguageModel } from 'ai';
 
 // Skills System
-export { listSkills, parseSkillMetadata } from "./skills/index.ts";
-export type { SkillMetadata, SkillLoadOptions } from "./skills/index.ts";
+export { listSkills, parseSkillMetadata } from "./skills/index";
+export type { SkillMetadata, SkillLoadOptions } from "./skills/index";
 
 // Agent Memory Middleware
-export { createAgentMemoryMiddleware } from "./middleware/agent-memory.ts";
-export type { AgentMemoryOptions } from "./types.ts";
+export { createAgentMemoryMiddleware } from "./middleware/agent-memory";
+export type { AgentMemoryOptions } from "./types";
 
 // Project Detection Utilities
-export { findGitRoot } from "./utils/project-detection.ts";
+export { findGitRoot } from "./utils/project-detection";

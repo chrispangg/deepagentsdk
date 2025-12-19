@@ -4,7 +4,7 @@
 
 import { tool } from "ai";
 import { z } from "zod";
-import type { DeepAgentState, TodoItem, EventCallback } from "../types.ts";
+import type { DeepAgentState, TodoItem, EventCallback } from "../types";
 
 const TodoItemSchema = z.object({
   id: z.string().describe("Unique identifier for the todo item"),

@@ -11,7 +11,7 @@
  * loaded on-demand.
  */
 
-import { createDeepAgent } from "../src/index.ts";
+import { createDeepAgent } from "../src/index";
 import { anthropic } from "@ai-sdk/anthropic";
 import * as path from "node:path";
 

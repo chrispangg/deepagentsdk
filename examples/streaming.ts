@@ -4,17 +4,16 @@
  * Run with: ANTHROPIC_API_KEY=your-key bun examples/streaming.ts
  */
 
-import { createDeepAgent, type DeepAgentEvent, type CreateDeepAgentParams, type BackendProtocol } from "../src/index.ts";
+import { createDeepAgent, type DeepAgentEvent, type CreateDeepAgentParams, type BackendProtocol } from "../src/index";
 import { anthropic } from "@ai-sdk/anthropic";
-import { FilesystemBackend } from "../src/backends/filesystem.ts";
-
+import { FilesystemBackend } from "../src/backends/filesystem";
 async function main() {
   // Create a deep agent
   const agent = createDeepAgent({
     model: anthropic("claude-sonnet-4-20250514"),
     systemPrompt: `You are a helpful assistant. Break down tasks into todos and work through them methodically.`,
     maxSteps: 15,
-    backend: new FilesystemBackend({ rootDir: "./workspace" }) as BackendProtocol,
+    backend: new FilesystemBackend({ rootDir: process.cwd() + "/workspace" }) as BackendProtocol,
   });
 
   console.log("🚀 Starting Deep Agent with streaming events...\n");

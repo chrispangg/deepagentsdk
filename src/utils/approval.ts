@@ -3,7 +3,7 @@
  */
 
 import { tool, type ToolSet } from "ai";
-import type { InterruptOnConfig, DynamicApprovalConfig } from "../types.ts";
+import type { InterruptOnConfig, DynamicApprovalConfig } from "../types";
 
 /**
  * Callback type for requesting approval from the user.
@@ -201,7 +201,7 @@ export function createInterruptData(
   toolName: string,
   args: unknown,
   step: number
-): import("../checkpointer/types.ts").InterruptData {
+): import("../checkpointer/types").InterruptData {
   return {
     toolCall: {
       toolCallId,

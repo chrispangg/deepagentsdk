@@ -2,13 +2,13 @@
  * Tools exports.
  */
 
-export { createTodosTool } from "./todos.ts";
-export { createFilesystemTools } from "./filesystem.ts";
-export { createSubagentTool, type CreateSubagentToolOptions } from "./subagent.ts";
+export { createTodosTool } from "./todos";
+export { createFilesystemTools } from "./filesystem";
+export { createSubagentTool, type CreateSubagentToolOptions } from "./subagent";
 export {
   createExecuteTool,
   createExecuteToolFromBackend,
   type CreateExecuteToolOptions,
-} from "./execute.ts";
-export { createWebTools, htmlToMarkdown, type CreateWebToolsOptions } from "./web.ts";
+} from "./execute";
+export { createWebTools, htmlToMarkdown, type CreateWebToolsOptions } from "./web";
 

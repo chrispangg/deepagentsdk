@@ -17,7 +17,7 @@ import type {
   GrepMatch,
   SandboxBackendProtocol,
   WriteResult,
-} from "../types.ts";
+} from "../types";
 
 /**
  * Encode string to base64 for safe shell transmission.

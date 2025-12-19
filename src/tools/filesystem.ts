@@ -9,12 +9,12 @@ import type {
   DeepAgentState,
   BackendFactory,
   EventCallback,
-} from "../types.ts";
-import { StateBackend } from "../backends/state.ts";
+} from "../types";
+import { StateBackend } from "../backends/state";
 import {
   evictToolResult,
   DEFAULT_EVICTION_TOKEN_LIMIT,
-} from "../utils/eviction.ts";
+} from "../utils/eviction";
 
 // Tool descriptions
 const LS_TOOL_DESCRIPTION = "List files and directories in a directory. Paths are relative to the working directory.";

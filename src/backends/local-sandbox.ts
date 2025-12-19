@@ -7,8 +7,8 @@
  */
 
 import { spawn } from "child_process";
-import type { ExecuteResponse } from "../types.ts";
-import { BaseSandbox } from "./sandbox.ts";
+import type { ExecuteResponse } from "../types";
+import { BaseSandbox } from "./sandbox";
 
 /**
  * Options for LocalSandbox.

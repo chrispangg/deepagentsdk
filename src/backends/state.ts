@@ -10,7 +10,7 @@ import type {
   GrepMatch,
   WriteResult,
   DeepAgentState,
-} from "../types.ts";
+} from "../types";
 import {
   createFileData,
   fileDataToString,
@@ -19,7 +19,7 @@ import {
   grepMatchesFromFiles,
   performStringReplacement,
   updateFileData,
-} from "./utils.ts";
+} from "./utils";
 
 /**
  * Backend that stores files in shared state (ephemeral).
