@@ -379,31 +379,32 @@ export function createSubagentTool(
           Object.assign(subagentSettings, safeAdvancedOptions);
         }
 
-        const subagentAgent = new ToolLoopAgent(subagentSettings);
-
-        // Use generate to capture subagent tool calls
+        // Track subagent step count for events
         let subagentStepCount = 0;
+
+        // Add onStepFinish callback to settings to capture steps
+        subagentSettings.onStepFinish = async ({ toolCalls, toolResults }: { toolCalls: any[]; toolResults: any[] }) => {
+          // Emit subagent step event with tool calls
+          if (onEvent && toolCalls && toolCalls.length > 0) {
+            // Map tool calls with their results
+            const toolCallsWithResults = toolCalls.map((tc: any, index: number) => ({
+              toolName: tc.toolName,
+              args: tc.args,
+              result: toolResults[index],
+            }));
+
+            onEvent({
+              type: "subagent-step",
+              stepIndex: subagentStepCount++,
+              toolCalls: toolCallsWithResults,
+            });
+          }
+        };
+
+        const subagentAgent = new ToolLoopAgent(subagentSettings);
 
         const result = await subagentAgent.generate({
           prompt: description,
-          // Pass a callback to capture steps
-          onStepFinish: async ({ toolCalls, toolResults }) => {
-            // Emit subagent step event with tool calls
-            if (onEvent && toolCalls && toolCalls.length > 0) {
-              // Map tool calls with their results
-              const toolCallsWithResults = toolCalls.map((tc: any, index: number) => ({
-                toolName: tc.toolName,
-                args: tc.args,
-                result: toolResults[index],
-              }));
-
-              onEvent({
-                type: "subagent-step",
-                stepIndex: subagentStepCount++,
-                toolCalls: toolCallsWithResults,
-              });
-            }
-          },
         });
 
         // Merge any file changes back to parent state

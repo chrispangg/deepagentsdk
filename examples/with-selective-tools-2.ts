@@ -60,7 +60,7 @@ const wordCount = tool({
 });
 
 // The task to perform
-const TASK = `Calculate 25 * 4 and count the words in "hello world test"`;
+const TASK = `Calculate the result of (((127 * 89) + 456) / 23) - (89 * 12, be sure to break it down into multiple steps and count the words in "The quick brown fox jumps over the lazy dog while the industrious beaver builds a magnificent dam across the flowing river under the bright moonlight"`;
 
 async function main() {
   console.log("═".repeat(70));
