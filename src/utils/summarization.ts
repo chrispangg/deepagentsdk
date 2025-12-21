@@ -30,6 +30,10 @@ export interface SummarizationOptions {
   tokenThreshold?: number;
   /** Number of recent messages to keep intact (default: 6) */
   keepMessages?: number;
+  /** Generation options to pass through */
+  generationOptions?: any;
+  /** Advanced options to pass through */
+  advancedOptions?: any;
 }
 
 /**
@@ -116,11 +120,13 @@ function formatMessagesForSummary(messages: ModelMessage[]): string {
  */
 async function generateSummary(
   messages: ModelMessage[],
-  model: LanguageModel
+  model: LanguageModel,
+  generationOptions?: any,
+  advancedOptions?: any
 ): Promise<string> {
   const conversationText = formatMessagesForSummary(messages);
 
-  const result = await generateText({
+  const generateTextOptions: any = {
     model,
     system: `You are a conversation summarizer. Your task is to create a concise but comprehensive summary of the conversation that preserves:
 1. Key decisions and conclusions
@@ -131,8 +137,17 @@ async function generateSummary(
 
 Keep the summary focused and avoid redundancy. The summary should allow someone to understand the conversation context without reading the full history.`,
     prompt: `Please summarize the following conversation:\n\n${conversationText}`,
-  });
+  };
 
+  // Add passthrough options
+  if (generationOptions) {
+    Object.assign(generateTextOptions, generationOptions);
+  }
+  if (advancedOptions) {
+    Object.assign(generateTextOptions, advancedOptions);
+  }
+
+  const result = await generateText(generateTextOptions);
   return result.text;
 }
 
@@ -197,7 +212,12 @@ export async function summarizeIfNeeded(
   const messagesToKeep = messages.slice(-keepMessages);
 
   // Generate summary
-  const summary = await generateSummary(messagesToSummarize, model);
+  const summary = await generateSummary(
+    messagesToSummarize,
+    model,
+    options.generationOptions,
+    options.advancedOptions
+  );
 
   // Create summary message
   const summaryMessage: ModelMessage = {

@@ -55,11 +55,20 @@
     "zod": "^3.25.0"
   },
   "devDependencies": {
+    "@langfuse/otel": "^4.5.1",
+    "@langfuse/tracing": "^4.5.1",
+    "@opentelemetry/api-logs": "^0.208.0",
+    "@opentelemetry/instrumentation": "^0.208.0",
+    "@opentelemetry/sdk-logs": "^0.208.0",
+    "@opentelemetry/sdk-node": "^0.208.0",
     "@types/bun": "latest",
     "@types/jsdom": "^21.1.7",
     "@types/micromatch": "^4.0.9",
     "@types/react": "^18.3.18",
-    "@types/turndown": "^5.0.5"
+    "@types/turndown": "^5.0.5",
+    "@vercel/otel": "^2.1.0",
+    "install": "^0.13.0",
+    "langfuse-vercel": "^3.38.6"
   },
   "peerDependencies": {
     "typescript": "^5"

@@ -948,16 +948,20 @@ const result = await agent.generate({
 
 ### `DeepAgent.stream(options)`
 
-Stream a response.
+Stream a response. Returns a Promise that resolves to a StreamTextResult with state attached.
 
 ```typescript
-const result = agent.stream({
+const result = await agent.stream({
   prompt: 'Your task here',
 });
 
 for await (const chunk of result.textStream) {
   process.stdout.write(chunk);
 }
+
+// Access state after streaming
+console.log(result.state.todos);
+console.log(result.state.files);
 ```
 
 ### `DeepAgent.streamWithEvents(options)`

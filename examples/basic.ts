@@ -10,7 +10,7 @@ import { openai } from "@ai-sdk/openai";
 async function main() {
   // Create a deep agent with default settings
   const agent = createDeepAgent({
-    model: openai("gpt-5-mini"),
+    model: openai("gpt-5-mini") as any,
     systemPrompt: `You are an expert researcher. Your job is to:
 1. Break down complex questions into manageable tasks
 2. Research each component thoroughly

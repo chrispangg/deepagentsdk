@@ -30,7 +30,7 @@ export function parseModelString(modelString: string): LanguageModel {
   if (provider === "anthropic") {
     return anthropic(modelName || "claude-sonnet-4-20250514");
   } else if (provider === "openai") {
-    return openai(modelName || "gpt-4o");
+    return openai(modelName || "gpt-5-mini") as any;
   }
 
   // Default to anthropic if no provider specified

@@ -33,7 +33,7 @@ const sentimentSchema = z.object({
 type SentimentResult = z.infer<typeof sentimentSchema>;
 
 const sentimentAgent = createDeepAgent({
-  model: openai("gpt-5-mini"),
+  model: openai("gpt-5-mini") as any,
   output: {
     schema: sentimentSchema,
     description: "Sentiment analysis result with score and summary",
@@ -62,7 +62,7 @@ const researchSchema = z.object({
 type ResearchResult = z.infer<typeof researchSchema>;
 
 const researchAgent = createDeepAgent({
-  model: openai("gpt-5-mini"),
+  model: openai("gpt-5-mini") as any,
   output: {
     schema: researchSchema,
     description: "Research findings with metadata and confidence",
@@ -112,7 +112,7 @@ const loggingMiddleware = {
 };
 
 const agentWithMiddleware = createDeepAgent({
-  model: openai("gpt-5-mini"),
+  model: openai("gpt-5-mini") as any,
   middleware: loggingMiddleware,
   output: {
     schema: sentimentSchema,

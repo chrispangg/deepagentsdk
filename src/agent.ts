@@ -616,9 +616,16 @@ export class DeepAgent {
       model: this.model,
       messages: inputMessages,
       tools,
-      stopWhen: stepCountIs(options.maxSteps ?? this.maxSteps),
+      stopWhen: this.buildStopConditions(options.maxSteps),
       abortSignal: options.abortSignal,
       onStepFinish: async ({ toolCalls, toolResults }) => {
+        // Call user's onStepFinish first if provided
+        if (this.loopControl?.onStepFinish) {
+          const composedOnStepFinish = this.composeOnStepFinish(this.loopControl.onStepFinish);
+          await composedOnStepFinish({ toolCalls, toolResults });
+        }
+
+        // Then execute DeepAgent's checkpointing logic
         stepNumberRef.value++;
         const cumulativeStep = baseStep + stepNumberRef.value;
 
@@ -657,6 +664,31 @@ export class DeepAgent {
         }
       },
     };
+
+    // Add generation options if provided
+    if (this.generationOptions) {
+      Object.assign(streamOptions, this.generationOptions);
+    }
+
+    // Add advanced options if provided
+    if (this.advancedOptions) {
+      Object.assign(streamOptions, this.advancedOptions);
+    }
+
+    // Add output configuration if provided using AI SDK Output helper
+    if (this.outputConfig) {
+      streamOptions.output = Output.object(this.outputConfig);
+    }
+
+    // Add composed loop control callbacks if provided
+    if (this.loopControl) {
+      if (this.loopControl.prepareStep) {
+        streamOptions.prepareStep = this.composePrepareStep(this.loopControl.prepareStep);
+      }
+      if (this.loopControl.onFinish) {
+        streamOptions.onFinish = this.composeOnFinish(this.loopControl.onFinish);
+      }
+    }
 
     // Add system prompt with optional caching for Anthropic models
     if (this.enablePromptCaching) {
@@ -753,6 +785,8 @@ export class DeepAgent {
           model: this.summarizationConfig.model || this.model,
           tokenThreshold: this.summarizationConfig.tokenThreshold,
           keepMessages: this.summarizationConfig.keepMessages,
+          generationOptions: this.generationOptions,
+          advancedOptions: this.advancedOptions,
         });
         patchedHistory = summarizationResult.messages;
       }
