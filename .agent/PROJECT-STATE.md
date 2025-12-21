@@ -56,6 +56,27 @@ Tracks feature parity with LangChain's DeepAgents framework. Reference implement
   - **Impact**: Better flexibility for advanced users, maintains compatibility with AI SDK provider features
   - **Effort**: 1 day, add `providerOptions` parameter to `CreateDeepAgentParams` and pass through to ToolLoopAgent
   - **Note**: Should work alongside existing `generationOptions` and `loopControl` passthrough
+- [x] **Architectural Refactoring** - Comprehensive refactoring to improve maintainability and reduce cognitive load (2025-12-21)
+  - **Phase 1**: Type System Modularisation - Split monolithic `types.ts` (1,670 lines) into focused modules:
+    - `src/types/core.ts` - Core agent types (12 exports)
+    - `src/types/backend.ts` - Backend and filesystem types (11 exports + function)
+    - `src/types/events.ts` - All 35 event types + unions (36 exports)
+    - `src/types/subagent.ts` - Subagent infrastructure (5 exports)
+    - `src/types/index.ts` - Re-exports for backward compatibility
+    - Main `src/types.ts` now serves as clean re-export layer
+  - **Phase 2**: Error Handling Standardisation - Added `success: boolean` discriminant to result types:
+    - Updated `WriteResult` and `EditResult` interfaces
+    - Added `isWriteSuccess()` and `isEditSuccess()` type guards
+    - Updated all 6 backend implementations consistently
+    - Maintains backward compatibility with existing `result.error` checks
+  - **Phase 3**: Function Decomposition - Broke down large methods into focused functions:
+    - `streamWithEvents`: 348 → 178 lines (49% reduction, exceeded 48% target)
+    - Extracted 7 helper methods: `loadCheckpointContext()`, `buildMessageArray()`, `buildStreamTextOptions()`, and 4 tool creation methods
+    - `createTools`: 59 lines → 27 lines main orchestrator + 4 focused category methods
+    - Code now reads as high-level workflow with details encapsulated
+  - **Impact**: Significantly improved maintainability, testability, and code readability
+  - **All Tests**: 227/227 passing (100%), TypeScript compilation successful
+  - **Breaking Changes**: None - fully backward compatible
 
 ---
 
@@ -120,27 +141,6 @@ Tracks feature parity with LangChain's DeepAgents framework. Reference implement
   - **Effort**: 3-4 days, extend `SkillMetadata` type and `listSkills` implementation
   - **Reference**: <https://agentskills.io/specification>, <https://agentskills.io/integrate-skills>
 
-- [ ] **Split types.ts** - Decompose 1,670-line monolithic type file by domain
-  - **Why**: Large file creates navigation challenges and mixes unrelated types (backend, events, CLI)
-  - **Impact**: Better onboarding experience, easier navigation, domain-focused types
-  - **Approach**: Split into domain-specific files:
-    - `src/types/core.ts` - Core agent types (DeepAgentState, DeepAgentOptions, etc.)
-    - `src/types/backend.ts` - Backend protocol and implementation types
-    - `src/types/events.ts` - Event system types (DeepAgentEvent, EventCallback, etc.)
-    - `src/types/cli.ts` - CLI-specific types (moved to `src/cli/types.ts`)
-  - **Effort**: 2-3 days, mostly moving code with careful import updates
-  - **Reference**: See `docs/tickets/012_architectural_health_assessment/research.md`
-
-- [ ] **Break Down streamWithEvents()** - Decompose ~300 line method into focused functions
-  - **Why**: Single method handles checkpoint loading, validation, tool creation, approval logic, streaming, and checkpoint saving
-  - **Impact**: Better testability, reduced cognitive complexity, clearer responsibilities
-  - **Approach**: Extract into smaller functions:
-    - `loadCheckpointState()` - Handle checkpoint restoration
-    - `prepareToolsWithApproval()` - Tool creation and approval wrapping
-    - `buildStreamOptions()` - Construct streamText configuration
-    - `processEventQueue()` - Handle event processing during streaming
-  - **Effort**: 2 days, internal refactoring with test updates
-
 ### Medium Impact (Future Enhancements)
 
 - [ ] **Type System Cleanup** - Remove all `as any` type assertions and fix wrapper/adapter pattern type handling
@@ -196,6 +196,10 @@ Tracks feature parity with LangChain's DeepAgents framework. Reference implement
 ✅ **Skills System** - Implemented with YAML frontmatter parsing and progressive disclosure pattern
 ✅ **Web Tools** - Implemented with Tavily search, HTTP client, and web scraping capabilities
 ✅ **Provider Options Passthrough** - Support for provider-specific options (thinking mode, reasoning effort, etc.)
+✅ **Architectural Refactoring** - Comprehensive refactoring completed with all three phases:
+- Type modularization (4 focused modules + re-exports)
+- Error handling standardisation (success discriminants)
+- Function decomposition (49% reduction in streamWithEvents size)
 
 **Architectural Health Assessment (2025-12-21):**
 
@@ -204,8 +208,8 @@ Completed comprehensive codebase analysis (see `docs/tickets/012_architectural_h
 - Layered architecture is sound with good separation of concerns
 - Event system complexity identified as scalability concern (Hybrid Event Bus pattern recommended)
 - Skills system should align with [agentskills.io](https://agentskills.io/specification) open standard
-- types.ts (1,670 lines) should be split by domain
-- streamWithEvents() (~300 lines) should be decomposed
+- ✅ types.ts modularization completed - split into 4 domain-focused modules
+- ✅ streamWithEvents decomposition completed - reduced from 348 to 178 lines
 
 **Current Priority:**
 
@@ -216,7 +220,6 @@ Completed comprehensive codebase analysis (see `docs/tickets/012_architectural_h
 
 - **Event System Refactor**: Implement Event Bus pattern for scalability (when complex multi-agent interactions needed)
 - **Enhanced Skills Ecosystem**: Full agentskills.io spec compliance (when interoperability required)
-- **Split types.ts / Break down streamWithEvents()**: Schedule alongside related refactoring work
 
 **Deferred Features:**
 
