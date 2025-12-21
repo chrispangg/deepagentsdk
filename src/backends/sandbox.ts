@@ -248,13 +248,14 @@ fs.writeFileSync(filePath, content, "utf-8");
     if (result.exitCode !== 0) {
       if (result.output.includes("already exists")) {
         return {
+          success: false,
           error: `Cannot write to ${filePath} because it already exists. Read and then make an edit, or write to a new path.`,
         };
       }
-      return { error: result.output.trim() || `Failed to write '${filePath}'` };
+      return { success: false, error: result.output.trim() || `Failed to write '${filePath}'` };
     }
 
-    return { path: filePath };
+    return { success: true, path: filePath };
   }
 
   /**
@@ -311,19 +312,20 @@ console.log(count);
     );
 
     if (result.exitCode === 1) {
-      return { error: `Error: File '${filePath}' not found` };
+      return { success: false, error: `Error: File '${filePath}' not found` };
     }
     if (result.exitCode === 2) {
-      return { error: `Error: String not found in file: '${oldString}'` };
+      return { success: false, error: `Error: String not found in file: '${oldString}'` };
     }
     if (result.exitCode === 3) {
       return {
+        success: false,
         error: `Error: String '${oldString}' appears multiple times. Use replaceAll=true to replace all occurrences.`,
       };
     }
 
     const count = parseInt(result.output.trim(), 10) || 1;
-    return { path: filePath, occurrences: count };
+    return { success: true, path: filePath, occurrences: count };
   }
 
   /**

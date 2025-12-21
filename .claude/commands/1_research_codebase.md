@@ -36,10 +36,10 @@ IMPORTANT: OPTIMIZE the user's research question request using your prompt-engin
    - Use the **codebase-locator** agent to find WHERE files and components live
    - Use the **codebase-analyzer** agent to understand HOW specific code works (without critiquing it)
    - Use the **codebase-pattern-finder** agent to find examples of existing patterns (without evaluating them)
-   - Output directory: `docs/tickets/{ticket-name}/` OR `docs/research/` if not associated with a ticket
+   - Output directory: `docs/tickets/{ticket-number}_{ticket-name}/`
    - Examples:
-     - For a research not associated with a ticket: `docs/research/2024-01-10-research-topic.md`
-     - For a research associated with ticket AI-1234 and specific research: `docs/tickets/AI-1234/research.md`
+     - For research ticket 013: `docs/tickets/013_authentication_flow/research.md`
+     - For research ticket 014 with specific focus: `docs/tickets/014_database_implementation/research.md`
      - Tickets can have multiple research documents under their folder
 
    **IMPORTANT**: All agents are documentarians, not critics. They will describe what exists without suggesting improvements or identifying issues.
@@ -52,10 +52,10 @@ IMPORTANT: OPTIMIZE the user's research question request using your prompt-engin
    - VERY IMPORTANT: In case you discover external libraries as dependencies, use the **codebase-online-researcher** agent for external documentation and resources
      - If you use DeepWiki tools, instruct the agent to return references to code snippets or documentation, PLEASE INCLUDE those references (e.g. source file names, line numbers, etc.)
      - If you perform a web search using the playwright tool, instruct the agent to return LINKS with their findings, and please INCLUDE those links in the research document
-     - Output directory: `docs/tickets/{ticket-name}/` if for a specific ticket, else `docs/`
+     - Output directory: `docs/tickets/{ticket-number}_{ticket-name}/`
      - Examples:
-       - Research on Redis locks under ticket AI-4321: `docs/tickets/AI-4321/redis-locks-usage.md`
-       - Research on OAuth flows without specific ticket: `docs/oauth-flows.md` with external links
+       - Research on Redis locks under ticket 015: `docs/tickets/015_redis_locks_usage/research.md`
+       - Research on OAuth flows under ticket 016: `docs/tickets/016_oauth_flows/research.md` with external links
 
    The key is to use these agents intelligently:
    - Start with locator agents to find what exists

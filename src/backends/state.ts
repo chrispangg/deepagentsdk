@@ -145,15 +145,24 @@ export class StateBackend implements BackendProtocol {
   write(filePath: string, content: string): WriteResult {
     const files = this.getFiles();
 
+    // Validate file path
+    if (!filePath || filePath.trim() === "") {
+      return {
+        success: false,
+        error: "File path cannot be empty",
+      };
+    }
+
     if (filePath in files) {
       return {
+        success: false,
         error: `Cannot write to ${filePath} because it already exists. Read and then make an edit, or write to a new path.`,
       };
     }
 
     const newFileData = createFileData(content);
     this.state.files[filePath] = newFileData;
-    return { path: filePath };
+    return { success: true, path: filePath };
   }
 
   /**
@@ -169,7 +178,7 @@ export class StateBackend implements BackendProtocol {
     const fileData = files[filePath];
 
     if (!fileData) {
-      return { error: `Error: File '${filePath}' not found` };
+      return { success: false, error: `Error: File '${filePath}' not found` };
     }
 
     const content = fileDataToString(fileData);
@@ -181,13 +190,13 @@ export class StateBackend implements BackendProtocol {
     );
 
     if (typeof result === "string") {
-      return { error: result };
+      return { success: false, error: result };
     }
 
     const [newContent, occurrences] = result;
     const newFileData = updateFileData(fileData, newContent);
     this.state.files[filePath] = newFileData;
-    return { path: filePath, occurrences };
+    return { success: true, path: filePath, occurrences };
   }
 
   /**

@@ -23,6 +23,8 @@ import type {
   BackendProtocol,
   BackendFactory,
   DeepAgentEvent,
+  ErrorEvent as DeepAgentErrorEvent,
+  CheckpointLoadedEvent,
   EventCallback,
   StreamWithEventsOptions,
   ModelMessage,
@@ -207,11 +209,10 @@ export class DeepAgent {
   }
 
   /**
-   * Create all tools for a given state.
-   * @param state - The shared agent state
-   * @param onEvent - Optional callback for emitting events
+   * Create core tools (todos and filesystem).
+   * @private
    */
-  private createTools(state: DeepAgentState, onEvent?: EventCallback): ToolSet {
+  private createCoreTools(state: DeepAgentState, onEvent?: EventCallback): ToolSet {
     const todosTool = createTodosTool(state, onEvent);
     const filesystemTools = createFilesystemTools(state, {
       backend: this.backend,
@@ -219,51 +220,95 @@ export class DeepAgent {
       toolResultEvictionLimit: this.toolResultEvictionLimit,
     });
 
-    let allTools: ToolSet = {
+    return {
       write_todos: todosTool,
       ...filesystemTools,
       ...this.userTools,
     };
+  }
 
-    // Add web tools if TAVILY_API_KEY is available
+  /**
+   * Create web tools if TAVILY_API_KEY is available.
+   * @private
+   */
+  private createWebToolSet(state: DeepAgentState, onEvent?: EventCallback): ToolSet {
     const webTools = createWebTools(state, {
       backend: this.backend,
       onEvent,
       toolResultEvictionLimit: this.toolResultEvictionLimit,
     });
-    // Only spread if webTools has actual tools (not empty object)
+    return webTools;
+  }
+
+  /**
+   * Create execute tool if backend is a sandbox.
+   * @private
+   */
+  private createExecuteToolSet(onEvent?: EventCallback): ToolSet {
+    if (!this.hasSandboxBackend) {
+      return {};
+    }
+
+    const sandboxBackend = this.backend as SandboxBackendProtocol;
+    return {
+      execute: createExecuteTool({
+        backend: sandboxBackend,
+        onEvent,
+      }),
+    };
+  }
+
+  /**
+   * Create subagent tool if configured.
+   * @private
+   */
+  private createSubagentToolSet(state: DeepAgentState, onEvent?: EventCallback): ToolSet {
+    if (
+      !this.subagentOptions.includeGeneralPurposeAgent &&
+      (!this.subagentOptions.subagents || this.subagentOptions.subagents.length === 0)
+    ) {
+      return {};
+    }
+
+    const subagentTool = createSubagentTool(state, {
+      defaultModel: this.subagentOptions.defaultModel,
+      defaultTools: this.userTools,
+      subagents: this.subagentOptions.subagents,
+      includeGeneralPurposeAgent: this.subagentOptions.includeGeneralPurposeAgent,
+      backend: this.backend,
+      onEvent,
+      interruptOn: this.interruptOn,
+      parentGenerationOptions: this.generationOptions,
+      parentAdvancedOptions: this.advancedOptions,
+    });
+
+    return { task: subagentTool };
+  }
+
+  /**
+   * Create all tools for the agent, combining core, web, execute, and subagent tools.
+   * @private
+   */
+  private createTools(state: DeepAgentState, onEvent?: EventCallback): ToolSet {
+    // Start with core tools (todos, filesystem, user tools)
+    let allTools = this.createCoreTools(state, onEvent);
+
+    // Add web tools if available
+    const webTools = this.createWebToolSet(state, onEvent);
     if (Object.keys(webTools).length > 0) {
       allTools = { ...allTools, ...webTools };
     }
 
-    // Add execute tool if backend is a sandbox
-    if (this.hasSandboxBackend) {
-      const sandboxBackend = this.backend as SandboxBackendProtocol;
-      allTools.execute = createExecuteTool({
-        backend: sandboxBackend,
-        onEvent,
-      });
+    // Add execute tool if sandbox backend
+    const executeTools = this.createExecuteToolSet(onEvent);
+    if (Object.keys(executeTools).length > 0) {
+      allTools = { ...allTools, ...executeTools };
     }
 
     // Add subagent tool if configured
-    if (
-      this.subagentOptions.includeGeneralPurposeAgent ||
-      (this.subagentOptions.subagents &&
-        this.subagentOptions.subagents.length > 0)
-    ) {
-      const subagentTool = createSubagentTool(state, {
-        defaultModel: this.subagentOptions.defaultModel,
-        defaultTools: this.userTools,
-        subagents: this.subagentOptions.subagents,
-        includeGeneralPurposeAgent:
-          this.subagentOptions.includeGeneralPurposeAgent,
-        backend: this.backend,
-        onEvent,
-        interruptOn: this.interruptOn,
-        parentGenerationOptions: this.generationOptions,
-        parentAdvancedOptions: this.advancedOptions,
-      });
-      allTools.task = subagentTool;
+    const subagentTools = this.createSubagentToolSet(state, onEvent);
+    if (Object.keys(subagentTools).length > 0) {
+      allTools = { ...allTools, ...subagentTools };
     }
 
     // Apply interruptOn configuration to tools
@@ -550,57 +595,117 @@ export class DeepAgent {
     };
   }
 
-  async *streamWithEvents(
-    options: StreamWithEventsOptions
-  ): AsyncGenerator<DeepAgentEvent, void, unknown> {
-    const { threadId, resume } = options;
-    
-    // Load checkpoint if threadId is provided and checkpointer exists
-    let state: DeepAgentState = options.state || { todos: [], files: {} };
-    let patchedHistory: ModelMessage[] = [];
-    let currentStep = 0;
-    let pendingInterrupt: InterruptData | undefined;
-    
-    if (threadId && this.checkpointer) {
-      const checkpoint = await this.checkpointer.load(threadId);
-      if (checkpoint) {
-        // Restore from checkpoint
-        state = checkpoint.state;
-        patchedHistory = checkpoint.messages;
-        currentStep = checkpoint.step;
-        pendingInterrupt = checkpoint.interrupt;
-        
-        yield {
-          type: "checkpoint-loaded",
-          threadId,
-          step: checkpoint.step,
-          messagesCount: checkpoint.messages.length,
+  /**
+   * Build streamText options with callbacks for step tracking and checkpointing.
+   *
+   * @private
+   */
+  private buildStreamTextOptions(
+    inputMessages: ModelMessage[],
+    tools: ToolSet,
+    options: StreamWithEventsOptions,
+    state: DeepAgentState,
+    baseStep: number,
+    pendingInterrupt: InterruptData | undefined,
+    eventQueue: DeepAgentEvent[],
+    stepNumberRef: { value: number }
+  ): Parameters<typeof streamText>[0] {
+    const { threadId } = options;
+
+    const streamOptions: Parameters<typeof streamText>[0] = {
+      model: this.model,
+      messages: inputMessages,
+      tools,
+      stopWhen: stepCountIs(options.maxSteps ?? this.maxSteps),
+      abortSignal: options.abortSignal,
+      onStepFinish: async ({ toolCalls, toolResults }) => {
+        stepNumberRef.value++;
+        const cumulativeStep = baseStep + stepNumberRef.value;
+
+        // Emit step finish event (relative step number)
+        const stepEvent: DeepAgentEvent = {
+          type: "step-finish",
+          stepNumber: stepNumberRef.value,
+          toolCalls: toolCalls.map((tc, i) => ({
+            toolName: tc.toolName,
+            args: "input" in tc ? tc.input : undefined,
+            result: toolResults[i] ? ("output" in toolResults[i] ? toolResults[i].output : undefined) : undefined,
+          })),
         };
-      }
+        eventQueue.push(stepEvent);
+
+        // Save checkpoint if configured
+        if (threadId && this.checkpointer) {
+          // Get current messages state - we need to track messages as they're built
+          // For now, we'll save with the input messages (will be updated after assistant response)
+          const checkpoint: Checkpoint = {
+            threadId,
+            step: cumulativeStep, // Cumulative step number
+            messages: inputMessages, // Current messages before assistant response
+            state: { ...state },
+            interrupt: pendingInterrupt,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          };
+          await this.checkpointer.save(checkpoint);
+
+          eventQueue.push({
+            type: "checkpoint-saved",
+            threadId,
+            step: cumulativeStep,
+          });
+        }
+      },
+    };
+
+    // Add system prompt with optional caching for Anthropic models
+    if (this.enablePromptCaching) {
+      // Use messages format with cache control for Anthropic
+      streamOptions.messages = [
+        {
+          role: "system",
+          content: this.systemPrompt,
+          providerOptions: {
+            anthropic: { cacheControl: { type: "ephemeral" } },
+          },
+        } as ModelMessage,
+        ...inputMessages,
+      ];
+    } else {
+      // Use standard system prompt
+      streamOptions.system = this.systemPrompt;
     }
-    
-    // Handle resume from interrupt
-    if (resume && pendingInterrupt) {
-      // Process the resume decision (approve/deny the pending tool call)
-      const decision = resume.decisions[0];
-      if (decision?.type === 'approve') {
-        // Clear the interrupt and continue
-        pendingInterrupt = undefined;
-      } else {
-        // Deny - the tool was rejected, clear interrupt
-        pendingInterrupt = undefined;
-        // Could add a denied message to history here if needed
-      }
-    }
-    
-    // Require either prompt, messages, resume, or threadId with checkpoint
-    // Note: Empty messages array is allowed (treated as fresh start)
-    if (!options.prompt && !options.messages && !resume && !threadId) {
-      yield {
-        type: "error",
-        error: new Error("Either 'prompt', 'messages', 'resume', or 'threadId' is required"),
+
+    return streamOptions;
+  }
+
+  /**
+   * Build message array from options, handling validation and priority logic.
+   * Priority: explicit messages > prompt > checkpoint history.
+   *
+   * @private
+   */
+  private async buildMessageArray(
+    options: StreamWithEventsOptions,
+    patchedHistory: ModelMessage[]
+  ): Promise<{
+    messages: ModelMessage[];
+    patchedHistory: ModelMessage[];
+    error?: DeepAgentErrorEvent;
+    shouldReturnEmpty?: boolean;
+  }> {
+    const { resume } = options;
+
+    // Validation: require either prompt, messages, resume, or threadId
+    if (!options.prompt && !options.messages && !resume && !options.threadId) {
+      return {
+        messages: [],
+        patchedHistory,
+        error: {
+          type: "error",
+          error: new Error("Either 'prompt', 'messages', 'resume', or 'threadId' is required"),
+        },
       };
-      return;
     }
 
     // Build messages with priority: explicit messages > prompt > checkpoint
@@ -663,6 +768,111 @@ export class DeepAgent {
     // Special case: empty messages with no checkpoint history
     if (hasEmptyMessages && !hasValidInput && !resume) {
       // This is a "no-op" case - return done immediately with empty messages
+      return {
+        messages: [],
+        patchedHistory,
+        shouldReturnEmpty: true,
+      };
+    }
+
+    // Check if we have valid input: either user messages or checkpoint history
+    if (!hasValidInput && !resume) {
+      return {
+        messages: [],
+        patchedHistory,
+        error: {
+          type: "error",
+          error: new Error("No valid input: provide either non-empty messages, prompt, or threadId with existing checkpoint"),
+        },
+      };
+    }
+
+    const inputMessages: ModelMessage[] = [
+      ...patchedHistory,
+      ...userMessages,
+    ];
+
+    return { messages: inputMessages, patchedHistory };
+  }
+
+  /**
+   * Load checkpoint context if threadId is provided.
+   * Handles checkpoint restoration and resume from interrupt.
+   *
+   * @private
+   */
+  private async loadCheckpointContext(
+    options: StreamWithEventsOptions
+  ): Promise<{
+    state: DeepAgentState;
+    patchedHistory: ModelMessage[];
+    currentStep: number;
+    pendingInterrupt: InterruptData | undefined;
+    checkpointEvent?: CheckpointLoadedEvent;
+  }> {
+    const { threadId, resume } = options;
+    let state: DeepAgentState = options.state || { todos: [], files: {} };
+    let patchedHistory: ModelMessage[] = [];
+    let currentStep = 0;
+    let pendingInterrupt: InterruptData | undefined;
+    let checkpointEvent: CheckpointLoadedEvent | undefined;
+
+    if (threadId && this.checkpointer) {
+      const checkpoint = await this.checkpointer.load(threadId);
+      if (checkpoint) {
+        state = checkpoint.state;
+        patchedHistory = checkpoint.messages;
+        currentStep = checkpoint.step;
+        pendingInterrupt = checkpoint.interrupt;
+
+        checkpointEvent = {
+          type: "checkpoint-loaded",
+          threadId,
+          step: checkpoint.step,
+          messagesCount: checkpoint.messages.length,
+        };
+      }
+    }
+
+    // Handle resume from interrupt
+    if (resume && pendingInterrupt) {
+      const decision = resume.decisions[0];
+      if (decision?.type === 'approve') {
+        pendingInterrupt = undefined;
+      } else {
+        pendingInterrupt = undefined;
+      }
+    }
+
+    return { state, patchedHistory, currentStep, pendingInterrupt, checkpointEvent };
+  }
+
+  async *streamWithEvents(
+    options: StreamWithEventsOptions
+  ): AsyncGenerator<DeepAgentEvent, void, unknown> {
+    const { threadId, resume } = options;
+
+    // Load checkpoint context (state, history, step tracking)
+    const context = await this.loadCheckpointContext(options);
+    const { state, currentStep, pendingInterrupt, checkpointEvent } = context;
+    let patchedHistory = context.patchedHistory; // Mutable - may be reassigned during message building
+
+    // Yield checkpoint-loaded event if checkpoint was restored
+    if (checkpointEvent) {
+      yield checkpointEvent;
+    }
+
+    // Build message array with validation and priority logic
+    const messageResult = await this.buildMessageArray(options, patchedHistory);
+
+    // Handle error cases
+    if (messageResult.error) {
+      yield messageResult.error;
+      return;
+    }
+
+    // Handle empty messages no-op case
+    if (messageResult.shouldReturnEmpty) {
       yield {
         type: "done",
         text: "",
@@ -672,23 +882,13 @@ export class DeepAgent {
       return;
     }
 
-    // Check if we have valid input: either user messages or checkpoint history
-    if (!hasValidInput && !resume) {
-      yield {
-        type: "error",
-        error: new Error("No valid input: provide either non-empty messages, prompt, or threadId with existing checkpoint"),
-      };
-      return;
-    }
-
-    const inputMessages: ModelMessage[] = [
-      ...patchedHistory,
-      ...userMessages,
-    ];
+    // Extract results
+    const inputMessages = messageResult.messages;
+    patchedHistory = messageResult.patchedHistory;
 
     // Event queue for collecting events from tool executions
     const eventQueue: DeepAgentEvent[] = [];
-    let stepNumber = 0; // Relative to current execution
+    const stepNumberRef = { value: 0 }; // Mutable reference for stepNumber
     const baseStep = currentStep; // Cumulative step from checkpoint
 
     // Event callback that tools will use to emit events
@@ -703,76 +903,23 @@ export class DeepAgent {
     // This intercepts tool execution and requests approval before running
     const hasInterruptOn = !!this.interruptOn;
     const hasApprovalCallback = !!options.onApprovalRequest;
-    
+
     if (hasInterruptOn && hasApprovalCallback) {
       tools = wrapToolsWithApproval(tools, this.interruptOn, options.onApprovalRequest);
     }
 
     try {
-      // Build streamText options
-      const streamOptions: Parameters<typeof streamText>[0] = {
-        model: this.model,
-        messages: inputMessages,
+      // Build streamText options with callbacks
+      const streamOptions = this.buildStreamTextOptions(
+        inputMessages,
         tools,
-        stopWhen: stepCountIs(options.maxSteps ?? this.maxSteps),
-        abortSignal: options.abortSignal,
-        onStepFinish: async ({ toolCalls, toolResults }) => {
-          stepNumber++;
-          const cumulativeStep = baseStep + stepNumber;
-
-          // Emit step finish event (relative step number)
-          const stepEvent: DeepAgentEvent = {
-            type: "step-finish",
-            stepNumber,
-            toolCalls: toolCalls.map((tc, i) => ({
-              toolName: tc.toolName,
-              args: "input" in tc ? tc.input : undefined,
-              result: toolResults[i] ? ("output" in toolResults[i] ? toolResults[i].output : undefined) : undefined,
-            })),
-          };
-          eventQueue.push(stepEvent);
-          
-          // Save checkpoint if configured
-          if (threadId && this.checkpointer) {
-            // Get current messages state - we need to track messages as they're built
-            // For now, we'll save with the input messages (will be updated after assistant response)
-            const checkpoint: Checkpoint = {
-              threadId,
-              step: cumulativeStep, // Cumulative step number
-              messages: inputMessages, // Current messages before assistant response
-              state: { ...state },
-              interrupt: pendingInterrupt,
-              createdAt: new Date().toISOString(),
-              updatedAt: new Date().toISOString(),
-            };
-            await this.checkpointer.save(checkpoint);
-            
-            eventQueue.push({
-              type: "checkpoint-saved",
-              threadId,
-              step: cumulativeStep,
-            });
-          }
-        },
-      };
-
-      // Add system prompt with optional caching for Anthropic models
-      if (this.enablePromptCaching) {
-        // Use messages format with cache control for Anthropic
-        streamOptions.messages = [
-          {
-            role: "system",
-            content: this.systemPrompt,
-            providerOptions: {
-              anthropic: { cacheControl: { type: "ephemeral" } },
-            },
-          } as ModelMessage,
-          ...inputMessages,
-        ];
-      } else {
-        // Use standard system prompt
-        streamOptions.system = this.systemPrompt;
-      }
+        options,
+        state,
+        baseStep,
+        pendingInterrupt,
+        eventQueue,
+        stepNumberRef
+      );
 
       // Use streamText with messages array for conversation history
       const result = streamText(streamOptions);
@@ -829,7 +976,7 @@ export class DeepAgent {
       if (threadId && this.checkpointer) {
         const finalCheckpoint: Checkpoint = {
           threadId,
-          step: baseStep + stepNumber, // Cumulative step number
+          step: baseStep + stepNumberRef.value, // Cumulative step number
           messages: updatedMessages,
           state,
           createdAt: new Date().toISOString(),
@@ -841,7 +988,7 @@ export class DeepAgent {
         yield {
           type: "checkpoint-saved",
           threadId,
-          step: baseStep + stepNumber,
+          step: baseStep + stepNumberRef.value,
         };
       }
     } catch (error) {

@@ -294,10 +294,12 @@ export class FilesystemBackend implements BackendProtocol {
         const stat = await fs.lstat(resolvedPath);
         if (stat.isSymbolicLink()) {
           return {
+            success: false,
             error: `Cannot write to ${filePath} because it is a symlink. Symlinks are not allowed.`,
           };
         }
         return {
+          success: false,
           error: `Cannot write to ${filePath} because it already exists. Read and then make an edit, or write to a new path.`,
         };
       } catch {
@@ -323,10 +325,10 @@ export class FilesystemBackend implements BackendProtocol {
         await fs.writeFile(resolvedPath, content, "utf-8");
       }
 
-      return { path: filePath };
+      return { success: true, path: filePath };
     } catch (e: unknown) {
       const error = e as Error;
-      return { error: `Error writing file '${filePath}': ${error.message}` };
+      return { success: false, error: `Error writing file '${filePath}': ${error.message}` };
     }
   }
 
@@ -347,7 +349,7 @@ export class FilesystemBackend implements BackendProtocol {
       if (SUPPORTS_NOFOLLOW) {
         const stat = await fs.stat(resolvedPath);
         if (!stat.isFile()) {
-          return { error: `Error: File '${filePath}' not found` };
+          return { success: false, error: `Error: File '${filePath}' not found` };
         }
 
         const fd = await fs.open(
@@ -362,10 +364,10 @@ export class FilesystemBackend implements BackendProtocol {
       } else {
         const stat = await fs.lstat(resolvedPath);
         if (stat.isSymbolicLink()) {
-          return { error: `Error: Symlinks are not allowed: ${filePath}` };
+          return { success: false, error: `Error: Symlinks are not allowed: ${filePath}` };
         }
         if (!stat.isFile()) {
-          return { error: `Error: File '${filePath}' not found` };
+          return { success: false, error: `Error: File '${filePath}' not found` };
         }
         content = await fs.readFile(resolvedPath, "utf-8");
       }
@@ -378,7 +380,7 @@ export class FilesystemBackend implements BackendProtocol {
       );
 
       if (typeof result === "string") {
-        return { error: result };
+        return { success: false, error: result };
       }
 
       const [newContent, occurrences] = result;
@@ -399,10 +401,10 @@ export class FilesystemBackend implements BackendProtocol {
         await fs.writeFile(resolvedPath, newContent, "utf-8");
       }
 
-      return { path: filePath, occurrences };
+      return { success: true, path: filePath, occurrences };
     } catch (e: unknown) {
       const error = e as Error;
-      return { error: `Error editing file '${filePath}': ${error.message}` };
+      return { success: false, error: `Error editing file '${filePath}': ${error.message}` };
     }
   }
 

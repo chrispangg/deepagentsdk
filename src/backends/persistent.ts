@@ -454,6 +454,7 @@ export class PersistentBackend implements BackendProtocol {
     const existing = await this.store.get(namespace, filePath);
     if (existing) {
       return {
+        success: false,
         error: `Cannot write to ${filePath} because it already exists. Read and then make an edit, or write to a new path.`,
       };
     }
@@ -462,7 +463,7 @@ export class PersistentBackend implements BackendProtocol {
     const fileData = createFileData(content);
     const storeValue = this.convertFromFileData(fileData);
     await this.store.put(namespace, filePath, storeValue);
-    return { path: filePath };
+    return { success: true, path: filePath };
   }
 
   /**
@@ -479,7 +480,7 @@ export class PersistentBackend implements BackendProtocol {
     // Get existing file
     const value = await this.store.get(namespace, filePath);
     if (!value) {
-      return { error: `Error: File '${filePath}' not found` };
+      return { success: false, error: `Error: File '${filePath}' not found` };
     }
 
     try {
@@ -493,7 +494,7 @@ export class PersistentBackend implements BackendProtocol {
       );
 
       if (typeof result === "string") {
-        return { error: result };
+        return { success: false, error: result };
       }
 
       const [newContent, occurrences] = result;
@@ -502,10 +503,10 @@ export class PersistentBackend implements BackendProtocol {
       // Update file in store
       const storeValue = this.convertFromFileData(newFileData);
       await this.store.put(namespace, filePath, storeValue);
-      return { path: filePath, occurrences };
+      return { success: true, path: filePath, occurrences };
     } catch (e: unknown) {
       const error = e as Error;
-      return { error: `Error: ${error.message}` };
+      return { success: false, error: `Error: ${error.message}` };
     }
   }
 
