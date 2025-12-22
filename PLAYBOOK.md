@@ -85,25 +85,34 @@ your-repo/
 │   ├── agents/                   # Specialized AI agents
 │   │   ├── codebase-locator.md   # Finds relevant files
 │   │   ├── codebase-analyzer.md  # Analyzes implementation
-│   │   └── codebase-pattern-finder.md # Finds patterns to follow
+│   │   ├── codebase-pattern-finder.md # Finds patterns to follow
+│   │   ├── codebase-research-locator.md # Finds docs/ files
+│   │   ├── codebase-research-analyzer.md # Extracts insights from docs
+│   │   └── codebase-online-researcher.md # Web research
 │   └── commands/                 # Numbered workflow commands
 │       ├── 1_research_codebase.md
 │       ├── 2_create_plan.md
-│       ├── 3_implement_plan.md
-│       ├── 4_validate_plan.md
-│       ├── 5_save_progress.md   # Save work session
-│       ├── 6_resume_work.md     # Resume saved work
-│       ├── 7_research_cloud.md  # Cloud infrastructure analysis
-│       └── 8_define_test_cases.md # Design acceptance test cases
+│       ├── 3_define_test_cases.md   # Generate executable tests
+│       ├── 4_implement_plan.md
+│       ├── 5_validate_implementation.md
+│       ├── 6_iterate_implementation.md
+│       ├── 7_save_progress.md   # Save work session
+│       ├── 8_resume_work.md     # Resume saved work
+│       └── 9_research_cloud.md  # Cloud infrastructure analysis
 ├── docs/                         # Persistent Context Storage
 │   ├── tickets/                  # Ticket-associated documentation
 │   │   └── TICKET-NAME/         # Feature/ticket folders
 │   │       ├── plan.md
 │   │       ├── research.md
+│   │       ├── test-cases.md     # Lightweight test index
+│   │       ├── notes-YYYY-MM-DD.md # Implementation notes
 │   │       └── sessions/        # Work session summaries
 │   │           └── NNN_feature.md
 │   └── notes/                    # General notes and meetings
 │       └── YYYY-MM-DD-meeting.md
+├── test/                         # Test files
+│   └── [feature]/
+│       └── [feature].test.ts    # Actual runnable tests
 └── CLAUDE.md                    # Project-specific instructions
 ```
 
@@ -116,9 +125,11 @@ your-repo/
 **Process**:
 
 1. Invoke command with research question
-2. AI spawns parallel agents to investigate
-3. Findings compiled into structured document
-4. Saved to `docs/tickets/TICKET-NAME/research.md` or `docs/{research-topic}.md` (creates folder if needed)
+2. Optimize question using prompt-engineer skill
+3. Read mentioned files FULLY before spawning sub-tasks
+4. AI spawns parallel agents to investigate
+5. Findings compiled into structured document
+6. Saved to `docs/tickets/TICKET-NAME/{research-topic}.md` or `docs/{research-topic}.md` (creates folder if needed)
 
 **Example**:
 
@@ -133,6 +144,7 @@ your-repo/
 - Architecture insights
 - Patterns and conventions
 - Related components
+- Historical context from `docs/`
 
 ### Phase 2: Planning (`/2_create_plan`)
 
@@ -140,7 +152,7 @@ your-repo/
 
 **Process**:
 
-1. Read requirements and research
+1. Read requirements and research FULLY
 2. Interactive planning with user
 3. Generate phased approach
 4. Save to `docs/tickets/TICKET-NAME/plan.md` (creates folder if needed)
@@ -174,102 +186,52 @@ your-repo/
 [...]
 ```
 
-### Phase 3: Implementation (`/3_implement_plan`)
+### Phase 3: Define Test Cases (`/3_define_test_cases`)
 
-**Purpose**: Execute plan systematically
-
-**Process**:
-
-1. Read plan and track with todos
-2. Implement phase by phase
-3. Run verification after each phase
-4. Update plan checkboxes
-
-**Example**:
-
-```
-/3_implement_plan
-> docs/tickets/TICKET-NAME/plan.md
-```
-
-**Progress Tracking**:
-
-- Uses checkboxes in plan
-- TodoWrite for task management
-- Communicates blockers clearly
-
-### Phase 4: Validation (`/4_validate_plan`)
-
-**Purpose**: Verify implementation matches plan
-
-**Process**:
-
-1. Review git changes
-2. Run all automated checks
-3. Generate validation report
-4. Identify deviations
-5. Prepare for manual commit process
-
-**Example**:
-
-```
-/4_validate_plan
-> Validate the Stripe integration implementation
-```
-
-**Report Includes**:
-
-- Implementation status
-- Test results
-- Code review findings
-- Manual testing requirements
-
-### Test-Driven Development (`/8_define_test_cases`)
-
-**Purpose**: Design acceptance test cases before implementation
+**Purpose**: Design executable test cases using BDD principles
 
 **Process**:
 
 1. Invoke command with feature description
 2. AI researches existing test patterns in codebase
-3. Defines test cases in structured comment format
-4. Identifies required DSL functions
-5. Notes which DSL functions exist vs. need creation
+3. Generates actual runnable test code file
+4. Creates lightweight index in `docs/tickets/TICKET-NAME/test-cases.md`
 
 **Example**:
 
 ```
-/8_define_test_cases
+/3_define_test_cases
 > Partner enrollment workflow when ordering kit products
 ```
 
 **Output**:
 
-1. **Test Case Definitions**: All scenarios in comment format:
+1. **PRIMARY: Test Code File** - `test/[feature]/[feature].test.ts`
+   - Actual runnable tests with Given-When-Then structure
+   - Minimal helpers (only when duplication > 2x)
+   - Tests ARE the specification
 
-```javascript
-// 1. New Customer Orders Partner Kit
-
-// newCustomer
-// partnerKitInCart
-//
-// customerPlacesOrder
-//
-// expectOrderCreated
-// expectPartnerCreatedInExigo
-```
-
-2. **DSL Function List**: Organized by type (setup/action/assertion)
-3. **Pattern Notes**: How tests align with existing patterns
+2. **SECONDARY: Lightweight Index** - `docs/tickets/TICKET-NAME/test-cases.md`
+   - Quick reference with line numbers
+   - Commands to run tests
+   - Coverage summary
 
 **Test Structure**:
 
-- Setup phase (arrange state)
-- Blank line
-- Action phase (trigger behavior)
-- Blank line
-- Assertion phase (verify outcomes)
-- No "Given/When/Then" labels - implicit structure
+```typescript
+describe("Feature Name", () => {
+  test("behavior description", async () => {
+    // Given: [preconditions]
+    const state = { files: {}, todos: [] };
+
+    // When: [action]
+    const result = await executeFeature(state);
+
+    // Then: [expected outcome]
+    expect(result.success).toBe(true);
+  });
+});
+```
 
 **Coverage Areas**:
 
@@ -279,7 +241,90 @@ your-repo/
 - Boundary conditions
 - Authorization/permission checks
 
-**Key Principle**: Comment-first approach - design tests as specifications before any implementation.
+### Phase 4: Implementation (`/4_implement_plan`)
+
+**Purpose**: Execute plan systematically
+
+**Process**:
+
+1. Read plan and test files (if exist) FULLY
+2. Read all note files in ticket folder
+3. Implement phase by phase
+4. **If test file exists**: Make tests pass (test-driven approach)
+5. Run verification after each phase
+6. Update plan checkboxes
+
+**Example**:
+
+```
+/4_implement_plan
+> docs/tickets/TICKET-NAME/plan.md
+```
+
+**Progress Tracking**:
+
+- Uses checkboxes in plan
+- TodoWrite for task management
+- Creates note files for new requirements
+- Communicates blockers clearly
+
+### Phase 5: Validation (`/5_validate_implementation`)
+
+**Purpose**: Verify implementation matches plan
+
+**Process**:
+
+1. Read all ticket documentation (plan, test-cases, notes, research, sessions)
+2. Review git changes
+3. Run all automated checks
+4. **If test file exists**: Run tests and verify 100% pass
+5. Generate validation report
+6. Identify deviations
+7. Recommend iteration if issues found
+
+**Example**:
+
+```
+/5_validate_implementation
+> Validate the Stripe integration implementation
+```
+
+**Report Includes**:
+
+- Implementation status
+- Test results (if applicable)
+- Code review findings
+- Requirements from notes
+- Manual testing requirements
+- Next steps (often: run step 6)
+
+### Phase 6: Iteration (`/6_iterate_implementation`)
+
+**Purpose**: Fix bugs, address deviations, refine features
+
+**Process**:
+
+1. Read validation report, plan, notes
+2. Categorize issues (bugs, deviations, missing requirements)
+3. Prioritize and fix systematically
+4. **Fix production code to make tests pass** (not modify tests)
+5. Update documentation (plan checkboxes, note files)
+6. Verify fixes with automated checks
+
+**Example**:
+
+```
+/6_iterate_implementation
+> docs/tickets/TICKET-NAME/plan.md
+```
+
+**Iteration Cycle**:
+
+```
+Step 5 (Validate) → Step 6 (Iterate) → Step 5 (Validate) → ...
+```
+
+Continue until all validation criteria pass.
 
 ## Command Reference
 
@@ -290,7 +335,7 @@ your-repo/
 - **Purpose**: Deep dive into codebase
 - **Input**: Research question
 - **Output**: Research document
-- **Agents Used**: All locator/analyzer agents
+- **Agents Used**: All locator/analyzer agents (codebase-locator, codebase-analyzer, codebase-pattern-finder, codebase-research-locator, codebase-research-analyzer, codebase-online-researcher)
 
 ### `/2_create_plan`
 
@@ -299,101 +344,60 @@ your-repo/
 - **Output**: Phased plan document
 - **Interactive**: Yes
 
-### `/3_implement_plan`
+### `/3_define_test_cases`
+
+- **Purpose**: Generate executable test code using BDD principles
+- **Input**: Feature/functionality to test
+- **Output**: Test file (`test/[feature]/[feature].test.ts`) + lightweight index (`docs/tickets/TICKET-NAME/test-cases.md`)
+- **Approach**: Tests ARE the specification - executable documentation
+- **Agent Used**: codebase-pattern-finder (automatic)
+
+### `/4_implement_plan`
 
 - **Purpose**: Execute implementation
 - **Input**: Plan path
 - **Output**: Completed implementation
+- **Note**: If tests exist, uses test-driven approach
 
-### `/4_validate_plan`
+### `/5_validate_implementation`
 
 - **Purpose**: Verify implementation
 - **Input**: Plan path (optional)
 - **Output**: Validation report
+- **Note**: Works in cycle with step 6
+
+### `/6_iterate_implementation`
+
+- **Purpose**: Fix bugs and address deviations found in validation
+- **Input**: Plan path
+- **Output**: Fixed implementation
+- **Note**: Works in cycle with step 5
 
 ## Session Management
 
 The framework supports saving and resuming work through persistent documentation:
 
-### `/5_save_progress`
+### `/7_save_progress`
 
 - **Purpose**: Save work progress and context
 - **Input**: Current work state
 - **Output**: Session summary and checkpoint
-- **Creates**: `docs/tickets/TICKET-NAME/sessions/` document
+- **Creates**: `docs/tickets/TICKET-NAME/sessions/NNN_feature.md` document (NNN is sequential)
 
-### `/6_resume_work`
+### `/8_resume_work`
 
 - **Purpose**: Resume previously saved work
 - **Input**: Session summary path or auto-discover
 - **Output**: Restored context and continuation
-- **Reads**: Session, plan, and research documents
+- **Reads**: Session, plan, research, and note files
 
-### Saving Progress (`/5_save_progress`)
-
-When you need to pause work:
-
-```
-/5_save_progress
-> Need to stop working on the payment feature
-
-# Creates:
-- Session summary in docs/tickets/TICKET-NAME/sessions/
-- Progress checkpoint in the plan
-- Work status documentation
-```
-
-### Resuming Work (`/6_resume_work`)
-
-To continue where you left off:
-
-```
-/6_resume_work
-> docs/tickets/TICKET-NAME/sessions/2025-01-06_payment_feature.md
-
-# Restores:
-- Full context from session
-- Plan progress state
-- Research findings
-- Todo list
-```
-
-### Progress Tracking
-
-Plans track progress with checkboxes:
-
-- `- [ ]` Not started
-- `- [x]` Completed
-- Progress checkpoints document partial completion
-
-When resuming, implementation continues from first unchecked item or documented checkpoint.
-
-### Session Documents
-
-Session summaries include:
-
-- Work completed in session
-- Current state and blockers
-- Next steps to continue
-- Commands to resume
-- File changes and test status
-
-This enables seamless context switching between features or across days/weeks.
-
-### `/7_research_cloud`
+### `/9_research_cloud`
 
 - **Purpose**: Analyze cloud infrastructure (READ-ONLY)
 - **Input**: Cloud platform and focus area
 - **Output**: Infrastructure analysis document
 - **Creates**: `docs/tickets/TICKET-NAME/cloud-platform-environment.md` or `docs/cloud-platform-environment.md` documents
-
-### `/8_define_test_cases`
-
-- **Purpose**: Design acceptance test cases using DSL approach
-- **Input**: Feature/functionality to test
-- **Output**: Test case definitions in comments + required DSL functions
-- **Approach**: Comment-first, follows existing test patterns
-- **Agent Used**: codebase-pattern-finder (automatic)
+- **Safety**: Only executes READ-ONLY operations
 
 ## Agent Reference
 
@@ -415,15 +419,9 @@ This enables seamless context switching between features or across days/weeks.
 - **Tools**: Grep, Glob, Read, LS
 - **Returns**: Code patterns and examples
 
-### codebase-online-researcher
-
-- **Role**: Research external documentation and web resources
-- **Tools**: DeepWiki, Playwright browser tools
-- **Returns**: External documentation findings with links
-
 ### codebase-research-locator
 
-- **Role**: Find existing documentation in docs/ directory
+- **Role**: Find existing documents in `docs/` directory
 - **Tools**: Read, Grep, Glob, LS
 - **Returns**: Categorized document listings
 
@@ -432,6 +430,12 @@ This enables seamless context switching between features or across days/weeks.
 - **Role**: Extract insights from research documents
 - **Tools**: Read, Grep, Glob, LS
 - **Returns**: Key decisions, constraints, and actionable insights
+
+### codebase-online-researcher
+
+- **Role**: Research external documentation and web resources
+- **Tools**: DeepWiki, Playwright browser tools
+- **Returns**: External documentation findings with links
 
 ## Best Practices
 
@@ -471,10 +475,10 @@ This enables seamless context switching between features or across days/weeks.
 ### 6. Design Tests Early
 
 - Define test cases before implementing features
-- Follow existing test patterns and DSL conventions
-- Use comment-first approach for test specifications
+- Use `/3_define_test_cases` to generate actual runnable test code
+- Tests become the living specification
 - Ensure tests cover happy paths, edge cases, and errors
-- Let tests guide implementation
+- Let tests guide implementation (test-driven approach)
 
 ## Customization Guide
 
@@ -588,17 +592,29 @@ Add instructions for your project:
 For complex features, chain commands:
 
 ```
+# Step 1: Research
 /1_research_codebase
 > Research current auth system
 
+# Step 2: Plan
 /2_create_plan
 > Based on research, plan OAuth integration
 
-/3_implement_plan
+# Step 3: Define tests
+/3_define_test_cases
+> OAuth authentication flows
+
+# Step 4: Implement
+/4_implement_plan
 > docs/tickets/TICKET-NAME/plan.md
 
-/4_validate_plan
-> Verify OAuth implementation
+# Step 5: Validate
+/5_validate_implementation
+> docs/tickets/TICKET-NAME/plan.md
+
+# Step 6: Iterate if needed
+/6_iterate_implementation
+> docs/tickets/TICKET-NAME/plan.md
 
 # Then manually commit using git
 ```
@@ -619,7 +635,7 @@ This spawns agents to research each aspect in parallel.
 Analyze cloud deployments without making changes:
 
 ```
-/7_research_cloud
+/9_research_cloud
 > Azure
 > all
 
@@ -636,33 +652,33 @@ Design tests before implementation:
 
 ```
 # Step 1: Define test cases
-/8_define_test_cases
+/3_define_test_cases
 > Partner enrollment when customer orders a kit product
 
 # Output includes:
-# - Test cases in comment format (happy path, edge cases, errors)
-# - List of DSL functions needed (setup/action/assertion)
-# - Existing functions that can be reused
+# - Actual test code: test/partners/enrollment.test.ts
+# - Lightweight index: docs/tickets/TICKET-NAME/test-cases.md
+# - Tests cover happy path, edge cases, errors, boundaries, auth
 
-# Step 2: Implement missing DSL functions
-# (Follow patterns discovered by the agent)
-
-# Step 3: Write tests using the defined test cases
-# (Copy comment structure to test files, add function calls)
-
-# Step 4: Create plan for feature implementation
+# Step 2: Create plan for feature implementation
 /2_create_plan
 > Implement partner enrollment logic to make tests pass
 
-# Step 5: Implement the feature
-/3_implement_plan
+# Step 3: Implement the feature
+/4_implement_plan
+> docs/tickets/TICKET-NAME/plan.md
+# Tests drive implementation - make them pass!
+
+# Step 4: Validate
+/5_validate_implementation
 > docs/tickets/TICKET-NAME/plan.md
 
-# Step 6: Validate tests pass
-/4_validate_plan
+# Step 5: Iterate if tests don't pass
+/6_iterate_implementation
+> docs/tickets/TICKET-NAME/plan.md
 ```
 
-**Key Benefit**: Tests are designed with existing patterns in mind, ensuring consistency across the test suite.
+**Key Benefit**: Tests are the living specification - executable documentation that defines correct behavior.
 
 ## Conclusion
 
