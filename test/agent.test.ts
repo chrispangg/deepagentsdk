@@ -9,13 +9,18 @@
  * Test coverage: Phases 1-3 of telemetry implementation plan
  */
 
-import { test, expect, describe, beforeEach } from "bun:test";
-import { createDeepAgent } from "../src/agent";
-import { StateBackend } from "../src/backends/state";
-import { anthropic } from "@ai-sdk/anthropic";
+import { test, expect, describe, beforeEach, afterEach } from "bun:test";
 import { tool } from "ai";
 import { z } from "zod";
 import type { DeepAgentEvent, DeepAgentState } from "../src/types";
+
+// Check if we have API keys for testing
+const hasAnthropicAPI = !!process.env.ANTHROPIC_API_KEY;
+
+// Now import after mocking
+import { createDeepAgent } from "../src/agent";
+import { StateBackend } from "../src/backends/state";
+import { anthropic } from "@ai-sdk/anthropic";
 
 // ============================================================================
 // Test Helpers
@@ -70,25 +75,25 @@ describe("Phase 1: Core Passthrough Options", () => {
     backend = new StateBackend({ todos: [], files: {} });
   });
 
-  test("passes experimental_telemetry to streamText", async () => {
-    // Given: Agent with telemetry enabled
-    const agent = createDeepAgent({
-      model: anthropic("claude-haiku-4-5-20251001"),
-      backend,
-      advancedOptions: {
-        experimental_telemetry: { isEnabled: true },
-      },
-    });
-
-    // When: Using streamWithEvents
-    const events = await collectEvents(agent, "Say hello", 1);
-
-    // Then: Should complete without errors (telemetry passed through)
-    expect(events.some((e) => e.type === "done")).toBe(true);
-    expect(events.some((e) => e.type === "text")).toBe(true);
+test.skipIf(!hasAnthropicAPI)("passes experimental_telemetry to streamText", async () => {
+  // Given: Agent with telemetry enabled
+  const agent = createDeepAgent({
+    model: anthropic("claude-haiku-4-5-20251001"),
+    backend,
+    advancedOptions: {
+      experimental_telemetry: { isEnabled: true },
+    },
   });
 
-  test("passes all generationOptions to streamText", async () => {
+  // When: Using streamWithEvents
+  const events = await collectEvents(agent, "Say hello", 1);
+
+  // Then: Should complete without errors (telemetry passed through)
+  expect(events.some((e) => e.type === "done")).toBe(true);
+  expect(events.some((e) => e.type === "text")).toBe(true);
+});
+
+  test.skipIf(!hasAnthropicAPI)("passes all generationOptions to streamText", async () => {
     // Given: Agent with generation options
     const agent = createDeepAgent({
       model: anthropic("claude-haiku-4-5-20251001"),
@@ -108,17 +113,14 @@ describe("Phase 1: Core Passthrough Options", () => {
     expect(events.some((e) => e.type === "done")).toBe(true);
   });
 
-  test("passes providerOptions to streamText", async () => {
+  test.skipIf(!hasAnthropicAPI)("passes providerOptions to streamText", async () => {
     // Given: Agent with provider-specific options
+    const providerOpts = { anthropic: { headers: { "test-header": "value" } } };
     const agent = createDeepAgent({
       model: anthropic("claude-haiku-4-5-20251001"),
       backend,
       advancedOptions: {
-        providerOptions: {
-          anthropic: {
-            // Valid Anthropic option (example)
-          },
-        },
+        providerOptions: providerOpts,
       },
     });
 
@@ -129,7 +131,7 @@ describe("Phase 1: Core Passthrough Options", () => {
     expect(events.some((e) => e.type === "done")).toBe(true);
   });
 
-  test("passes toolChoice and activeTools to streamText", async () => {
+  test.skipIf(!hasAnthropicAPI)("passes toolChoice and activeTools to streamText", async () => {
     // Given: Agent with tool control options
     const testTool = createMockTool("test_tool");
     const agent = createDeepAgent({
@@ -149,7 +151,7 @@ describe("Phase 1: Core Passthrough Options", () => {
     expect(events.some((e) => e.type === "step-finish")).toBe(true);
   });
 
-  test("passes experimental_context to streamText", async () => {
+  test.skipIf(!hasAnthropicAPI)("passes experimental_context to streamText", async () => {
     // Given: Agent with experimental context
     const agent = createDeepAgent({
       model: anthropic("claude-haiku-4-5-20251001"),
@@ -169,7 +171,7 @@ describe("Phase 1: Core Passthrough Options", () => {
     expect(events.some((e) => e.type === "done")).toBe(true);
   });
 
-  test("passes output configuration to streamText", async () => {
+  test.skipIf(!hasAnthropicAPI)("passes output configuration to streamText", async () => {
     // Given: Agent with output configuration
     const agent = createDeepAgent({
       model: anthropic("claude-haiku-4-5-20251001"),
@@ -188,7 +190,7 @@ describe("Phase 1: Core Passthrough Options", () => {
     expect(events.some((e) => e.type === "done")).toBe(true);
   });
 
-  test("handles multiple options together correctly", async () => {
+  test.skipIf(!hasAnthropicAPI)("handles multiple options together correctly", async () => {
     // Given: Agent with multiple option types
     const multiTool = createMockTool("multi_tool");
     const agent = createDeepAgent({
@@ -210,7 +212,7 @@ describe("Phase 1: Core Passthrough Options", () => {
     expect(events.some((e) => e.type === "step-finish")).toBe(true);
   });
 
-  test("handles undefined options gracefully", async () => {
+  test.skipIf(!hasAnthropicAPI)("handles undefined options gracefully", async () => {
     // Given: Agent with minimal configuration
     const agent = createDeepAgent({
       model: anthropic("claude-haiku-4-5-20251001"),
@@ -224,7 +226,7 @@ describe("Phase 1: Core Passthrough Options", () => {
     expect(events.some((e) => e.type === "done")).toBe(true);
   });
 
-  test("matches generate() behavior with same options", async () => {
+  test.skipIf(!hasAnthropicAPI)("matches generate() behavior with same options", async () => {
     // Given: Two agents with identical configurations
     const options = {
       model: anthropic("claude-haiku-4-5-20251001"),
@@ -250,7 +252,7 @@ describe("Phase 1: Core Passthrough Options", () => {
     expect(events.some((e) => e.type === "done")).toBe(true);
   });
 
-  test("preserves existing functionality with prompt caching", async () => {
+  test.skipIf(!hasAnthropicAPI)("preserves existing functionality with prompt caching", async () => {
     // Given: Agent with prompt caching enabled
     const agent = createDeepAgent({
       model: anthropic("claude-haiku-4-5-20251001"),
@@ -286,7 +288,7 @@ describe("Phase 2: loopControl Callback Composition", () => {
     prepareStepCalls = [];
   });
 
-  test("calls user's onStepFinish callback during streaming", async () => {
+  test.skipIf(!hasAnthropicAPI)("calls user's onStepFinish callback during streaming", async () => {
     // Given: Agent with onStepFinish callback
     const agent = createDeepAgent({
       model: anthropic("claude-haiku-4-5-20251001"),
@@ -307,7 +309,7 @@ describe("Phase 2: loopControl Callback Composition", () => {
     expect(events.some((e) => e.type === "step-finish")).toBe(true);
   });
 
-  test("applies custom stopWhen conditions in streaming", async () => {
+  test.skipIf(!hasAnthropicAPI)("applies custom stopWhen conditions in streaming", async () => {
     // Given: Agent with custom stop condition
     let stepCount = 0;
     const agent = createDeepAgent({
@@ -329,7 +331,7 @@ describe("Phase 2: loopControl Callback Composition", () => {
     expect(events.some((e) => e.type === "done")).toBe(true);
   });
 
-  test("executes prepareStep before each step", async () => {
+  test.skipIf(!hasAnthropicAPI)("executes prepareStep before each step", async () => {
     // Given: Agent with prepareStep callback
     const agent = createDeepAgent({
       model: anthropic("claude-haiku-4-5-20251001"),
@@ -350,7 +352,7 @@ describe("Phase 2: loopControl Callback Composition", () => {
     expect(events.some((e) => e.type === "done")).toBe(true);
   });
 
-  test("calls onFinish after completion", async () => {
+  test.skipIf(!hasAnthropicAPI)("calls onFinish after completion", async () => {
     // Given: Agent with onFinish callback
     const agent = createDeepAgent({
       model: anthropic("claude-haiku-4-5-20251001"),
@@ -370,7 +372,7 @@ describe("Phase 2: loopControl Callback Composition", () => {
     expect(events.some((e) => e.type === "done")).toBe(true);
   });
 
-  test("preserves checkpointing with user callbacks", async () => {
+  test.skipIf(!hasAnthropicAPI)("preserves checkpointing with user callbacks", async () => {
     // Given: Agent with both checkpointing and user callback
     const mockCheckpointer = {
       save: async (checkpoint: any) => {
@@ -409,7 +411,7 @@ describe("Phase 2: loopControl Callback Composition", () => {
     expect(events.some((e) => e.type === "done")).toBe(true);
   });
 
-  test("combines all callbacks correctly", async () => {
+  test.skipIf(!hasAnthropicAPI)("combines all callbacks correctly", async () => {
     // Given: Agent with all callback types
     const agent = createDeepAgent({
       model: anthropic("claude-haiku-4-5-20251001"),
@@ -450,7 +452,7 @@ describe("Phase 3: Summarization Telemetry", () => {
     backend = new StateBackend({ todos: [], files: {} });
   });
 
-  test("passes telemetry to summarization generateText", async () => {
+  test.skipIf(!hasAnthropicAPI)("passes telemetry to summarization generateText", async () => {
     // Given: Agent with telemetry and summarization enabled
     const agent = createDeepAgent({
       model: anthropic("claude-haiku-4-5-20251001"),
@@ -474,7 +476,7 @@ describe("Phase 3: Summarization Telemetry", () => {
     expect(events.some((e) => e.type === "done")).toBe(true);
   });
 
-  test("includes provider options in summarization", async () => {
+  test.skipIf(!hasAnthropicAPI)("includes provider options in summarization", async () => {
     // Given: Agent with provider options and summarization
     const agent = createDeepAgent({
       model: anthropic("claude-haiku-4-5-20251001"),
@@ -497,7 +499,7 @@ describe("Phase 3: Summarization Telemetry", () => {
     expect(events.some((e) => e.type === "done")).toBe(true);
   });
 
-  test("applies generation options to summarization", async () => {
+  test.skipIf(!hasAnthropicAPI)("applies generation options to summarization", async () => {
     // Given: Agent with generation options and summarization
     const agent = createDeepAgent({
       model: anthropic("claude-haiku-4-5-20251001"),
@@ -519,7 +521,7 @@ describe("Phase 3: Summarization Telemetry", () => {
     expect(events.some((e) => e.type === "done")).toBe(true);
   });
 
-  test("works without telemetry options in summarization", async () => {
+  test.skipIf(!hasAnthropicAPI)("works without telemetry options in summarization", async () => {
     // Given: Agent with summarization but no telemetry
     const agent = createDeepAgent({
       model: anthropic("claude-haiku-4-5-20251001"),
@@ -538,7 +540,7 @@ describe("Phase 3: Summarization Telemetry", () => {
     expect(events.some((e) => e.type === "done")).toBe(true);
   });
 
-  test("preserves summarization configuration with telemetry", async () => {
+  test.skipIf(!hasAnthropicAPI)("preserves summarization configuration with telemetry", async () => {
     // Given: Agent with custom summarization config
     const agent = createDeepAgent({
       model: anthropic("claude-haiku-4-5-20251001"),
@@ -567,7 +569,7 @@ describe("Phase 3: Summarization Telemetry", () => {
 // ============================================================================
 
 describe("Integration: Complete Telemetry Flow", () => {
-  test("end-to-end telemetry with streaming and summarization", async () => {
+  test.skipIf(!hasAnthropicAPI)("end-to-end telemetry with streaming and summarization", async () => {
     // Given: Fully configured agent
     const integrationTool = createMockTool("integration_tool");
     const agent = createDeepAgent({
@@ -611,7 +613,7 @@ describe("Integration: Complete Telemetry Flow", () => {
 // ============================================================================
 
 describe("Edge Cases", () => {
-  test("handles empty options objects", async () => {
+  test.skipIf(!hasAnthropicAPI)("handles empty options objects", async () => {
     // Given: Agent with empty options
     const agent = createDeepAgent({
       model: anthropic("claude-haiku-4-5-20251001"),
@@ -628,7 +630,7 @@ describe("Edge Cases", () => {
     expect(events.some((e) => e.type === "done")).toBe(true);
   });
 
-  test("preserves maxSteps with loopControl.stopWhen", async () => {
+  test.skipIf(!hasAnthropicAPI)("preserves maxSteps with loopControl.stopWhen", async () => {
     // Given: Agent with both maxSteps and stopWhen
     const agent = createDeepAgent({
       model: anthropic("claude-haiku-4-5-20251001"),
@@ -645,7 +647,7 @@ describe("Edge Cases", () => {
     expect(events.some((e) => e.type === "done")).toBe(true);
   });
 
-  test("handles callback errors gracefully", async () => {
+  test.skipIf(!hasAnthropicAPI)("handles callback errors gracefully", async () => {
     // Given: Agent with error-throwing callback
     const agent = createDeepAgent({
       model: anthropic("claude-haiku-4-5-20251001"),
