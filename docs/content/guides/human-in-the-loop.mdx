@@ -1,0 +1,616 @@
+---
+title: Human-in-the-Loop
+description: Learn how to configure human approval for sensitive tool operations
+---
+
+Some tool operations may be sensitive and require human approval before execution. Deep agents support **human-in-the-loop (HITL)** workflows through the `interruptOn` configuration and approval callbacks.
+
+<Callout type="info">
+**Think of HITL as** a safety checkpoint - agents pause before dangerous operations and wait for your go-ahead.
+</Callout>
+
+## Overview
+
+### What is Human-in-the-Loop?
+
+Human-in-the-loop (HITL) gives you control over which tool operations require approval:
+
+```typescript
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-5-20250929'),
+  interruptOn: {
+    write_file: true,  // Require approval before writing files
+    edit_file: true,   // Require approval before editing
+    execute: true,     // Require approval before running commands
+  },
+});
+```
+
+### Why Use HITL?
+
+- **Safety**: Prevent accidental deletion of files or execution of harmful commands
+- **Compliance**: Meet audit requirements for sensitive operations
+- **Quality**: Review and refine tool arguments before execution
+- **Learning**: Understand what the agent is doing and why
+- **Control**: Stay in the loop while automating complex tasks
+
+### When to Use HITL?
+
+✅ **Recommended for:**
+- File operations (write, edit, delete)
+- Shell command execution
+- HTTP requests to external APIs
+- Database modifications
+- Email sending or notifications
+
+❌ **Not needed for:**
+- Read operations (read_file, ls, grep, glob)
+- Todo list updates (write_todos)
+- Non-destructive operations
+
+---
+
+## Basic Configuration
+
+### Boolean Configuration
+
+The simplest form - enable or disable interrupts per tool:
+
+```typescript
+import { createDeepAgent } from 'ai-sdk-deep-agent';
+import { anthropic } from '@ai-sdk/anthropic';
+
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-5-20250929'),
+  interruptOn: {
+    write_file: true,   // Always require approval
+    edit_file: true,    // Always require approval
+    execute: true,      // Always require approval
+    read_file: false,   // Never require approval
+    ls: false,          // Never require approval
+  },
+});
+```
+
+### Dynamic Approval
+
+Use a function to conditionally require approval based on arguments:
+
+```typescript
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-5-20250929'),
+  interruptOn: {
+    // Only require approval for dangerous commands
+    execute: {
+      shouldApprove: (args: { command: string }) => {
+        const dangerous = ['rm -rf', 'sudo', 'format', 'delete'];
+        return dangerous.some(cmd => args.command.includes(cmd));
+      },
+    },
+
+    // Only require approval for large file writes
+    write_file: {
+      shouldApprove: (args: { path: string; content: string }) => {
+        // Approve if file is small
+        if (args.content.length < 1000) return false;
+        // Require approval if file is large
+        return true;
+      },
+    },
+  },
+});
+```
+
+---
+
+## Approval Workflow
+
+### Step 1: Configure Agent
+
+```typescript
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-5-20250929'),
+  interruptOn: {
+    write_file: true,
+    edit_file: true,
+    execute: true,
+  },
+});
+```
+
+### Step 2: Provide Approval Callback
+
+```typescript
+for await (const event of agent.streamWithEvents({
+  prompt: 'Delete all test files and create a new README',
+  onApprovalRequest: async (request) => {
+    const { approvalId, toolName, args } = request;
+
+    console.log(`\n⚠️  Tool "${toolName}" requires approval`);
+    console.log('Arguments:', JSON.stringify(args, null, 2));
+    console.log(`Approval ID: ${approvalId}`);
+
+    // Prompt user for decision
+    const answer = await promptUser('Approve? (y/n): ');
+    return answer.toLowerCase() === 'y';
+  },
+})) {
+  // Handle events...
+}
+```
+
+### Step 3: User Approves or Denies
+
+When a tool requires approval:
+
+```
+⚠️  Tool "write_file" requires approval
+Arguments: {
+  "path": "/README.md",
+  "content": "# My Project\n..."
+}
+Approval ID: approve_123abc
+
+Approve? (y/n): y
+```
+
+### Approval Callback Signature
+
+```typescript
+type ApprovalCallback = (request: {
+  approvalId: string;     // Unique ID for tracking
+  toolCallId: string;     // AI SDK's tool call ID
+  toolName: string;       // Name of tool being called
+  args: unknown;          // Arguments that will be passed
+}) => Promise<boolean>;   // Return true to approve, false to deny
+```
+
+---
+
+## Advanced Patterns
+
+### Pattern 1: Edit Before Approving
+
+Allow users to modify tool arguments before execution:
+
+```typescript
+import { createDeepAgent } from 'ai-sdk-deep-agent';
+
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-5-20250929'),
+  interruptOn: {
+    write_file: true,
+  },
+});
+
+for await (const event of agent.streamWithEvents({
+  prompt: 'Create a README with project description',
+  onApprovalRequest: async ({ toolName, args }) => {
+    console.log(`\n⚠️  Tool: ${toolName}`);
+    console.log('Path:', args.path);
+    console.log('Content preview:', args.content.substring(0, 100) + '...');
+
+    const action = await promptUser('(A)pprove, (E)dit, (D)eny: ');
+
+    if (action === 'A') {
+      return true; // Approve as-is
+    } else if (action === 'E') {
+      // Let user edit the content
+      const newContent = await openEditor(args.content);
+      args.content = newContent; // Modify arguments
+      return true; // Approve with edits
+    } else {
+      return false; // Deny
+    }
+  },
+})) {
+  // Handle events...
+}
+```
+
+### Pattern 2: Auto-Approve Safe Operations
+
+```typescript
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-5-20250929'),
+  interruptOn: {
+    write_file: {
+      shouldApprove: (args: { path: string; content: string }) => {
+        // Auto-approve files in safe directories
+        if (args.path.startsWith('/tmp/')) return false;
+        if (args.path.startsWith('/sandbox/')) return false;
+
+        // Require approval for other paths
+        return true;
+      },
+    },
+  },
+});
+```
+
+### Pattern 3: Batch Approval
+
+Approve multiple similar operations at once:
+
+```typescript
+let approvedPaths = new Set<string>();
+
+for await (const event of agent.streamWithEvents({
+  prompt: 'Create multiple documentation files',
+  onApprovalRequest: async ({ toolName, args }) => {
+    if (toolName === 'write_file') {
+      // Already approved this path?
+      if (approvedPaths.has(args.path)) {
+        return true;
+      }
+
+      console.log(`\nCreate ${args.path}?`);
+      const answer = await promptUser('(Y)es, (A)ll files, (N)o: ');
+
+      if (answer === 'A') {
+        // Auto-approve all writes from now on
+        approvedPaths.add(args.path);
+        return true;
+      }
+
+      return answer === 'Y';
+    }
+
+    return false;
+  },
+})) {
+  // Handle events...
+}
+```
+
+### Pattern 4: Conditional Approval Based on Risk
+
+```typescript
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-5-20250929'),
+  interruptOn: {
+    execute: {
+      shouldApprove: (args: { command: string }) => {
+        const cmd = args.command;
+
+        // High risk: always approve
+        if (cmd.includes('rm -rf')) return true;
+        if (cmd.includes('sudo')) return true;
+        if (cmd.includes('format')) return true;
+
+        // Medium risk: require approval only in production
+        if (cmd.includes('deploy') && process.env.NODE_ENV === 'production') {
+          return true;
+        }
+
+        // Low risk: auto-approve
+        return false;
+      },
+    },
+  },
+});
+```
+
+---
+
+## CLI Integration
+
+### Interactive Approval in CLI
+
+The built-in CLI provides an interactive approval UI:
+
+```typescript
+// From CLI implementation
+onApprovalRequest: async ({ toolName, args }) => {
+  if (autoApproveEnabled) {
+    return true; // Skip approval in auto-approve mode
+  }
+
+  // Show approval UI
+  setPendingApproval({
+    approvalId,
+    toolName,
+    args,
+  });
+
+  // Wait for user input
+  return new Promise<boolean>((resolve) => {
+    approvalResolverRef.current = resolve;
+  });
+}
+```
+
+### CLI Approval UI
+
+```
+┌─────────────────────────────────────────┐
+│  🛑 Tool Approval Required              │
+│  ────────────────────────────────────  │
+│  Tool: write_file                       │
+│                                         │
+│  Arguments:                             │
+│  {                                     │
+│    "path": "src/config.ts",            │
+│    "content": "export const config..."  │
+│  }                                     │
+│                                         │
+│  [Y] Approve  [N] Deny  [A] Approve All │
+└─────────────────────────────────────────┘
+```
+
+---
+
+## Subagent Approval
+
+Subagents can have their own `interruptOn` configuration that overrides the main agent's settings:
+
+```typescript
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-5-20250929'),
+  interruptOn: {
+    write_file: false,  // Main agent: no approval needed
+    read_file: false,
+  },
+  subagents: [
+    {
+      name: 'file-manager',
+      description: 'Manages file operations',
+      systemPrompt: 'You handle file operations...',
+      tools: [writeFileTool, readFileTool],
+      interruptOn: {
+        // Override: require approval for this subagent
+        write_file: true,
+        read_file: true,
+      },
+    },
+  ],
+});
+```
+
+### Approval Flow with Subagents
+
+```typescript
+for await (const event of agent.streamWithEvents({
+  prompt: 'Use the file-manager to update configuration',
+  onApprovalRequest: async ({ toolName, args, subagentType }) => {
+    if (subagentType) {
+      console.log(`Subagent "${subagentType}" wants to run ${toolName}`);
+    }
+    return await askUser();
+  },
+})) {
+  // Handle events...
+}
+```
+
+---
+
+## Best Practices
+
+### 1. Require Approval for Destructive Operations
+
+```typescript
+// ✅ Good: Protect dangerous tools
+const agent = createDeepAgent({
+  interruptOn: {
+    write_file: true,
+    edit_file: true,
+    execute: true,
+    delete_file: true, // If you have this tool
+  },
+});
+```
+
+### 2. Use Dynamic Approval for Smart Defaults
+
+```typescript
+// ✅ Good: Auto-approve safe operations
+const agent = createDeepAgent({
+  interruptOn: {
+    execute: {
+      shouldApprove: (args) => {
+        // Allow safe commands
+        const safe = ['ls', 'cat', 'echo', 'pwd'];
+        if (safe.some(cmd => args.command.startsWith(cmd))) {
+          return false;
+        }
+        // Require approval for everything else
+        return true;
+      },
+    },
+  },
+});
+```
+
+### 3. Provide Clear Context in Approval UI
+
+```typescript
+// ✅ Good: Show what will happen
+onApprovalRequest: async ({ toolName, args }) => {
+  console.log(`\n${'='.repeat(50)}`);
+  console.log(`⚠️  Approval Required: ${toolName}`);
+  console.log('─'.repeat(50));
+
+  if (toolName === 'execute') {
+    console.log(`Command: ${args.command}`);
+    console.log(`Working directory: ${process.cwd()}`);
+  } else if (toolName === 'write_file') {
+    console.log(`File: ${args.path}`);
+    console.log(`Size: ${args.content.length} bytes`);
+    console.log(`Preview:\n${args.content.substring(0, 200)}...`);
+  }
+
+  console.log('─'.repeat(50));
+  return await promptUser('Approve? (y/n): ');
+};
+```
+
+### 4. Log All Approval Decisions
+
+```typescript
+// ✅ Good: Audit trail
+onApprovalRequest: async ({ toolName, args, approvalId }) => {
+  const decision = await askUser();
+
+  // Log for audit
+  console.log(`[${new Date().toISOString()}] Approval ${decision ? 'GRANTED' : 'DENIED'}`);
+  console.log(`  Tool: ${toolName}`);
+  console.log(`  Approval ID: ${approvalId}`);
+  console.log(`  Decision: ${decision}`);
+
+  return decision;
+};
+```
+
+### 5. Implement Timeout for Approval Requests
+
+```typescript
+// ✅ Good: Don't hang forever
+onApprovalRequest: async ({ toolName, args }) => {
+  const timeout = 30000; // 30 seconds
+
+  const decision = await Promise.race([
+    promptUser('Approve? (y/n): '),
+    new Promise<boolean>((resolve) =>
+      setTimeout(() => resolve(false), timeout)
+    ),
+  ]);
+
+  if (!decision) {
+    console.log('Approval timed out - denying request');
+  }
+
+  return decision;
+};
+```
+
+---
+
+## Troubleshooting
+
+### Tools Not Requiring Approval
+
+**Problem**: Tools execute without prompting for approval.
+
+**Solutions**:
+
+1. **Check `interruptOn` configuration**:
+
+```typescript
+// Make sure tools are listed
+const agent = createDeepAgent({
+  interruptOn: {
+    write_file: true,  // ✅ Listed
+    // execute: true, // ❌ Missing - execute won't require approval
+  },
+});
+```
+
+2. **Verify approval callback is provided**:
+
+```typescript
+// ❌ Wrong: No callback - tools will auto-deny
+for await (const event of agent.streamWithEvents({
+  prompt: 'Create a file',
+  // Missing: onApprovalRequest
+})) {
+  // ...
+}
+
+// ✅ Correct: Include callback
+for await (const event of agent.streamWithEvents({
+  prompt: 'Create a file',
+  onApprovalRequest: async (req) => {
+    return await askUser();
+  },
+})) {
+  // ...
+}
+```
+
+### Approval Callback Not Being Called
+
+**Problem**: Callback never fires even though `interruptOn` is configured.
+
+**Cause**: Missing or misconfigured callback.
+
+**Solution**:
+
+```typescript
+// Ensure callback is async
+onApprovalRequest: async ({ toolName, args }) => {
+  // Must return Promise<boolean>
+  return true;
+};
+```
+
+### Always Getting Denied
+
+**Problem**: Tools are automatically denied without prompting.
+
+**Cause**: `interruptOn` is configured but no callback provided.
+
+**Solution**:
+
+```typescript
+// Either provide callback
+onApprovalRequest: async (req) => true,
+
+// Or remove interruptOn for tools that don't need approval
+interruptOn: {
+  write_file: false, // No approval needed
+},
+```
+
+---
+
+## Configuration Reference
+
+### InterruptOnConfig Type
+
+```typescript
+type InterruptOnConfig = Record<
+  string,  // Tool name
+  boolean | DynamicApprovalConfig
+>;
+
+interface DynamicApprovalConfig {
+  shouldApprove?: (args: unknown) => boolean | Promise<boolean>;
+}
+```
+
+### ApprovalCallback Type
+
+```typescript
+type ApprovalCallback = (request: {
+  approvalId: string;     // Unique ID for this request
+  toolCallId: string;     // AI SDK's tool call ID
+  toolName: string;       // Name of tool being called
+  args: unknown;          // Arguments that will be passed
+}) => Promise<boolean>;   // Return true to approve, false to deny
+```
+
+---
+
+## Summary
+
+Human-in-the-loop provides:
+
+| Feature | Benefit |
+|---------|---------|
+| **Safety** | Prevent accidental damage |
+| **Compliance** | Meet audit requirements |
+| **Control** | Stay informed and in charge |
+| **Flexibility** | Configure per-tool or conditional approval |
+| **Subagent Support** | Different approval rules per subagent |
+| **CLI Integration** | Built-in interactive approval UI |
+
+<Callout type="success">
+**Best Practice**: Start with approval enabled for destructive tools (write, edit, execute), then refine with dynamic approval based on your use case.
+</Callout>
+
+## Next Steps
+
+- [Agent Harness](/docs/guides/harness) - Learn about built-in tools
+- [Customization](/docs/guides/customization) - Configure agents for your use case
+- [CLI Documentation](/docs/get-started/cli) - Interactive CLI with HITL support

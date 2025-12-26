@@ -1,0 +1,573 @@
+---
+title: Agent Harness Capabilities
+description: Complete guide to built-in tools and capabilities in the deep agent harness
+---
+
+The **agent harness** is the core runtime that provides deep agents with their advanced capabilities. It wraps AI SDK's `ToolLoopAgent` with built-in tools and features that enable complex, multi-step reasoning.
+
+<Callout type="info">
+**Think of the harness as** an "agent operating system" - it provides the environment and tools agents need to tackle complex tasks.
+</Callout>
+
+## Overview
+
+The harness provides:
+
+1. **File system access** - Six tools for file operations
+2. **Task planning** - Built-in `write_todos` tool for decomposition
+3. **Subagent spawning** - `task` tool for delegating work
+4. **Tool result eviction** - Automatic context management
+5. **Human-in-the-loop** - Approval workflows for sensitive operations
+6. **Event streaming** - Real-time observability
+
+---
+
+## File System Access
+
+The harness provides six tools for file system operations, making files first-class citizens in the agent's environment:
+
+### Available Tools
+
+| Tool | Description |
+|------|-------------|
+| `ls` | List files in a directory with metadata (size, modified time) |
+| `read_file` | Read file contents with line numbers, supports offset/limit for large files |
+| `write_file` | Create new files |
+| `edit_file` | Perform exact string replacements in files (with global replace mode) |
+| `glob` | Find files matching patterns (e.g., `**/*.ts`) |
+| `grep` | Search file contents with multiple output modes (files only, content with context, or counts) |
+
+### Tool Usage Examples
+
+```typescript
+import { createDeepAgent } from 'ai-sdk-deep-agent';
+import { anthropic } from '@ai-sdk/anthropic';
+
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-5-20250929'),
+});
+
+// Agent can use all filesystem tools
+const result = await agent.generate({
+  prompt: `
+  1. List all TypeScript files in the src directory
+  2. Read the main.ts file
+  3. Search for "TODO" comments across all files
+  4. Create a summary file
+  `,
+});
+```
+
+### Tool Result Eviction
+
+The harness automatically dumps large tool results to the file system when they exceed a token threshold, preventing context window saturation.
+
+**How it works:**
+
+1. Monitors tool call results for size (default threshold: 20,000 tokens)
+2. When exceeded, writes the result to a file instead
+3. Replaces the tool result with a concise reference to the file
+4. Agent can later read the file if needed
+
+**Configuration:**
+
+```typescript
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-5-20250929'),
+  toolResultEvictionLimit: 20000, // Default: 20,000 tokens
+});
+```
+
+<Callout type="warn">
+**Token Savings**: Without eviction, reading a 10,000-line file would consume ~50,000 tokens. With eviction, it uses ~500 tokens (file reference) + the specific lines the agent actually reads.
+</Callout>
+
+---
+
+## Pluggable Storage Backends
+
+The harness abstracts file system operations behind a protocol, allowing different storage strategies for different use cases.
+
+### Built-in Backends
+
+| Backend | Description | Use Case |
+|---------|-------------|----------|
+| **StateBackend** | Ephemeral in-memory storage | Temporary working files, single-thread conversations |
+| **FilesystemBackend** | Real filesystem access | Local projects, CI sandboxes, mounted volumes |
+| **PersistentBackend** | Cross-conversation storage | Long-term memory, knowledge bases |
+| **CompositeBackend** | Route different paths to different backends | Hybrid storage strategies |
+
+### Backend Configuration
+
+```typescript
+import {
+  StateBackend,
+  FilesystemBackend,
+  PersistentBackend,
+  CompositeBackend
+} from 'ai-sdk-deep-agent';
+
+// Example 1: Simple filesystem access
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-5-20250929'),
+  backend: new FilesystemBackend({ rootDir: './workspace' }),
+});
+
+// Example 2: Hybrid storage (ephemeral + persistent)
+const backend = new CompositeBackend(
+  new StateBackend(), // Default: ephemeral
+  {
+    '/memories/': new PersistentBackend({ store: myStore }),
+  }
+);
+
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-5-20250929'),
+  backend,
+});
+```
+
+**See:** [Backends Documentation](/docs/guides/backends) for complete backend guide.
+
+---
+
+## Task Delegation (Subagents)
+
+The harness allows the main agent to create ephemeral "subagents" for isolated multi-step tasks.
+
+### Why Use Subagents?
+
+- **Context isolation** - Subagent's work doesn't clutter main agent's context
+- **Parallel execution** - Multiple subagents can run concurrently
+- **Specialization** - Subagents can have different tools/configurations
+- **Token efficiency** - Large subtask context is compressed into a single result
+
+### How It Works
+
+1. Main agent has a `task` tool
+2. When invoked, creates a fresh agent instance with its own context
+3. Subagent executes autonomously until completion
+4. Returns a single final report to the main agent
+5. Subagents are stateless (can't send multiple messages back)
+
+### General-Purpose Subagent
+
+In addition to any user-defined subagents, deep agents have access to a `general-purpose` subagent at all times:
+
+```typescript
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-5-20250929'),
+  // No subagents needed - general-purpose is always available
+});
+
+// Agent can delegate complex tasks automatically
+const result = await agent.generate({
+  prompt: 'Analyze this codebase and find all API endpoints',
+  // Agent may use task tool to delegate to general-purpose subagent
+});
+```
+
+**See:** [Subagents Documentation](/docs/guides/subagents) for complete subagent guide.
+
+---
+
+## To-Do List Tracking
+
+The harness provides a `write_todos` tool that agents can use to maintain a structured task list.
+
+### Features
+
+- Track multiple tasks with statuses (pending, in_progress, completed)
+- Persisted in agent state
+- Helps agent organize complex multi-step work
+- Useful for long-running tasks and planning
+
+### Example Usage
+
+```typescript
+const result = await agent.generate({
+  prompt: 'Build a REST API with authentication',
+});
+
+// Access the todo list
+result.state.todos.forEach(todo => {
+  console.log(`[${todo.status}] ${todo.content}`);
+});
+
+// Output:
+// [completed] Design API endpoints
+// [completed] Set up project structure
+// [in_progress] Implement authentication middleware
+// [pending] Add input validation
+// [pending] Write tests
+```
+
+<Callout type="info">
+**Automatic Planning**: Agents are prompted to use `write_todos` before starting complex tasks. This happens automatically - you don't need to instruct them to do it.
+</Callout>
+
+---
+
+## Human-in-the-Loop
+
+The harness pauses agent execution at specified tool calls to allow human approval/modification.
+
+### Configuration
+
+```typescript
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-5-20250929'),
+  interruptOn: {
+    write_file: true,  // Pause before every write
+    edit_file: true,
+    execute: true,
+  },
+});
+```
+
+### Approval Workflow
+
+```typescript
+for await (const event of agent.streamWithEvents({
+  prompt: 'Delete all test files',
+  onApprovalRequest: async ({ toolName, args }) => {
+    console.log(`\n⚠️  Tool "${toolName}" requires approval`);
+    console.log('Arguments:', JSON.stringify(args, null, 2));
+
+    // Prompt user for approval
+    const answer = await promptUser('Approve? (y/n): ');
+    return answer.toLowerCase() === 'y';
+  },
+})) {
+  // Handle events...
+}
+```
+
+**See:** [Human-in-the-Loop Documentation](/docs/guides/human-in-the-loop) for complete approval workflow guide.
+
+---
+
+## Conversation History Summarization
+
+The harness automatically compresses old conversation history when token usage becomes excessive.
+
+### Configuration
+
+```typescript
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-5-20250929'),
+  summarization: {
+    tokenThreshold: 170000,  // Trigger at 170k tokens
+    keepMessages: 6,          // Keep 6 most recent messages
+    model: anthropic('claude-haiku-4-5-20251001'), // Model for summarization
+  },
+});
+```
+
+### How It Works
+
+1. Monitors conversation token count
+2. When threshold exceeded, summarizes old messages
+3. Keeps recent messages intact (default: 6)
+4. Replaces old messages with a summary
+5. Transparent to agent (appears as special system message)
+
+<Callout type="success">
+**Benefit**: Enables very long conversations without hitting context limits while preserving recent context for continuity.
+</Callout>
+
+---
+
+## Interrupt Message Repair
+
+The harness fixes message history when tool calls are interrupted or cancelled before receiving results.
+
+### The Problem
+
+1. Agent requests tool call: "Please run X"
+2. Tool call is interrupted (user cancels, error, etc.)
+3. Agent sees tool_call in AIMessage but no corresponding ToolMessage
+4. This creates an invalid message sequence
+
+### The Solution
+
+The harness detects AIMessages with tool_calls that have no results and creates synthetic ToolMessage responses indicating the call was cancelled, then repairs the message history before agent execution.
+
+<Callout type="info">
+**Why This Matters**: Prevents agent confusion from incomplete message chains and gracefully handles interruptions and errors, maintaining conversation coherence.
+</Callout>
+
+---
+
+## Prompt Caching (Anthropic)
+
+The harness enables Anthropic's prompt caching feature to reduce redundant token processing.
+
+### How It Works
+
+1. Caches portions of the prompt that repeat across turns
+2. Significantly reduces latency and cost for long system prompts
+3. Automatically skips for non-Anthropic models
+
+### Configuration
+
+```typescript
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-5-20250929'),
+  enablePromptCaching: true, // Default: true for Anthropic models
+});
+```
+
+<Callout type="success">
+**Performance**: System prompts (especially with filesystem docs) can be 5k+ tokens. Caching provides ~10x speedup and cost reduction for cached portions.
+</Callout>
+
+---
+
+## Event Streaming
+
+The harness provides real-time events for observability and debugging.
+
+### Event Types
+
+```typescript
+for await (const event of agent.streamWithEvents({
+  prompt: 'Build a web app',
+})) {
+  switch (event.type) {
+    case 'text':
+      // Streaming text chunks
+      process.stdout.write(event.text);
+      break;
+
+    case 'step-start':
+      // New reasoning step
+      console.log(`\n--- Step ${event.step} ---`);
+      break;
+
+    case 'tool-call':
+      // Tool being executed
+      console.log(`Tool: ${event.toolName}`);
+      break;
+
+    case 'todos-changed':
+      // Todo list updated
+      console.log(`Todos: ${event.todos.length} total`);
+      break;
+
+    case 'file-written':
+      // File created
+      console.log(`Created: ${event.path}`);
+      break;
+
+    case 'subagent-start':
+      // Subagent spawned
+      console.log(`Subagent: ${event.subagentType}`);
+      break;
+
+    case 'done':
+      // Task complete
+      console.log('\n✅ Done!');
+      break;
+  }
+}
+```
+
+### All Event Types
+
+| Event Type | Description |
+|------------|-------------|
+| `text` | Streaming text chunks |
+| `step-start` | New reasoning step began |
+| `step-finish` | Reasoning step completed |
+| `tool-call` | Tool was called |
+| `tool-result` | Tool returned a result |
+| `todos-changed` | Todo list was updated |
+| `file-write-start` | File write is starting |
+| `file-written` | File was written successfully |
+| `file-edited` | File was edited |
+| `file-read` | File was read |
+| `ls` | Directory was listed |
+| `glob` | Glob search completed |
+| `grep` | Grep search completed |
+| `web-search-start` | Web search started |
+| `web-search-finish` | Web search completed |
+| `http-request-start` | HTTP request started |
+| `http-request-finish` | HTTP request completed |
+| `subagent-start` | Subagent was spawned |
+| `subagent-finish` | Subagent completed |
+| `error` | An error occurred |
+| `done` | Agent finished successfully |
+
+---
+
+## Web Tools (Optional)
+
+When `TAVILY_API_KEY` is set, the harness automatically adds web search and HTTP request tools.
+
+### Available Web Tools
+
+| Tool | Description | Requires |
+|------|-------------|----------|
+| `web_search` | Search the web using Tavily API | `TAVILY_API_KEY` |
+| `http_request` | Make HTTP requests | `TAVILY_API_KEY` |
+| `fetch_url` | Fetch and read URL content | `TAVILY_API_KEY` |
+
+### Configuration
+
+```bash
+# Set environment variable
+export TAVILY_API_KEY=tvly-your-key-here
+```
+
+```typescript
+// Web tools are automatically available
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-5-20250929'),
+});
+
+// Agent can now search the web
+const result = await agent.generate({
+  prompt: 'Search for recent AI news and summarize',
+});
+```
+
+---
+
+## Command Execution (Optional)
+
+When using `LocalSandbox` backend, the harness adds an `execute` tool for running shell commands.
+
+### Configuration
+
+```typescript
+import { LocalSandbox } from 'ai-sdk-deep-agent';
+
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-5-20250929'),
+  backend: new LocalSandbox({
+    cwd: './workspace',
+    timeout: 60000, // 60 second timeout
+  }),
+});
+
+// execute tool is automatically added
+const result = await agent.generate({
+  prompt: 'Initialize a Node.js project and install dependencies',
+});
+```
+
+<Callout type="warn">
+**Safety**: The execute tool is powerful. Consider enabling `interruptOn` for approval workflows when using it.
+</Callout>
+
+---
+
+## Best Practices
+
+### 1. Choose the Right Backend
+
+```typescript
+// ✅ Good: Match backend to use case
+const agent = createDeepAgent({
+  backend: new FilesystemBackend({ rootDir: './project' }),
+  // Use for: Working with existing codebases
+
+  backend: new StateBackend(),
+  // Use for: Temporary scratch space
+
+  backend: new CompositeBackend(stateBackend, {
+    '/memories/': persistentBackend,
+  }),
+  // Use for: Hybrid ephemeral + persistent storage
+});
+```
+
+### 2. Enable Tool Result Eviction for Large Files
+
+```typescript
+// ✅ Good: Prevent context bloat
+const agent = createDeepAgent({
+  toolResultEvictionLimit: 20000,
+});
+```
+
+### 3. Use Human-in-the-Loop for Destructive Operations
+
+```typescript
+// ✅ Good: Require approval for dangerous tools
+const agent = createDeepAgent({
+  interruptOn: {
+    write_file: true,
+    edit_file: true,
+    execute: true,
+  },
+});
+```
+
+### 4. Leverage Subagents for Complex Tasks
+
+```typescript
+// ✅ Good: Define specialized subagents
+const agent = createDeepAgent({
+  subagents: [
+    {
+      name: 'researcher',
+      description: 'Conducts in-depth research',
+      systemPrompt: 'You are a research specialist...',
+      tools: [webSearchTool],
+    },
+    {
+      name: 'coder',
+      description: 'Writes and reviews code',
+      systemPrompt: 'You are a software engineer...',
+      tools: [executeTool, fileTools],
+    },
+  ],
+});
+```
+
+### 5. Monitor Events for Observability
+
+```typescript
+// ✅ Good: Stream events for debugging
+for await (const event of agent.streamWithEvents({
+  prompt: complexTask,
+  onEvent: (event) => {
+    // Log all events for debugging
+    console.log('[EVENT]', event.type, event);
+  },
+})) {
+  // Handle UI updates...
+}
+```
+
+---
+
+## Summary
+
+The agent harness provides:
+
+| Capability | Tool/Feature | Benefit |
+|------------|--------------|---------|
+| File operations | `ls`, `read_file`, `write_file`, `edit_file`, `glob`, `grep` | Persistent context management |
+| Task planning | `write_todos` | Automatic decomposition |
+| Subagent spawning | `task` tool | Context isolation |
+| Storage abstraction | Backend system | Flexible persistence |
+| Human-in-the-loop | `interruptOn` | Safety controls |
+| Context management | Tool result eviction | Token efficiency |
+| Observability | Event streaming | Real-time monitoring |
+| Long conversations | Summarization | Unlimited context |
+| Web access | `web_search`, `http_request` | Live information |
+| Code execution | `execute` (with LocalSandbox) | Project automation |
+
+<Callout type="success">
+**Key Insight**: The harness transforms a basic tool-calling agent into a sophisticated system capable of planning, context management, delegation, and long-running tasks.
+</Callout>
+
+## Next Steps
+
+- [Backends Documentation](/docs/guides/backends) - Deep dive into storage options
+- [Subagents Documentation](/docs/guides/subagents) - Master subagent patterns
+- [Human-in-the-Loop Documentation](/docs/guides/human-in-the-loop) - Implement approval workflows
+- [Middleware Documentation](/docs/guides/middleware) - Extend harness with custom behavior

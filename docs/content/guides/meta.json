@@ -1,11 +1,16 @@
 {
   "title": "Guides",
   "pages": [
+    "harness",
+    "backends",
+    "subagents",
+    "human-in-the-loop",
+    "long-term-memory",
+    "middleware",
+    "customization",
     "cli-usage",
     "checkpointers",
-    "agent-memory",
-    "customization"
+    "agent-memory"
   ],
   "defaultOpen": false
 }
-

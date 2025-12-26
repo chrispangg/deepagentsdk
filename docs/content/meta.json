@@ -1,12 +1,12 @@
 {
-    "title": "Documentation",
-    "pages": [
-        "index",
-        "get-started",
-        "---Guides---",
-        "guides",
-        "---Reference---",
-        "reference"
-    ],
-    "defaultOpen": true
+  "title": "Documentation",
+  "pages": [
+    "overview",
+    "...get-started",
+    "---Guides---",
+    "...guides",
+    "---Reference---",
+    "...reference"
+  ],
+  "defaultOpen": true
 }

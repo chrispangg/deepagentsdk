@@ -1,0 +1,813 @@
+---
+title: Backends
+description: Choose and configure filesystem backends for deep agents
+---
+
+Deep agents expose a **virtual filesystem** through tools like `ls`, `read_file`, `write_file`, `edit_file`, `glob`, and `grep`. These tools operate through a pluggable backend system that allows different storage strategies for different use cases.
+
+<Callout type="info">
+**Think of backends as** the "storage driver" for your agent's filesystem - they determine where and how files are stored.
+</Callout>
+
+## Overview
+
+### Backend Types
+
+| Backend | Storage | Persistence | Speed | Use Case |
+|---------|---------|-------------|-------|----------|
+| **StateBackend** | In-memory (`DeepAgentState.files`) | Single thread | Fastest | Default, testing |
+| **FilesystemBackend** | Disk files | Cross-session (process) | Fast | CLI tools, codebases |
+| **PersistentBackend** | Key-value store | Cross-thread (indefinite) | Medium | Cloud, multi-user |
+| **CompositeBackend** | Routes to multiple backends | Varies by route | Varies | Hybrid strategies |
+
+### Quick Reference
+
+```typescript
+import {
+  StateBackend,
+  FilesystemBackend,
+  PersistentBackend,
+  CompositeBackend
+} from 'ai-sdk-deep-agent';
+
+// Default (ephemeral)
+const agent1 = createDeepAgent({
+  backend: new StateBackend(), // or omit entirely
+});
+
+// Disk persistence
+const agent2 = createDeepAgent({
+  backend: new FilesystemBackend({ rootDir: './workspace' }),
+});
+
+// Long-term memory
+const agent3 = createDeepAgent({
+  backend: new PersistentBackend({ store: myStore }),
+});
+
+// Hybrid (ephemeral + persistent)
+const agent4 = createDeepAgent({
+  backend: new CompositeBackend(
+    new StateBackend(), // Default: ephemeral
+    {
+      '/memories/': new PersistentBackend({ store: myStore }),
+    }
+  ),
+});
+```
+
+---
+
+## StateBackend (In-Memory)
+
+**Default backend** for ephemeral storage.
+
+### How It Works
+
+- Stores files in `DeepAgentState.files` as `Record<string, FileData>`
+- All operations are synchronous (no I/O)
+- Files exist only during a single agent invocation
+- Created automatically if no backend is specified
+
+### When to Use
+
+✅ **Perfect for:**
+- Temporary working files
+- Single-turn conversations
+- Testing and development
+- When you want maximum speed
+
+❌ **Not suitable for:**
+- Cross-session persistence
+- Multi-user scenarios
+- Production deployments requiring durability
+
+### Usage
+
+```typescript
+import { StateBackend } from 'ai-sdk-deep-agent';
+
+// Option 1: Omit backend (defaults to StateBackend)
+const agent1 = createDeepAgent({
+  model: anthropic('claude-sonnet-4-5-20250929'),
+  // backend defaults to StateBackend
+});
+
+// Option 2: Explicit StateBackend
+const agent2 = createDeepAgent({
+  model: anthropic('claude-sonnet-4-5-20250929'),
+  backend: new StateBackend(),
+});
+
+// Option 3: Factory function (for subagent compatibility)
+const agent3 = createDeepAgent({
+  model: anthropic('claude-sonnet-4-5-20250929'),
+  backend: (state) => new StateBackend(state),
+});
+```
+
+### Data Structure
+
+```typescript
+interface FileData {
+  content: string[];     // Lines of the file
+  modified_at: string;   // ISO timestamp
+}
+
+interface DeepAgentState {
+  todos: TodoItem[];
+  files: Record<string, FileData>;
+}
+```
+
+### Example
+
+```typescript
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-5-20250929'),
+  backend: new StateBackend(),
+});
+
+const result = await agent.generate({
+  prompt: 'Create notes.md with meeting notes',
+});
+
+// Access the in-memory files
+console.log(result.state.files['/notes.md'].content);
+// ['# Meeting Notes', '', '## Attendees', '...']
+
+// Files are lost when the result goes out of scope
+```
+
+---
+
+## FilesystemBackend (Disk Persistence)
+
+**Real filesystem access** for local projects.
+
+### How It Works
+
+- Reads/writes real files on disk using Node.js `fs/promises`
+- All operations are async (I/O bound)
+- **Security**: Path traversal protection and symlink prevention
+- **Search optimization**: Uses ripgrep (`rg`) when available, falls back to pure JS
+
+### When to Use
+
+✅ **Perfect for:**
+- Multi-session projects requiring disk persistence
+- Working with existing codebases
+- CLI tools that need to modify actual files
+- Production scenarios with shared workspaces
+
+❌ **Not suitable for:**
+- Serverless functions (no filesystem access)
+- Multi-tenant scenarios (need isolation)
+- Cloud deployments (need distributed storage)
+
+### Usage
+
+```typescript
+import { FilesystemBackend } from 'ai-sdk-deep-agent';
+
+// Basic usage
+const agent1 = createDeepAgent({
+  model: anthropic('claude-sonnet-4-5-20250929'),
+  backend: new FilesystemBackend({ rootDir: './workspace' }),
+});
+
+// Virtual mode (sandboxed)
+const agent2 = createDeepAgent({
+  model: anthropic('claude-sonnet-4-5-20250929'),
+  backend: new FilesystemBackend({
+    rootDir: './workspace',
+    virtualMode: true, // Sandbox paths to rootDir
+  }),
+});
+```
+
+### Configuration Options
+
+```typescript
+interface FilesystemBackendOptions {
+  rootDir: string;      // Root directory (absolute path)
+  virtualMode?: boolean; // Enable path sandboxing (default: false)
+}
+```
+
+### Virtual Mode vs Normal Mode
+
+```typescript
+// Normal mode (virtualMode: false)
+const backend1 = new FilesystemBackend({
+  rootDir: './workspace',
+  virtualMode: false,
+});
+// Can access absolute paths:
+// /Users/chris/project/file.txt
+// ./relative/path/file.txt
+
+// Virtual mode (virtualMode: true)
+const backend2 = new FilesystemBackend({
+  rootDir: './workspace',
+  virtualMode: true,
+});
+// All paths are relative to rootDir:
+// /file.txt → ./workspace/file.txt
+// Path traversal (..) is blocked
+```
+
+### Security Features
+
+```typescript
+// Path traversal protection
+await agent.generate({
+  prompt: 'Read /etc/passwd',
+  // Error: Path traversal not allowed (in virtualMode)
+});
+
+// Symlink prevention
+await agent.generate({
+  prompt: 'Read symlink-to-sensitive-file',
+  // Error: Symlink traversal blocked
+});
+```
+
+### Example
+
+```typescript
+import { FilesystemBackend } from 'ai-sdk-deep-agent';
+import { anthropic } from '@ai-sdk/anthropic';
+
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-5-20250929'),
+  backend: new FilesystemBackend({
+    rootDir: '/Users/chris/projects/my-app',
+    virtualMode: true, // Sandbox to project directory
+  }),
+});
+
+// Agent can now work with real files
+await agent.generate({
+  prompt: 'Review the src/ directory and suggest improvements',
+});
+
+// Files are persisted to disk
+ls -la /Users/chris/projects/my-app/
+// total 24
+// drwxr-xr-x  4 chris  staff   128 Dec 27 12:00 .
+// drwxr-xr-x  3 chris  staff    96 Dec 27 12:00 ..
+// -rw-r--r--  1 chris  staff  2048 Dec 27 12:00 review.md
+```
+
+---
+
+## PersistentBackend (Key-Value Store)
+
+**Cross-conversation storage** using pluggable key-value stores.
+
+### How It Works
+
+- Abstracts storage behind a `KeyValueStore` interface
+- Stores files as `FileData` objects in hierarchical namespaces
+- Supports any storage backend (Redis, SQLite, cloud storage)
+- Built-in `InMemoryStore` for testing
+
+### When to Use
+
+✅ **Perfect for:**
+- Multi-agent/multi-user scenarios requiring shared storage
+- Cloud deployments (serverless functions, containers)
+- Cross-conversation persistence without disk access
+- Implementing custom storage backends (Redis, PostgreSQL, etc.)
+
+❌ **Not suitable for:**
+- Simple single-session use cases (use StateBackend)
+- Local development without infrastructure (use FilesystemBackend)
+
+### KeyValueStore Interface
+
+```typescript
+interface KeyValueStore {
+  // Get a file by path
+  get(namespace: string[], key: string): Promise<Record<string, unknown> | undefined>;
+
+  // Store a file
+  put(namespace: string[], key: string, value: Record<string, unknown>): Promise<void>;
+
+  // Delete a file
+  delete(namespace: string[], key: string): Promise<void>;
+
+  // List all files in a namespace (non-recursive)
+  list(namespace: string[]): Promise<Array<{ key: string; value: Record<string, unknown> }>>;
+}
+```
+
+### Built-in InMemoryStore
+
+```typescript
+import { PersistentBackend, InMemoryStore } from 'ai-sdk-deep-agent';
+
+const store = new InMemoryStore();
+
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-5-20250929'),
+  backend: new PersistentBackend({
+    store,
+    namespace: 'project-123', // Isolate files per project
+  }),
+});
+```
+
+### Custom Redis Implementation
+
+```typescript
+class RedisStore implements KeyValueStore {
+  constructor(private redis: RedisClient) {}
+
+  async get(namespace: string[], key: string) {
+    const redisKey = [...namespace, key].join(':');
+    const data = await this.redis.get(redisKey);
+    return data ? JSON.parse(data) : undefined;
+  }
+
+  async put(namespace: string[], key: string, value: Record<string, unknown>) {
+    const redisKey = [...namespace, key].join(':');
+    await this.redis.set(redisKey, JSON.stringify(value));
+  }
+
+  async delete(namespace: string[], key: string) {
+    const redisKey = [...namespace, key].join(':');
+    await this.redis.del(redisKey);
+  }
+
+  async list(namespace: string[]) {
+    const pattern = namespace.join(':') + ':*';
+    const keys = await this.redis.keys(pattern);
+    const values = await Promise.all(
+      keys.map(key => this.redis.get(key))
+    );
+    return keys.map((key, i) => ({
+      key: key.split(':').pop()!,
+      value: JSON.parse(values[i]!),
+    }));
+  }
+}
+
+// Usage
+const redisStore = new RedisStore(redisClient);
+
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-5-20250929'),
+  backend: new PersistentBackend({
+    store: redisStore,
+    namespace: 'production',
+  }),
+});
+```
+
+### Namespace Hierarchy
+
+```
+[namespacePrefix, "filesystem", filePath]
+        ↓             ↓            ↓
+"project-123"  "filesystem"  "src/main.ts"
+
+Stored as: "project-123:filesystem:src/main.ts" (Redis-style)
+```
+
+### Example
+
+```typescript
+import { PersistentBackend, InMemoryStore } from 'ai-sdk-deep-agent';
+
+const store = new InMemoryStore();
+
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-5-20250929'),
+  backend: new PersistentBackend({
+    store,
+    namespace: 'user-preferences',
+  }),
+});
+
+// Thread 1: Save preferences
+await agent.generate({
+  prompt: 'Save my preference for dark mode to /memories/prefs.json',
+});
+
+// Thread 2: Read preferences (different conversation!)
+await agent.generate({
+  prompt: 'What are my saved preferences?',
+});
+// Agent reads from the same PersistentBackend
+```
+
+---
+
+## CompositeBackend (Router)
+
+**Route different paths** to different backends for hybrid storage strategies.
+
+### How It Works
+
+- Routes file operations to different backends based on path prefix
+- Supports **longest-prefix matching** (e.g., `/persistent/cache/` matches before `/persistent/`)
+- Aggregates results from multiple backends for operations like `ls` and `grep`
+- Strips route prefix before passing to backend, adds it back in results
+
+### When to Use
+
+✅ **Perfect for:**
+- Hybrid storage strategies (some files persistent, others ephemeral)
+- Separating user data from system files
+- Multi-tenant scenarios with different storage backends per tenant
+- Gradual migration between storage systems
+
+❌ **Not suitable for:**
+- Simple single-backend scenarios (use backend directly)
+
+### Usage
+
+```typescript
+import { CompositeBackend, StateBackend, PersistentBackend } from 'ai-sdk-deep-agent';
+
+const backend = new CompositeBackend(
+  new StateBackend(), // Default: ephemeral
+  {
+    '/memories/': new PersistentBackend({ store: myStore }),
+    '/cache/': new StateBackend(), // Could also use another backend
+  }
+);
+
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-5-20250929'),
+  backend,
+});
+```
+
+### Routing Mechanism
+
+```typescript
+// Longest prefix matching
+const backend = new CompositeBackend(
+  new FilesystemBackend({ rootDir: './default' }),
+  {
+    '/persistent/': new PersistentBackend({ store: store1 }),
+    '/persistent/cache/': new StateBackend(), // More specific!
+    '/shared/': new PersistentBackend({ store: store2 }),
+  }
+);
+
+// Routes:
+await backend.write('/default/data.txt', '...');     // → FilesystemBackend
+await backend.write('/persistent/file.txt', '...');  // → PersistentBackend (store1)
+await backend.write('/persistent/cache/tmp.txt', '...'); // → StateBackend (more specific)
+await backend.write('/shared/doc.md', '...');        // → PersistentBackend (store2)
+```
+
+### Path Transformation Flow
+
+```
+lsInfo('/persistent/src/')
+     ↓
+Check routes: ['/persistent/', '/persistent/cache/', '/shared/']
+     ↓
+Matches '/persistent/' → Use PersistentBackend
+     ↓
+Strip prefix: '/persistent/src/' → '/src/'
+     ↓
+Call backend.lsInfo('/src/')
+     ↓
+Add prefix back: ['/src/main.ts'] → ['/persistent/src/main.ts']
+```
+
+### Aggregated Operations
+
+```typescript
+const backend = new CompositeBackend(
+  new FilesystemBackend({ rootDir: './default' }),
+  {
+    '/persistent/': new PersistentBackend({ store: myStore }),
+  }
+);
+
+// At root "/", aggregate all backends
+const files = await backend.lsInfo('/');
+// Returns:
+// [
+//   { path: '/project.txt', is_dir: false },  // From FilesystemBackend
+//   { path: '/persistent/', is_dir: true },    // Route directory itself
+//   { path: '/persistent/data.txt', is_dir: false }, // From PersistentBackend
+// ]
+```
+
+### Example
+
+```typescript
+import { CompositeBackend, StateBackend, FilesystemBackend, PersistentBackend } from 'ai-sdk-deep-agent';
+
+// Hybrid setup: ephemeral workspace + persistent memory + disk cache
+const backend = new CompositeBackend(
+  new StateBackend(), // Default: in-memory
+  {
+    '/memories/': new PersistentBackend({ store: redisStore }),
+    '/workspace/': new FilesystemBackend({ rootDir: './project-files' }),
+    '/cache/': new StateBackend(),
+  }
+);
+
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-5-20250929'),
+  backend,
+  systemPrompt: `
+  File storage rules:
+  - /workspace/ → Real project files (disk)
+  - /memories/ → Long-term memory (Redis)
+  - /cache/ → Temporary cache (memory)
+  - Other paths → In-memory only
+  `,
+});
+
+// Agent can now use all three storage types
+await agent.generate({
+  prompt: `
+  1. Read the current project files from /workspace/
+  2. Check my long-term preferences in /memories/
+  3. Save temporary results to /cache/
+  `,
+});
+```
+
+---
+
+## Backend Resolution
+
+Backends can be provided as **instances** or **factory functions**.
+
+### Instance (Eager)
+
+```typescript
+import { FilesystemBackend } from 'ai-sdk-deep-agent';
+
+const backend = new FilesystemBackend({ rootDir: './workspace' });
+
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-5-20250929'),
+  backend, // Instance: created immediately
+});
+```
+
+### Factory (Lazy)
+
+```typescript
+import { StateBackend } from 'ai-sdk-deep-agent';
+
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-5-20250929'),
+  backend: (state) => new StateBackend(state), // Factory: called when needed
+});
+```
+
+<Callout type="info">
+**When to use factories**: StateBackend requires access to agent state, so it must be a factory function. FilesystemBackend doesn't need state, so it can be an instance.
+</Callout>
+
+---
+
+## Implementing Custom Backends
+
+You can implement your own backend by following the `BackendProtocol` interface.
+
+### BackendProtocol Interface
+
+```typescript
+interface BackendProtocol {
+  // List files with metadata
+  lsInfo(path: string): FileInfo[] | Promise<FileInfo[]>;
+
+  // Read file with line numbers (offset/limit for large files)
+  read(filePath: string, offset?: number, limit?: number): string | Promise<string>;
+
+  // Read raw file data (returns FileData object)
+  readRaw(filePath: string): FileData | Promise<FileData>;
+
+  // Search files using regex
+  grepRaw(pattern: string, path?: string, glob?: string): GrepMatch[] | string;
+
+  // Find files matching glob patterns
+  globInfo(pattern: string, path?: string): FileInfo[] | Promise<FileInfo[]>;
+
+  // Create new file (fails if exists)
+  write(filePath: string, content: string): WriteResult | Promise<WriteResult>;
+
+  // Edit file by string replacement
+  edit(filePath: string, oldString: string, newString: string, replaceAll?: boolean): EditResult | Promise<EditResult>;
+}
+```
+
+### Supporting Types
+
+```typescript
+interface FileInfo {
+  path: string;
+  is_dir?: boolean;
+  size?: number;
+  modified_at?: string;
+}
+
+interface GrepMatch {
+  path: string;
+  line: number;
+  text: string;
+}
+
+interface FileData {
+  content: string[];
+  modified_at: string;
+}
+
+interface WriteResult {
+  error?: string;
+  path?: string;
+  files_update?: Record<string, FileData>;
+}
+
+interface EditResult {
+  error?: string;
+  path?: string;
+  files_update?: Record<string, FileData>;
+  occurrences?: number;
+}
+```
+
+### Example: S3 Backend
+
+```typescript
+import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
+import { BackendProtocol, FileInfo, FileData } from 'ai-sdk-deep-agent';
+
+class S3Backend implements BackendProtocol {
+  constructor(
+    private bucket: string,
+    private prefix: string = '',
+    private s3: S3Client
+  ) {}
+
+  private key(path: string): string {
+    return this.prefix + path.replace(/^\//, '');
+  }
+
+  async lsInfo(path: string): Promise<FileInfo[]> {
+    // List objects under path
+    // Return FileInfo entries
+    const listCommand = new ListObjectsV2Command({
+      Bucket: this.bucket,
+      Prefix: this.key(path),
+    });
+
+    const response = await this.s3.send(listCommand);
+    return (response.Contents || []).map(obj => ({
+      path: '/' + obj.Key!.substring(this.prefix.length),
+      size: obj.Size!,
+      modified_at: obj.LastModified!.toISOString(),
+    }));
+  }
+
+  async read(filePath: string): Promise<string> {
+    const getCommand = new GetObjectCommand({
+      Bucket: this.bucket,
+      Key: this.key(filePath),
+    });
+
+    const response = await this.s3.send(getCommand);
+    const str = await response.Body!.transformToString();
+    return str.split('\n')
+      .map((line, i) => `${(i + 1).toString().padStart(4)}: ${line}`)
+      .join('\n');
+  }
+
+  async write(filePath: string, content: string): Promise<WriteResult> {
+    const lines = content.split('\n');
+    const putCommand = new PutObjectCommand({
+      Bucket: this.bucket,
+      Key: this.key(filePath),
+      Body: content,
+    });
+
+    await this.s3.send(putCommand);
+
+    return {
+      path: filePath,
+      files_update: {
+        [filePath]: {
+          content: lines,
+          modified_at: new Date().toISOString(),
+        },
+      },
+    };
+  }
+
+  // Implement other methods...
+}
+
+// Usage
+const s3Backend = new S3Backend('my-bucket', 'agent-files/', s3Client);
+
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-5-20250929'),
+  backend: s3Backend,
+});
+```
+
+---
+
+## Best Practices
+
+### 1. Choose the Right Backend
+
+```typescript
+// ✅ Development/testing
+backend: new StateBackend()
+
+// ✅ Local projects
+backend: new FilesystemBackend({ rootDir: './project' })
+
+// ✅ Production with persistence
+backend: new PersistentBackend({ store: redisStore })
+
+// ✅ Multi-tenant
+backend: new CompositeBackend(defaultBackend, {
+  [`/tenant/${tenantId}/`]: tenantSpecificBackend,
+})
+```
+
+### 2. Use Virtual Mode for Security
+
+```typescript
+// ✅ Good: Sandbox filesystem access
+backend: new FilesystemBackend({
+  rootDir: './workspace',
+  virtualMode: true, // Blocks path traversal
+})
+
+// ❌ Bad: Unrestricted filesystem access
+backend: new FilesystemBackend({
+  rootDir: '/',
+  virtualMode: false, // Can access entire system!
+})
+```
+
+### 3. Organize Persistent Files
+
+```typescript
+// ✅ Good: Clear namespace organization
+const backend = new CompositeBackend(stateBackend, {
+  '/memories/user/': userMemoryBackend,
+  '/memories/project/': projectMemoryBackend,
+  '/memories/shared/': sharedKnowledgeBackend,
+});
+
+// ❌ Bad: Flat namespace
+const backend = new PersistentBackend({
+  store: myStore,
+  namespace: 'everything', // All files mixed together
+});
+```
+
+### 4. Handle Backend Errors Gracefully
+
+```typescript
+try {
+  const result = await agent.generate({
+    prompt: 'Process files',
+  });
+} catch (error) {
+  if (error.message.includes('File not found')) {
+    // Handle missing file
+  } else if (error.message.includes('Backend unavailable')) {
+    // Handle backend connection error
+  }
+}
+```
+
+---
+
+## Summary
+
+| Backend | Best For | Persistence | Performance | Security |
+|---------|----------|-------------|-------------|----------|
+| **StateBackend** | Testing, scratch space | Single thread | Fastest | In-memory |
+| **FilesystemBackend** | Local projects, CLI | Cross-session | Fast | Path validation |
+| **PersistentBackend** | Production, cloud | Indefinite | Medium | Depends on store |
+| **CompositeBackend** | Hybrid scenarios | Varies | Varies | Route-based |
+
+<Callout type="success">
+**Key Insight**: Start with StateBackend for development, then switch to FilesystemBackend or PersistentBackend for production based on your persistence needs.
+</Callout>
+
+## Next Steps
+
+- [Agent Harness](/docs/guides/harness) - Learn about built-in tools
+- [Long-term Memory](/docs/guides/long-term-memory) - Implement persistent memory
+- [Human-in-the-Loop](/docs/guides/human-in-the-loop) - Add approval workflows

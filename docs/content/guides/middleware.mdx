@@ -1,0 +1,779 @@
+---
+title: Middleware
+description: Understand the middleware architecture for extending deep agent behavior
+---
+
+Deep agents are built with a **modular middleware architecture**. The library uses AI SDK v6's `LanguageModelMiddleware` system to provide cross-cutting concerns like logging, caching, telemetry, and custom behavior modification.
+
+<Callout type="info">
+**Think of middleware as** interceptors - they sit between the agent and the model, allowing you to observe, modify, or enhance every interaction.
+</Callout>
+
+## Overview
+
+### What is Middleware?
+
+Middleware wraps the model to intercept and customize:
+
+- **Model calls** - Every LLM API invocation
+- **Requests** - Prompts, parameters, temperature, etc.
+- **Responses** - Text, tool calls, token usage
+- **Streaming** - Real-time response chunks
+- **Errors** - Failures and retries
+
+### Why Use Middleware?
+
+| Use Case | Example |
+|----------|---------|
+| **Logging** | Log all prompts and responses for debugging |
+| **Caching** | Cache responses to reduce cost and latency |
+| **Telemetry** | Track token usage, request duration |
+| **Guardrails** | Filter or modify prompts/responses |
+| **Transformation** | Inject context, rewrite prompts |
+| **Observability** | Send data to LangSmith, Datadog, etc. |
+| **Testing** | Mock model responses in tests |
+
+### Architecture
+
+```
+┌─────────────────────────────────────────┐
+│         Deep Agent                      │
+│  - State management                    │
+│  - Tool composition                    │
+└────────────┬────────────────────────────┘
+             │
+┌────────────▼────────────────────────────┐
+│      Middleware Layer                   │
+│  - Can wrap before model               │
+│  - Intercepts requests/responses       │
+│  - Applied in reverse order            │
+└────────────┬────────────────────────────┘
+             │
+┌────────────▼────────────────────────────┐
+│      AI SDK Model                      │
+│  - anthropic()                         │
+│  - openai()                            │
+│  - Other providers                     │
+└─────────────────────────────────────────┘
+```
+
+---
+
+## Basic Usage
+
+### Single Middleware
+
+```typescript
+import { createDeepAgent } from 'ai-sdk-deep-agent';
+import { anthropic } from '@ai-sdk/anthropic';
+
+const loggingMiddleware = {
+  wrapGenerate: async ({ doGenerate, params }) => {
+    console.log('Model called with:', params.prompt);
+    const startTime = Date.now();
+
+    const result = await doGenerate();
+
+    const duration = Date.now() - startTime;
+    console.log(`Duration: ${duration}ms`);
+    console.log(`Tokens: ${result.usage?.totalTokens}`);
+
+    return result;
+  },
+};
+
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-5-20250929'),
+  middleware: [loggingMiddleware],
+});
+```
+
+### Multiple Middleware
+
+```typescript
+const cachingMiddleware = {
+  wrapGenerate: async ({ doGenerate, params }) => {
+    const cacheKey = JSON.stringify(params.prompt);
+
+    // Check cache
+    if (cache.has(cacheKey)) {
+      console.log('Cache hit!');
+      return cache.get(cacheKey);
+    }
+
+    // Cache miss - call model
+    const result = await doGenerate();
+
+    // Save to cache
+    cache.set(cacheKey, result);
+    return result;
+  },
+};
+
+const telemetryMiddleware = {
+  wrapGenerate: async ({ doGenerate, params }) => {
+    const span = tracer.startSpan('llm.call');
+
+    try {
+      const result = await doGenerate();
+      span.setAttributes({
+        'llm.tokens': result.usage?.totalTokens,
+        'llm.model': params.model,
+      });
+      return result;
+    } finally {
+      span.end();
+    }
+  },
+};
+
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-5-20250929'),
+  middleware: [
+    telemetryMiddleware,   // Applied first (outermost)
+    cachingMiddleware,      // Applied second
+  ],
+  // Execution order: telemetry → caching → model
+});
+```
+
+---
+
+## Middleware API
+
+### LanguageModelMiddleware
+
+```typescript
+interface LanguageModelMiddleware {
+  specificationVersion?: 'v3';
+
+  // Transform parameters before model call
+  transformParams?: (params: any) => params | Promise<any>;
+
+  // Wrap synchronous generation
+  wrapGenerate?: async ({ doGenerate, params }) => {
+    // Pre-processing
+    const result = await doGenerate();
+    // Post-processing
+    return result;
+  };
+
+  // Wrap streaming generation
+  wrapStream?: async ({ doStream, params }) => {
+    // Pre-processing
+    const result = await doStream();
+    // Post-processing
+    return result;
+  };
+}
+```
+
+### Parameters
+
+```typescript
+// wrapGenerate/wrapStream receive:
+{
+  doGenerate: () => Promise<GenerateResult>,  // Function to call model
+  doStream: () => Promise<StreamResult>,      // Function to stream
+  params: {
+    model: LanguageModel,
+    prompt: Array<{ role: string, content: string }>,
+    temperature?: number,
+    maxTokens?: number,
+    tools?: Record<string, Tool>,
+    // ... other generation options
+  },
+}
+```
+
+---
+
+## Common Patterns
+
+### Pattern 1: Logging
+
+```typescript
+const loggingMiddleware = {
+  specificationVersion: 'v3' as const,
+
+  wrapGenerate: async ({ doGenerate, params }) => {
+    console.log('╔════════════════════════════════════════╗');
+    console.log('║ LLM Request                           ║');
+    console.log('╚════════════════════════════════════════╝');
+    console.log('Model:', params.model.modelId);
+    console.log('Temperature:', params.temperature);
+    console.log('Max Tokens:', params.maxTokens);
+    console.log('Prompt:', JSON.stringify(params.prompt, null, 2));
+
+    const startTime = Date.now();
+    const result = await doGenerate();
+    const duration = Date.now() - startTime;
+
+    console.log('╔════════════════════════════════════════╗');
+    console.log('║ LLM Response                          ║');
+    console.log('╚════════════════════════════════════════╝');
+    console.log('Duration:', `${duration}ms`);
+    console.log('Tokens:', result.usage?.totalTokens);
+    console.log('Response:', result.text?.substring(0, 200) + '...');
+
+    return result;
+  },
+};
+```
+
+### Pattern 2: Caching
+
+```typescript
+class CacheMiddleware {
+  private cache = new Map<string, any>();
+
+  constructor(private ttl: number = 300000) {} // 5 minutes default
+
+  private getCacheKey(params: any): string {
+    return JSON.stringify({
+      prompt: params.prompt,
+      temperature: params.temperature,
+      maxTokens: params.maxTokens,
+      tools: Object.keys(params.tools || {}),
+    });
+  }
+
+  wrapGenerate: async ({ doGenerate, params }) => {
+    const key = this.getCacheKey(params);
+
+    // Check cache
+    const cached = this.cache.get(key);
+    if (cached && Date.now() - cached.timestamp < this.ttl) {
+      console.log('✓ Cache hit');
+      return cached.result;
+    }
+
+    // Cache miss - call model
+    console.log('✗ Cache miss');
+    const result = await doGenerate();
+
+    // Save to cache
+    this.cache.set(key, {
+      result,
+      timestamp: Date.now(),
+    });
+
+    return result;
+  };
+}
+
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-5-20250929'),
+  middleware: [new CacheMiddleware(600000)], // 10 minute TTL
+});
+```
+
+### Pattern 3: Prompt Injection
+
+```typescript
+const contextInjectionMiddleware = {
+  transformParams: async (params) => {
+    // Inject RAG context into system prompt
+    const ragContext = await fetchRelevantContext(params.prompt);
+
+    return {
+      ...params,
+      prompt: params.prompt.map(msg => {
+        if (msg.role === 'system') {
+          return {
+            ...msg,
+            content: `${msg.content}\n\nContext:\n${ragContext}`,
+          };
+        }
+        return msg;
+      }),
+    };
+  },
+};
+
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-5-20250929'),
+  middleware: [contextInjectionMiddleware],
+});
+```
+
+### Pattern 4: Guardrails
+
+```typescript
+const guardrailsMiddleware = {
+  transformParams: async (params) => {
+    // Check for prohibited content
+    const userPrompt = params.prompt.find(m => m.role === 'user')?.content || '';
+
+    if (containsMaliciousContent(userPrompt)) {
+      throw new Error('Malicious content detected');
+    }
+
+    // Filter or redact sensitive information
+    const sanitizedPrompt = sanitizePrompt(params.prompt);
+
+    return {
+      ...params,
+      prompt: sanitizedPrompt,
+    };
+  },
+
+  wrapGenerate: async ({ doGenerate, params }) => {
+    const result = await doGenerate();
+
+    // Check response for policy violations
+    if (violatesPolicy(result.text)) {
+      return {
+        ...result,
+        text: '[Content filtered due to policy violation]',
+      };
+    }
+
+    return result;
+  },
+};
+
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-5-20250929'),
+  middleware: [guardrailsMiddleware],
+});
+```
+
+### Pattern 5: Observability (LangSmith)
+
+```typescript
+import { LangSmithTracer } from 'langsmith';
+
+const tracer = new LangSmithTracer({
+  projectName: 'my-deep-agent',
+});
+
+const langsmithMiddleware = {
+  wrapGenerate: async ({ doGenerate, params }) => {
+    return tracer.trace('llm.call', async () => {
+      return await doGenerate();
+    });
+  },
+};
+
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-5-20250929'),
+  middleware: [langsmithMiddleware],
+});
+```
+
+### Pattern 6: Mock Responses (Testing)
+
+```typescript
+class MockMiddleware {
+  constructor(private mockResponse: string) {}
+
+  wrapGenerate: async ({ doGenerate, params }) => {
+    // Only mock in test environment
+    if (process.env.NODE_ENV !== 'test') {
+      return await doGenerate();
+    }
+
+    console.log('[MOCK] Returning mock response');
+
+    return {
+      text: this.mockResponse,
+      toolCalls: [],
+      usage: { promptTokens: 10, completionTokens: 20 },
+      warnings: [],
+    };
+  };
+}
+
+// Test setup
+const mockAgent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-5-20250929'),
+  middleware: [new MockMiddleware('Mocked response!')],
+});
+
+const result = await mockAgent.generate({
+  prompt: 'This will be mocked',
+});
+console.log(result.text); // "Mocked response!"
+```
+
+---
+
+## Advanced Patterns
+
+### Pattern: Retry with Exponential Backoff
+
+```typescript
+const retryMiddleware = {
+  wrapGenerate: async ({ doGenerate, params }) => {
+    let lastError;
+    const maxRetries = 3;
+    const baseDelay = 1000; // 1 second
+
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        return await doGenerate();
+      } catch (error) {
+        lastError = error;
+
+        if (attempt === maxRetries) {
+          throw error;
+        }
+
+        // Exponential backoff
+        const delay = baseDelay * Math.pow(2, attempt);
+        console.log(`Attempt ${attempt + 1} failed, retrying in ${delay}ms...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
+
+    throw lastError;
+  },
+};
+```
+
+### Pattern: Rate Limiting
+
+```typescript
+class RateLimitMiddleware {
+  private requestTimes: number[] = [];
+
+  constructor(
+    private maxRequests: number = 10,
+    private windowMs: number = 60000 // 1 minute
+  ) {}
+
+  wrapGenerate: async ({ doGenerate, params }) => {
+    const now = Date.now();
+
+    // Remove old timestamps outside window
+    this.requestTimes = this.requestTimes.filter(
+      time => now - time < this.windowMs
+    );
+
+    // Check if limit exceeded
+    if (this.requestTimes.length >= this.maxRequests) {
+      const waitTime = this.requestTimes[0] + this.windowMs - now;
+      console.log(`Rate limit exceeded, waiting ${waitTime}ms`);
+      await new Promise(resolve => setTimeout(resolve, waitTime));
+    }
+
+    // Add current request timestamp
+    this.requestTimes.push(now);
+
+    return await doGenerate();
+  };
+}
+
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-5-20250929'),
+  middleware: [new RateLimitMiddleware(10, 60000)],
+});
+```
+
+### Pattern: Streaming Middleware
+
+```typescript
+const streamingLoggingMiddleware = {
+  wrapStream: async ({ doStream, params }) => {
+    console.log('Starting stream...');
+    const startTime = Date.now();
+
+    const result = await doStream();
+
+    // Log stream completion
+    result.allStreamChunks?.forEach((chunk, index) => {
+      console.log(`Chunk ${index}:`, chunk.text);
+    });
+
+    const duration = Date.now() - startTime;
+    console.log(`Stream completed in ${duration}ms`);
+
+    return result;
+  },
+};
+
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-5-20250929'),
+  middleware: [streamingLoggingMiddleware],
+});
+```
+
+---
+
+## Middleware vs Human-in-the-Loop
+
+### Different Purposes
+
+| Aspect | Middleware | Human-in-the-Loop |
+|--------|-----------|-------------------|
+| **Scope** | Model-level | Tool-level |
+| **What it intercepts** | LLM calls | Tool execution |
+| **Use cases** | Logging, caching, telemetry | Approval workflows |
+| **Granularity** | All model interactions | Per-tool configuration |
+| **When to use** | Cross-cutting concerns | Safety controls |
+
+### Example Comparison
+
+```typescript
+// Middleware: Model-level logging
+const loggingMiddleware = {
+  wrapGenerate: async ({ doGenerate, params }) => {
+    console.log('Model called');
+    return await doGenerate();
+  },
+};
+
+// HITL: Tool-level approval
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-5-20250929'),
+  middleware: [loggingMiddleware],
+  interruptOn: {
+    write_file: true,  // Require approval for this tool
+  },
+});
+```
+
+**Key difference**: Middleware sees EVERY model call, but HITL only sees specific tool executions.
+
+---
+
+## Best Practices
+
+### 1. Keep Middleware Focused
+
+```typescript
+// ✅ Good: Single responsibility
+const loggingMiddleware = { /* logs only */ };
+const cachingMiddleware = { /* caches only */ };
+
+// ❌ Bad: Multiple responsibilities
+const everythingMiddleware = {
+  wrapGenerate: async ({ doGenerate, params }) => {
+    // Logging
+    console.log('Called');
+
+    // Caching
+    if (cache.has(key)) return cache.get(key);
+
+    // Telemetry
+    const span = tracer.startSpan('llm');
+
+    // ... mixed concerns
+  },
+};
+```
+
+### 2. Order Matters
+
+```typescript
+const agent = createDeepAgent({
+  middleware: [
+    telemetryMiddleware,   // Outermost - wraps everything
+    cachingMiddleware,      // Middle - can skip inner layers
+    loggingMiddleware,      // Innermost - closest to model
+  ],
+  // Execution: telemetry → caching → logging → model
+});
+```
+
+### 3. Handle Errors Gracefully
+
+```typescript
+const safeMiddleware = {
+  wrapGenerate: async ({ doGenerate, params }) => {
+    try {
+      return await doGenerate();
+    } catch (error) {
+      // Log error but don't crash
+      console.error('Middleware error:', error);
+
+      // Re-throw or return fallback
+      throw error;
+    }
+  },
+};
+```
+
+### 4. Use Factory Functions for Configurable Middleware
+
+```typescript
+function createCacheMiddleware(ttl: number = 300000) {
+  return {
+    wrapGenerate: async ({ doGenerate, params }) => {
+      const key = JSON.stringify(params.prompt);
+      const cached = cache.get(key);
+
+      if (cached && Date.now() - cached.timestamp < ttl) {
+        return cached.result;
+      }
+
+      const result = await doGenerate();
+      cache.set(key, { result, timestamp: Date.now() });
+      return result;
+    },
+  };
+}
+
+const agent = createDeepAgent({
+  middleware: [createCacheMiddleware(600000)], // 10 minute TTL
+});
+```
+
+### 5. Make Middleware Composable
+
+```typescript
+// Combine multiple middleware
+function composeMiddleware(...middlewares: LanguageModelMiddleware[]) {
+  return {
+    wrapGenerate: async ({ doGenerate, params }) => {
+      let wrapped = doGenerate;
+
+      // Apply middleware in reverse order
+      for (const mw of middlewares.reverse()) {
+        const current = wrapped;
+        wrapped = () => mw.wrapGenerate!({ doGenerate: current, params });
+      }
+
+      return await wrapped();
+    },
+  };
+}
+
+const agent = createDeepAgent({
+  middleware: composeMiddleware(
+    loggingMiddleware,
+    cachingMiddleware,
+    telemetryMiddleware
+  ),
+});
+```
+
+---
+
+## Troubleshooting
+
+### Middleware Not Being Called
+
+**Problem**: Middleware functions aren't executing.
+
+**Solutions**:
+
+1. **Check middleware is an array**:
+
+```typescript
+// ❌ Wrong: Single middleware, not array
+const agent = createDeepAgent({
+  middleware: loggingMiddleware,
+});
+
+// ✅ Correct: Array of middleware
+const agent = createDeepAgent({
+  middleware: [loggingMiddleware],
+});
+```
+
+2. **Verify specification version**:
+
+```typescript
+const mw = {
+  specificationVersion: 'v3',  // Required for AI SDK v6
+  wrapGenerate: async ({ doGenerate, params }) => {
+    return await doGenerate();
+  },
+};
+```
+
+### Breaking Changes in Responses
+
+**Problem**: Middleware modifies response in ways that break the agent.
+
+**Solution**: Preserve response structure:
+
+```typescript
+const mw = {
+  wrapGenerate: async ({ doGenerate, params }) => {
+    const result = await doGenerate();
+
+    // ✅ Good: Preserve structure
+    return {
+      ...result,
+      text: result.text.toUpperCase(), // Safe modification
+    };
+
+    // ❌ Bad: Break structure
+    return {
+      text: result.text,
+      // Missing: toolCalls, usage, warnings, etc.
+    };
+  },
+};
+```
+
+### Performance Issues
+
+**Problem**: Middleware slows down every request.
+
+**Solutions**:
+
+1. **Cache in middleware**:
+
+```typescript
+const mw = {
+  wrapGenerate: async ({ doGenerate, params }) => {
+    // Fast path with cache
+    const cached = await cache.get(params);
+    if (cached) return cached;
+
+    // Slow path without cache
+    const result = await doGenerate();
+    await cache.set(params, result);
+    return result;
+  },
+};
+```
+
+2. **Async operations efficiently**:
+
+```typescript
+const mw = {
+  wrapGenerate: async ({ doGenerate, params }) => {
+    // ✅ Good: Parallel operations
+    const [context, history] = await Promise.all([
+      fetchContext(params),
+      fetchHistory(params),
+    ]);
+
+    // ❌ Bad: Sequential operations
+    const context = await fetchContext(params);
+    const history = await fetchHistory(params);
+
+    return await doGenerate();
+  },
+};
+```
+
+---
+
+## Summary
+
+Middleware provides:
+
+| Feature | Benefit |
+|---------|---------|
+| **Observability** | Log all model interactions |
+| **Performance** | Cache responses to reduce cost/latency |
+| **Safety** | Guardrails and content filtering |
+| **Flexibility** | Modify prompts and responses |
+| **Testing** | Mock model responses |
+| **Integration** | Connect to external services (LangSmith, Datadog, etc.) |
+
+<Callout type="success">
+**Key Insight**: Middleware is the extension point for cross-cutting concerns. Use it for anything that applies to ALL model interactions, not just specific tools or workflows.
+</Callout>
+
+## Next Steps
+
+- [Agent Harness](/docs/guides/harness) - Learn about built-in tools
+- [Customization](/docs/guides/customization) - Configure agent behavior
+- [Human-in-the-Loop](/docs/guides/human-in-the-loop) - Tool-level safety controls

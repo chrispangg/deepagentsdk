@@ -1,0 +1,274 @@
+---
+title: Deep Agents Overview
+description: Build agents that can plan, use subagents, and leverage file systems for complex tasks
+---
+
+**ai-sdk-deep-agent** is a TypeScript library for building agents that can tackle complex, multi-step tasks. Built on Vercel AI SDK v6 and inspired by applications like Claude Code, Deep Research, and LangChain's DeepAgents, this library provides:
+
+- **Planning and task decomposition** via built-in `write_todos` tool
+- **Virtual filesystem** for context management across tool calls
+- **Subagent spawning** for context isolation and specialized work
+- **Long-term memory** for cross-conversation persistence
+- **Human-in-the-loop** workflows for sensitive operations
+- **Composable middleware** for custom behavior
+
+## When to Use Deep Agents
+
+Use deep agents when you need agents that can:
+
+- ✅ **Handle complex, multi-step tasks** that require planning and decomposition
+- ✅ **Manage large amounts of context** through filesystem tools
+- ✅ **Delegate work** to specialized subagents for context isolation
+- ✅ **Persist memory** across conversations and threads
+- ✅ **Support human-in-the-loop** workflows for safety
+
+For simpler use cases, consider using AI SDK's `generateText` or building a custom `ToolLoopAgent`.
+
+## Core Capabilities
+
+### Planning and Task Decomposition
+
+Deep agents include a built-in `write_todos` tool that enables agents to break down complex tasks into discrete steps, track progress, and adapt plans as new information emerges.
+
+```typescript
+import { createDeepAgent } from 'ai-sdk-deep-agent';
+import { anthropic } from '@ai-sdk/anthropic';
+
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-5-20250929'),
+});
+
+const result = await agent.generate({
+  prompt: 'Build a REST API with authentication',
+});
+
+console.log(result.state.todos);
+// [
+//   { content: 'Design API endpoints', status: 'completed' },
+//   { content: 'Implement authentication middleware', status: 'in_progress' },
+//   { content: 'Add input validation', status: 'pending' }
+// ]
+```
+
+### Context Management
+
+Filesystem tools (`ls`, `read_file`, `write_file`, `edit_file`) allow agents to offload large context to memory, preventing context window overflow and enabling work with variable-length tool results.
+
+```typescript
+const result = await agent.generate({
+  prompt: 'Analyze this codebase and document the architecture',
+});
+
+// Agent writes findings to files for reference
+console.log(Object.keys(result.state.files));
+// ['/architecture.md', '/components.md', '/data-flow.md']
+```
+
+### Subagent Spawning
+
+A built-in `task` tool enables agents to spawn specialized subagents for context isolation. This keeps the main agent's context clean while still going deep on specific subtasks.
+
+```typescript
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-5-20250929'),
+  subagents: [
+    {
+      name: 'code-reviewer',
+      description: 'Reviews code for bugs and best practices',
+      systemPrompt: 'You are an expert code reviewer...',
+    },
+    {
+      name: 'test-writer',
+      description: 'Writes comprehensive tests',
+      systemPrompt: 'You are a testing specialist...',
+    },
+  ],
+});
+
+// Main agent can delegate to subagents
+const result = await agent.generate({
+  prompt: 'Review this code and write tests for it',
+});
+```
+
+### Long-term Memory
+
+Extend agents with persistent memory across threads using pluggable backends. Agents can save and retrieve information from previous conversations.
+
+```typescript
+import { CompositeBackend, StateBackend, PersistentBackend } from 'ai-sdk-deep-agent';
+
+const backend = new CompositeBackend(
+  new StateBackend(), // Ephemeral by default
+  {
+    '/memories/': new PersistentBackend({ store: myStore }),
+  }
+);
+
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-5-20250929'),
+  backend,
+  systemPrompt: `Save user preferences to /memories/preferences.txt
+  and read them at the start of each conversation.`,
+});
+```
+
+### Human-in-the-Loop
+
+Configure tools to require human approval before execution, enabling safe workflows for sensitive operations.
+
+```typescript
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-5-20250929'),
+  interruptOn: {
+    write_file: true, // Require approval
+    edit_file: true,
+    execute: true,
+  },
+});
+
+for await (const event of agent.streamWithEvents({
+  prompt: 'Delete all test files',
+  onApprovalRequest: async ({ toolName, args }) => {
+    console.log(`Tool ${toolName} requires approval`);
+    return await askUser();
+  },
+})) {
+  // Handle events...
+}
+```
+
+## Relationship to the AI SDK Ecosystem
+
+**ai-sdk-deep-agent** is built on top of:
+
+- **Vercel AI SDK v6** - Provides the underlying `ToolLoopAgent`, tools, and model integrations
+- **Language Model Providers** - Works with Anthropic, OpenAI, Azure, and more via `@ai-sdk/*` packages
+- **TypeScript** - Full type safety and excellent developer experience
+
+The library extends AI SDK's `ToolLoopAgent` with:
+- State management for todos and files
+- Built-in filesystem and planning tools
+- Subagent spawning capabilities
+- Checkpointing and session persistence
+- Human-in-the-loop workflows
+
+## Get Started
+
+<Cards>
+  <Card title="Quickstart" href="/docs/get-started/get-started">
+    Build your first deep agent in minutes
+  </Card>
+  <Card title="Guides" href="/docs/guides">
+    In-depth guides for customization and advanced features
+  </Card>
+  <Card title="Examples" href="https://github.com/your-repo/tree/main/examples">
+    15+ working examples to explore
+  </Card>
+  <Card title="CLI" href="/docs/get-started/cli">
+    Interactive command-line interface
+  </Card>
+</Cards>
+
+## Key Differences from Basic Tool-Calling Agents
+
+### Basic Tool-Calling Agent
+
+```typescript
+// Single tool call, no state, no planning
+const result = await generateText({
+  model: anthropic('claude-sonnet-4-5-20250929'),
+  tools: {
+    web_search: mySearchTool,
+  },
+  prompt: 'Search for information about X',
+});
+```
+
+**Limitations:**
+- ❌ No task planning or decomposition
+- ❌ No state across tool calls
+- ❌ Context fills up with intermediate results
+- ❌ Can't delegate to specialized helpers
+- ❌ No persistent memory
+
+### Deep Agent
+
+```typescript
+// Multi-step planning, stateful execution, subagents
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-5-20250929'),
+  tools: { web_search: mySearchTool },
+});
+
+const result = await agent.generate({
+  prompt: 'Research X and write a comprehensive report',
+});
+```
+
+**Advantages:**
+- ✅ Automatic task planning via `write_todos`
+- ✅ Stateful execution (todos, files persist)
+- ✅ Context offloading to filesystem
+- ✅ Subagent delegation for complex subtasks
+- ✅ Persistent memory across conversations
+- ✅ Human-in-the-loop approval workflows
+
+## Architecture
+
+<Callout type="info">
+**Design Philosophy:** Wrap, don't replace
+</Callout>
+
+**ai-sdk-deep-agent** wraps AI SDK's `ToolLoopAgent` with additional capabilities:
+
+```
+┌─────────────────────────────────────────────┐
+│           Deep Agent (Facade)               │
+│  - State management (todos, files)          │
+│  - Tool composition (core + user tools)     │
+│  - Event streaming                          │
+│  - Checkpointing                            │
+└─────────────────┬───────────────────────────┘
+                  │
+┌─────────────────▼───────────────────────────┐
+│       AI SDK ToolLoopAgent                  │
+│  - Model orchestration                      │
+│  - Tool calling loop                        │
+│  - Streaming & events                       │
+└─────────────────────────────────────────────┘
+```
+
+This approach means:
+- **Compatibility**: Works with any AI SDK model provider
+- **Composability**: Use with other AI SDK features
+- **Upgradability**: Benefits from AI SDK improvements
+- **Simplicity**: Clean API, no hidden magic
+
+## Feature Parity with LangChain DeepAgents
+
+This library implements the same core features as LangChain's DeepAgents framework:
+
+| Feature | LangChain | ai-sdk-deep-agent |
+|---------|-----------|-------------------|
+| Planning tool | `write_todos` | `write_todos` ✅ |
+| Virtual filesystem | Yes | Yes ✅ |
+| Subagent spawning | Yes | Yes ✅ |
+| Long-term memory | StoreBackend | PersistentBackend ✅ |
+| Human-in-the-loop | Interrupts | `interruptOn` ✅ |
+| Middleware | LangGraph middleware | AI SDK middleware ✅ |
+| CLI | `uvx deepagents-cli` | `bunx ai-sdk-deep-agent` ✅ |
+
+**Key difference:** Built on AI SDK v6 instead of LangGraph, with TypeScript-first design and full type safety.
+
+## Next Steps
+
+1. **[Quickstart Guide](/docs/get-started/get-started)** - Build your first agent
+2. **[Customization Guide](/docs/guides/customization)** - Configure prompts, tools, and backends
+3. **[Agent Harness](/docs/guides/harness)** - Deep dive into capabilities
+4. **[Examples](https://github.com/your-repo/tree/main/examples)** - Learn by doing
+5. **[CLI](/docs/get-started/cli)** - Interactive development experience
+
+<Callout type="success">
+**Ready to build?** Check out the quickstart guide to create your first deep agent in minutes!
+</Callout>

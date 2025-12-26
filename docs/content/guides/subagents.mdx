@@ -1,0 +1,752 @@
+---
+title: Subagents
+description: Learn how to use subagents to delegate work and keep context clean
+---
+
+Deep agents can create **subagents** to delegate work. Subagents solve the **context bloat problem** by isolating complex tasks - the main agent receives only the final result, not the dozens of tool calls that produced it.
+
+<Callout type="info">
+**Think of subagents as** specialized team members - each has their own expertise and workspace, and they report back with a concise summary instead of bringing the main agent into every detail.
+</Callout>
+
+## Why Use Subagents?
+
+### The Context Bloat Problem
+
+When agents use tools with large outputs (web search, file reads, database queries), the context window fills up quickly:
+
+```
+❌ Without Subagents:
+Main Agent Context:
+[User prompt]
+[Tool call 1: web_search] → [5,000 tokens of results]
+[Tool call 2: web_search] → [5,000 tokens of results]
+[Tool call 3: read_file] → [3,000 tokens of content]
+[Tool call 4-10... more tool calls]
+→ Context is huge, expensive, and slow!
+
+✅ With Subagents:
+Main Agent Context:
+[User prompt]
+[Tool call: task] → [Subagent result: 500 tokens]
+→ Context stays clean!
+```
+
+### Benefits
+
+| Benefit | Description |
+|---------|-------------|
+| **Context isolation** | Subagent work doesn't clutter main agent's context |
+| **Parallel execution** | Multiple subagents can run concurrently |
+| **Specialization** | Subagents can have different tools/configurations |
+| **Token efficiency** | Large subtask context compressed into single result |
+| **Better focus** | Main agent stays high-level, subagents go deep |
+
+### When to Use Subagents
+
+✅ **Good for:**
+- Multi-step tasks that would clutter main agent's context
+- Specialized domains needing custom instructions or tools
+- Tasks requiring different model capabilities
+- Keeping main agent focused on high-level coordination
+
+❌ **Not for:**
+- Simple, single-step tasks
+- When you need to maintain intermediate context
+- When overhead outweighs benefits
+
+---
+
+## Configuration
+
+### Basic Subagent Definition
+
+```typescript
+import { createDeepAgent } from 'ai-sdk-deep-agent';
+import { anthropic } from '@ai-sdk/anthropic';
+
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-5-20250929'),
+  subagents: [
+    {
+      name: 'researcher',
+      description: 'Expert at researching topics using web search',
+      systemPrompt: 'You are a research specialist. Use web_search to find information and provide comprehensive summaries.',
+    },
+    {
+      name: 'coder',
+      description: 'Expert at writing and reviewing code',
+      systemPrompt: 'You are a software engineer. Write clean, well-documented code with tests.',
+    },
+  ],
+});
+```
+
+### SubAgent Schema
+
+```typescript
+interface SubAgent {
+  // Required fields
+  name: string;              // Unique identifier
+  description: string;        // What this subagent does (main agent uses this to decide)
+  systemPrompt: string;       // Instructions for the subagent
+
+  // Optional fields
+  tools?: ToolSet | SubagentToolConfig[];  // Custom tools
+  model?: LanguageModel;      // Override default model
+  interruptOn?: InterruptOnConfig;  // Human-in-the-loop approval
+  output?: {                  // Structured output
+    schema: z.ZodType<any>;
+    description?: string;
+  };
+  generationOptions?: GenerationOptions;  // AI SDK generation opts
+  advancedOptions?: AdvancedAgentOptions; // AI SDK advanced opts
+}
+```
+
+---
+
+## Using Subagents
+
+### Example: Research + Code Generation
+
+```typescript
+import { createDeepAgent } from 'ai-sdk-deep-agent';
+import { anthropic, openai } from '@ai-sdk/anthropic';
+import { z } from 'zod';
+
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-5-20250929'),
+  subagents: [
+    {
+      name: 'researcher',
+      description: 'Conducts in-depth research on technical topics',
+      systemPrompt: `You are a technical researcher.
+
+      Your job:
+      1. Break down the research question
+      2. Use web_search to find relevant information
+      3. Synthesize findings into a summary
+      4. Cite sources
+
+      Output format:
+      - Summary (2-3 paragraphs)
+      - Key findings (bullet points)
+      - Sources (with URLs)
+
+      Keep response under 500 words.`,
+      tools: { web_search: webSearchTool },
+    },
+    {
+      name: 'implementation-specialist',
+      description: 'Implements code based on research findings',
+      systemPrompt: 'You are a software engineer. Implement production-ready code with tests and documentation.',
+      model: openai('gpt-4o'), // Use different model
+    },
+  ],
+});
+
+// Main agent can now delegate
+const result = await agent.generate({
+  prompt: 'Research OAuth 2.0 best practices and implement a secure authentication system',
+});
+
+// Flow:
+// 1. Main agent calls task(researcher) → "Research OAuth 2.0..."
+// 2. Researcher subagent uses web_search multiple times
+// 3. Researcher returns 500-word summary
+// 4. Main agent calls task(implementation-specialist) → "Implement based on research..."
+// 5. Implementation-specialist writes code files
+// 6. Main agent synthesizes final answer
+```
+
+### Example: Parallel Subagents
+
+```typescript
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-5-20250929'),
+  subagents: [
+    {
+      name: 'frontend-specialist',
+      description: 'Handles React and TypeScript UI code',
+      systemPrompt: 'You are a frontend expert. Focus on React, TypeScript, and UI best practices.',
+    },
+    {
+      name: 'backend-specialist',
+      description: 'Handles API and server-side code',
+      systemPrompt: 'You are a backend expert. Focus on APIs, databases, and server architecture.',
+    },
+    {
+      name: 'devops-specialist',
+      description: 'Handles deployment and infrastructure',
+      systemPrompt: 'You are a DevOps expert. Focus on Docker, CI/CD, and cloud deployment.',
+    },
+  ],
+});
+
+// Main agent can delegate to all three in parallel
+const result = await agent.generate({
+  prompt: 'Design and implement a full-stack web application with CI/CD pipeline',
+});
+```
+
+---
+
+## The General-Purpose Subagent
+
+In addition to user-defined subagents, deep agents have access to a **general-purpose** subagent at all times.
+
+### Characteristics
+
+- Same system prompt as the main agent
+- Same tools as the main agent
+- Same model (unless overridden)
+- No explicit configuration needed
+
+### Purpose
+
+The general-purpose subagent is ideal for **context isolation without specialized behavior**:
+
+```typescript
+// No subagents defined - general-purpose is always available
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-5-20250929'),
+});
+
+// Agent can still delegate using the task tool
+const result = await agent.generate({
+  prompt: 'Analyze this entire codebase and document the architecture',
+  // Agent will use task(general-purpose) to avoid cluttering context
+});
+```
+
+### When to Use
+
+- Quick context isolation without defining custom subagents
+- Tasks that don't require specialized instructions
+- Exploratory work where you want to keep main agent clean
+
+---
+
+## Context Isolation
+
+### What's Shared vs Isolated
+
+```typescript
+const parentResult = await agent.generate({
+  prompt: 'Use a subagent to analyze the codebase',
+});
+
+// Inside subagent:
+console.log(subagentState);
+// {
+//   todos: [],  // Isolated: empty todo list
+//   files: parentResult.state.files,  // Shared: same reference
+// }
+
+// What's isolated:
+// - todos: Each subagent has its own
+// - messages: Independent conversation history
+// - tool execution context: Fresh tool instances
+
+// What's shared:
+// - files: Can read/modify parent's filesystem
+// - backend: Same storage layer
+// - tools: Subset of parent's tools (unless customized)
+```
+
+### Why Share Files?
+
+```typescript
+// Main agent creates a plan
+await agent.generate({
+  prompt: 'Create a plan in /plan.md for building a web app',
+});
+
+// Subagent can read and execute the plan
+await agent.generate({
+  prompt: 'Use a subagent to implement the plan in /plan.md',
+  // Subagent has access to /plan.md via shared files
+});
+```
+
+---
+
+## Customizing Subagents
+
+### Custom Tools
+
+```typescript
+import { tool } from 'ai';
+import { z } from 'zod';
+
+const deployTool = tool({
+  description: 'Deploy code to production',
+  parameters: z.object({
+    environment: z.enum(['staging', 'production']),
+  }),
+  execute: async ({ environment }) => {
+    // Deployment logic
+    return `Deployed to ${environment}`;
+  },
+});
+
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-5-20250929'),
+  subagents: [
+    {
+      name: 'devops-engineer',
+      description: 'Handles deployments and infrastructure',
+      systemPrompt: 'You are a DevOps engineer. Use deploy_tool when ready.',
+      tools: {
+        deploy_tool: deployTool,
+        // Also gets default tools (write_todos, filesystem, etc.)
+      },
+    },
+  ],
+});
+```
+
+### Structured Output
+
+```typescript
+const researchSchema = z.object({
+  summary: z.string(),
+  keyFindings: z.array(z.string()),
+  confidence: z.number(),
+  sources: z.array(z.object({
+    url: z.string(),
+    title: z.string(),
+  })),
+});
+
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-5-20250929'),
+  subagents: [
+    {
+      name: 'researcher',
+      description: 'Researches topics and returns structured findings',
+      systemPrompt: 'Research the topic and return findings in the specified format.',
+      output: {
+        schema: researchSchema,
+        description: 'Research findings with confidence scores',
+      },
+    },
+  ],
+});
+
+const result = await agent.generate({
+  prompt: 'Research quantum computing applications',
+});
+
+// Subagent returns structured output
+console.log(result.output);
+// {
+//   summary: "Quantum computing...",
+//   keyFindings: ["...", "..."],
+//   confidence: 0.85,
+//   sources: [...]
+// }
+```
+
+### Different Models
+
+```typescript
+import { anthropic, openai } from '@ai-sdk/anthropic';
+import { createDeepAgent } from 'ai-sdk-deep-agent';
+
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-5-20250929'), // Main agent uses Claude
+  subagents: [
+    {
+      name: 'analyst',
+      description: 'Analyzes data and provides insights',
+      systemPrompt: 'You are a data analyst...',
+      model: openai('gpt-4o'), // Subagent uses GPT-4
+    },
+    {
+      name: 'writer',
+      description: 'Writes documentation and reports',
+      systemPrompt: 'You are a technical writer...',
+      model: anthropic('claude-haiku-4-5-20251001'), // Subagent uses Haiku (faster, cheaper)
+    },
+  ],
+});
+```
+
+### Human-in-the-Loop
+
+```typescript
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-5-20250929'),
+  interruptOn: {
+    write_file: false, // Main agent: no approval needed
+  },
+  subagents: [
+    {
+      name: 'deployer',
+      description: 'Handles production deployments',
+      systemPrompt: 'You are responsible for deployments...',
+      interruptOn: {
+        deploy_tool: true, // Subagent: require approval for deploys
+      },
+    },
+  ],
+});
+
+for await (const event of agent.streamWithEvents({
+  prompt: 'Deploy to production',
+  onApprovalRequest: async ({ toolName, args }) => {
+    console.log(`Subagent wants to run ${toolName}`);
+    return await confirmDeployment();
+  },
+})) {
+  // Handle events...
+}
+```
+
+---
+
+## Best Practices
+
+### 1. Write Clear Descriptions
+
+The main agent uses descriptions to decide which subagent to call. Be specific:
+
+```typescript
+// ✅ Good: Specific and action-oriented
+{
+  name: 'security-auditor',
+  description: 'Analyzes code for security vulnerabilities including SQL injection, XSS, CSRF, and authentication flaws. Use when reviewing code for security issues.',
+}
+
+// ❌ Bad: Vague
+{
+  name: 'helper',
+  description: 'helps with stuff',
+}
+```
+
+### 2. Detailed System Prompts
+
+Include specific guidance on how to use tools and format outputs:
+
+```typescript
+{
+  name: 'technical-writer',
+  description: 'Creates technical documentation',
+  systemPrompt: `You are a technical writer specializing in developer documentation.
+
+  Your process:
+  1. Understand the topic thoroughly
+  2. Organize information logically
+  3. Write clear, concise documentation
+  4. Include code examples where helpful
+
+  Output format:
+  - Title (clear and descriptive)
+  - Overview (2-3 sentences)
+  - Main content (structured with headers)
+  - Code examples (when applicable)
+  - See also section (related topics)
+
+  Keep documentation under 1000 words. Use markdown formatting.`,
+}
+```
+
+### 3. Minimize Tool Sets
+
+Only give subagents the tools they need. This improves focus and security:
+
+```typescript
+// ✅ Good: Focused tool set
+{
+  name: 'email-sender',
+  tools: {
+    send_email: emailTool,
+    validate_email: validationTool,
+  },
+}
+
+// ❌ Bad: Too many tools
+{
+  name: 'email-sender',
+  tools: {
+    send_email: emailTool,
+    web_search: searchTool,
+    database_query: dbTool,
+    file_upload: uploadTool,
+  },
+}
+```
+
+### 4. Choose Models by Task
+
+Different models excel at different tasks:
+
+```typescript
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-5-20250929'),
+  subagents: [
+    {
+      name: 'contract-reviewer',
+      description: 'Reviews legal documents',
+      systemPrompt: 'You are an expert legal reviewer...',
+      model: anthropic('claude-sonnet-4-5-20250929'), // Large context for long docs
+    },
+    {
+      name: 'summarizer',
+      description: 'Creates concise summaries',
+      systemPrompt: 'Summarize the content in 3 bullet points...',
+      model: anthropic('claude-haiku-4-5-20251001'), // Faster, cheaper for summaries
+    },
+    {
+      name: 'data-analyst',
+      description: 'Analyzes numerical data',
+      systemPrompt: 'You are a data analyst...',
+      model: openai('gpt-4o'), // Better at numerical analysis
+    },
+  ],
+});
+```
+
+### 5. Return Concise Results
+
+Instruct subagents to return summaries, not raw data:
+
+```typescript
+{
+  name: 'data-analyst',
+  systemPrompt: `Analyze the data and return:
+
+  1. Key insights (3-5 bullet points)
+  2. Overall confidence score (0-1)
+  3. Recommended next actions
+
+  Do NOT include:
+  - Raw data
+  - Intermediate calculations
+  - Detailed tool outputs
+
+  Keep response under 300 words.`,
+}
+```
+
+---
+
+## Common Patterns
+
+### Pattern 1: Multi-Stage Pipeline
+
+```typescript
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-5-20250929'),
+  subagents: [
+    {
+      name: 'data-collector',
+      description: 'Gathers raw data from various sources',
+      systemPrompt: 'Collect comprehensive data on the topic',
+      tools: [webSearchTool, databaseTool, apiTool],
+    },
+    {
+      name: 'data-analyzer',
+      description: 'Analyzes collected data for insights',
+      systemPrompt: 'Analyze data and extract key insights',
+      tools: [analysisTool],
+    },
+    {
+      name: 'report-writer',
+      description: 'Writes polished reports from analysis',
+      systemPrompt: 'Create professional reports from insights',
+      tools: [documentFormatterTool],
+    },
+  ],
+  systemPrompt: `You coordinate data analysis projects.
+
+  Workflow:
+  1. Use data-collector to gather information
+  2. Pass results to data-analyzer
+  3. Send insights to report-writer
+  4. Compile final output`,
+});
+
+// Usage
+await agent.generate({
+  prompt: 'Research the state of AI in 2024 and create a comprehensive report',
+});
+```
+
+### Pattern 2: Specialized Reviewers
+
+```typescript
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-5-20250929'),
+  subagents: [
+    {
+      name: 'security-reviewer',
+      description: 'Reviews code for security vulnerabilities',
+      systemPrompt: 'Check for SQL injection, XSS, CSRF, auth flaws...',
+      tools: [securityScannerTool],
+    },
+    {
+      name: 'performance-reviewer',
+      description: 'Reviews code for performance issues',
+      systemPrompt: 'Check for N+1 queries, inefficient algorithms...',
+      tools: [performanceAnalyzerTool],
+    },
+    {
+      name: 'style-reviewer',
+      description: 'Reviews code for style and consistency',
+      systemPrompt: 'Check adherence to style guides and best practices...',
+      tools: [linterTool],
+    },
+  ],
+  systemPrompt: `For code reviews, delegate to appropriate reviewers:
+  - Use security-reviewer for security concerns
+  - Use performance-reviewer for performance issues
+  - Use style-reviewer for code style`,
+});
+```
+
+### Pattern 3: A/B Testing
+
+```typescript
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-5-20250929'),
+  subagents: [
+    {
+      name: 'approach-a',
+      description: 'Implements solutions using functional programming',
+      systemPrompt: 'You prefer functional programming patterns. Use immutability, pure functions, and composition.',
+    },
+    {
+      name: 'approach-b',
+      description: 'Implements solutions using object-oriented programming',
+      systemPrompt: 'You prefer OOP patterns. Use classes, inheritance, and polymorphism.',
+    },
+  ],
+  systemPrompt: `For complex problems, use both approach-a and approach-b subagents, then compare their solutions and recommend the best one.`,
+});
+
+// Usage
+await agent.generate({
+  prompt: 'Implement a data processing pipeline using both approaches and compare',
+});
+```
+
+---
+
+## Troubleshooting
+
+### Subagent Not Being Called
+
+**Problem**: Main agent tries to do work itself instead of delegating.
+
+**Solutions**:
+
+1. **Make descriptions more specific**:
+
+```typescript
+// ✅ Good
+{
+  name: 'research-specialist',
+  description: 'Conducts in-depth research on specific topics using web search. Use when you need detailed information that requires multiple searches.',
+}
+
+// ❌ Bad
+{
+  name: 'helper',
+  description: 'helps with stuff',
+}
+```
+
+2. **Instruct main agent to delegate**:
+
+```typescript
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-5-20250929'),
+  subagents: [/* ... */],
+  systemPrompt: `IMPORTANT: For complex tasks, delegate to your subagents using the task() tool.
+  This keeps your context clean and improves results.`,
+});
+```
+
+### Context Still Getting Bloated
+
+**Problem**: Context fills up despite using subagents.
+
+**Solutions**:
+
+1. **Instruct subagent to return concise results**:
+
+```typescript
+{
+  name: 'researcher',
+  systemPrompt: `...
+
+  IMPORTANT: Return only the essential summary.
+  Do NOT include raw data, intermediate search results, or detailed tool outputs.
+  Your response should be under 500 words.`,
+}
+```
+
+2. **Use filesystem for large data**:
+
+```typescript
+{
+  name: 'data-processor',
+  systemPrompt: `When you gather large amounts of data:
+  1. Save raw data to /data/raw_results.txt
+  2. Process and analyze the data
+  3. Return only the analysis summary
+
+  This keeps context clean.`,
+}
+```
+
+### Wrong Subagent Being Selected
+
+**Problem**: Main agent calls inappropriate subagent for the task.
+
+**Solution**: Differentiate subagents clearly in descriptions:
+
+```typescript
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-5-20250929'),
+  subagents: [
+    {
+      name: 'quick-researcher',
+      description: 'For simple, quick research questions that need 1-2 searches. Use when you need basic facts or definitions.',
+    },
+    {
+      name: 'deep-researcher',
+      description: 'For complex, in-depth research requiring multiple searches, synthesis, and analysis. Use for comprehensive reports.',
+    },
+  ],
+});
+```
+
+---
+
+## Summary
+
+Subagents enable:
+
+| Feature | Benefit |
+|---------|---------|
+| **Context isolation** | Main agent stays clean and focused |
+| **Specialization** | Each subagent optimized for its task |
+| **Parallel execution** | Multiple subagents work simultaneously |
+| **Token efficiency** | Large work compressed into summaries |
+| **Flexibility** | Custom tools, models, and instructions per subagent |
+| **General-purpose** | Always available without configuration |
+
+<Callout type="success">
+**Key Insight**: Subagents are the key to scaling agent capabilities without hitting context limits. They let agents go deep on specific tasks while staying efficient at the high level.
+</Callout>
+
+## Next Steps
+
+- [Agent Harness](/docs/guides/harness) - Learn about built-in tools
+- [Customization](/docs/guides/customization) - Configure subagents and tools
+- [Human-in-the-Loop](/docs/guides/human-in-the-loop) - Add approval workflows for subagents
