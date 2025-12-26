@@ -3,24 +3,34 @@ title: Get Started
 description: Build your first Deep Agent from installation to your first working agent
 ---
 
-# Get Started with AI SDK Deep Agent
-
 A comprehensive guide to building your first Deep Agent from installation to your first working agent.
 
 ## What are Deep Agents?
 
 Deep Agents extend basic LLM tool-calling with four core capabilities:
 
-1. **Planning Tool** (`write_todos`) - Break down complex tasks and track progress
-2. **Virtual Filesystem** - Persistent state across tool calls
-3. **Subagent Spawning** (`task`) - Delegate work to specialized agents
-4. **Detailed Prompting** - Context-aware instructions and tool descriptions
+<Cards>
+  <Card title="Planning Tool">
+    `write_todos` - Break down complex tasks and track progress
+  </Card>
+  <Card title="Virtual Filesystem">
+    Persistent state across tool calls
+  </Card>
+  <Card title="Subagent Spawning">
+    `task` tool - Delegate work to specialized agents
+  </Card>
+  <Card title="Detailed Prompting">
+    Context-aware instructions and tool descriptions
+  </Card>
+</Cards>
 
 This combination enables agents to handle complex, multi-step tasks that would overwhelm simpler "shallow" agents.
 
 ## Prerequisites
 
-Before you begin, ensure you have:
+<Callout title="Before You Begin" type="info">
+Ensure you have the following ready:
+</Callout>
 
 - **Bun runtime** (>= 1.0.0) - This package requires Bun for TypeScript features and performance
 - **Node.js** compatible environment
@@ -42,45 +52,47 @@ bun --version
 
 ## Installation
 
-### For a New Project
+<Tabs items={['New Project', 'Existing Project', 'CLI Global']}>
+  <Tab value="New Project">
+    ```bash
+    # Create a new project
+    mkdir my-agent-project
+    cd my-agent-project
+    bun init -y
 
-```bash
-# Create a new project
-mkdir my-agent-project
-cd my-agent-project
-bun init -y
+    # Install the package
+    bun add ai-sdk-deep-agent
 
-# Install the package
-bun add ai-sdk-deep-agent
+    # Install AI SDK providers
+    bun add @ai-sdk/anthropic @ai-sdk/openai
+    ```
+  </Tab>
+  <Tab value="Existing Project">
+    ```bash
+    cd your-project
+    bun add ai-sdk-deep-agent
+    ```
+  </Tab>
+  <Tab value="CLI Global">
+    ```bash
+    # Install globally
+    bun add -g ai-sdk-deep-agent
 
-# Install AI SDK providers
-bun add @ai-sdk/anthropic @ai-sdk/openai
-```
-
-### For an Existing Project
-
-```bash
-cd your-project
-bun add ai-sdk-deep-agent
-```
-
-### For CLI Usage (Global)
-
-```bash
-# Install globally
-bun add -g ai-sdk-deep-agent
-
-# Now you can run from anywhere
-deep-agent
-```
+    # Now you can run from anywhere
+    deep-agent
+    ```
+  </Tab>
+</Tabs>
 
 ## Configuration
 
-### 1. Set Up API Keys
+<Steps>
+<Step>
+### Set Up API Keys
 
 Create a `.env` file in your project root:
 
-```bash
+```bash title=".env"
 # Anthropic (recommended)
 ANTHROPIC_API_KEY=sk-ant-your-key-here
 
@@ -90,10 +102,14 @@ OPENAI_API_KEY=sk-your-key-here
 # Tavily (for web search tools - optional)
 TAVILY_API_KEY=tvly-your-key-here
 ```
+</Step>
 
-### 2. Choose a Model
+<Step>
+### Choose a Model
 
-The library requires AI SDK `LanguageModel` instances (not strings). Here are common options:
+<Callout type="warn">
+The library requires AI SDK `LanguageModel` instances (not strings).
+</Callout>
 
 ```typescript
 import { anthropic } from '@ai-sdk/anthropic';
@@ -114,12 +130,14 @@ const model4 = openai('gpt-5');
 // OpenAI GPT-4o
 const model5 = openai('gpt-4o');
 ```
+</Step>
 
-### 3. Configure TypeScript
+<Step>
+### Configure TypeScript
 
 Ensure your `tsconfig.json` has these settings:
 
-```json
+```json title="tsconfig.json"
 {
   "compilerOptions": {
     "target": "ESNext",
@@ -130,6 +148,8 @@ Ensure your `tsconfig.json` has these settings:
   }
 }
 ```
+</Step>
+</Steps>
 
 ## Your First Agent
 
@@ -137,7 +157,7 @@ Ensure your `tsconfig.json` has these settings:
 
 Create a file `agent.ts`:
 
-```typescript
+```typescript title="agent.ts"
 import { createDeepAgent } from 'ai-sdk-deep-agent';
 import { anthropic } from '@ai-sdk/anthropic';
 
@@ -405,10 +425,11 @@ const result = await agent.generate({
 
 ### Pattern 5: With Web Search
 
-Enable web research capabilities:
+<Callout title="Tavily API Key Required" type="warn">
+Enable web research capabilities by setting your Tavily API key in `.env`
+</Callout>
 
-```bash
-# Set Tavily API key in .env
+```bash title=".env"
 TAVILY_API_KEY=tvly-your-key-here
 ```
 
@@ -431,7 +452,7 @@ const result = await agent.generate({
 Give your agent persistent memory across conversations:
 
 ```typescript
-import { createDeepAgent, createAgentMemoryMiddleware } from 'ai-sdk-deep-agent';
+import { createDeepAgent } from 'ai-sdk-deep-agent';
 import { anthropic } from '@ai-sdk/anthropic';
 
 const agent = createDeepAgent({
@@ -500,224 +521,228 @@ for await (const event of agent.streamWithEvents({
 
 ## Troubleshooting
 
-### Issue 1: "Cannot find module 'ai-sdk-deep-agent'"
+<Accordions type="single">
+  <Accordion title="Cannot find module 'ai-sdk-deep-agent'">
+    **Problem:** TypeScript cannot resolve the module.
 
-**Problem:** TypeScript cannot resolve the module.
+    **Solution:** Ensure you're using Bun runtime:
 
-**Solution:** Ensure you're using Bun runtime:
+    ```bash
+    # Run with Bun (not node or tsx)
+    bun run your-script.ts
 
-```bash
-# Run with Bun (not node or tsx)
-bun run your-script.ts
+    # Not
+    node your-script.ts
+    # or
+    tsx your-script.ts
+    ```
+  </Accordion>
 
-# Not
-node your-script.ts
-# or
-tsx your-script.ts
-```
+  <Accordion title="API Key Not Found">
+    **Problem:** The agent cannot find your API key.
 
-### Issue 2: "API Key Not Found"
+    **Solutions:**
 
-**Problem:** The agent cannot find your API key.
+    1. **Check environment variable:**
+    ```bash
+    echo $ANTHROPIC_API_KEY
+    ```
 
-**Solutions:**
+    2. **Create `.env` file:**
+    ```bash
+    ANTHROPIC_API_KEY=sk-ant-your-key-here
+    ```
 
-1. **Check environment variable:**
-```bash
-echo $ANTHROPIC_API_KEY
-```
+    3. **Load .env in your code:**
+    ```typescript
+    // Bun auto-loads .env, but if you have issues:
+    import { config } from 'dotenv';
+    config();
 
-2. **Create `.env` file:**
-```bash
-ANTHROPIC_API_KEY=sk-ant-your-key-here
-```
+    const agent = createDeepAgent({
+      model: anthropic('claude-sonnet-4-5-20250929', {
+        apiKey: process.env.ANTHROPIC_API_KEY,
+      }),
+    });
+    ```
+  </Accordion>
 
-3. **Load .env in your code:**
-```typescript
-// Bun auto-loads .env, but if you have issues:
-import { config } from 'dotenv';
-config();
+  <Accordion title="Model Not Found or Invalid Model">
+    **Problem:** Using string model IDs instead of provider instances.
 
-const agent = createDeepAgent({
-  model: anthropic('claude-sonnet-4-5-20250929', {
-    apiKey: process.env.ANTHROPIC_API_KEY,
-  }),
-});
-```
+    **Solution:** Always use provider instances:
 
-### Issue 3: "Model Not Found" or Invalid Model
+    ```typescript
+    // ❌ Wrong - string model IDs don't work
+    const agent = createDeepAgent({
+      model: 'claude-sonnet-4-5-20250929',
+    });
 
-**Problem:** Using string model IDs instead of provider instances.
+    // ✅ Correct - use provider instance
+    const agent = createDeepAgent({
+      model: anthropic('claude-sonnet-4-5-20250929'),
+    });
+    ```
+  </Accordion>
 
-**Solution:** Always use provider instances:
+  <Accordion title="Files Not Persisting">
+    **Problem:** Files created by agent disappear between runs.
 
-```typescript
-// ❌ Wrong - string model IDs don't work
-const agent = createDeepAgent({
-  model: 'claude-sonnet-4-5-20250929',
-});
+    **Solution:** Use a persistent backend:
 
-// ✅ Correct - use provider instance
-const agent = createDeepAgent({
-  model: anthropic('claude-sonnet-4-5-20250929'),
-});
-```
+    ```typescript
+    // Default: StateBackend (in-memory, ephemeral)
+    const agent1 = createDeepAgent({
+      model: anthropic('claude-sonnet-4-5-20250929'),
+      // Files lost after agent.generate() completes
+    });
 
-### Issue 4: Files Not Persisting
+    // Persistent: FilesystemBackend (saved to disk)
+    const agent2 = createDeepAgent({
+      model: anthropic('claude-sonnet-4-5-20250929'),
+      backend: new FilesystemBackend({ rootDir: './workspace' }),
+      // Files persist on disk
+    });
+    ```
+  </Accordion>
 
-**Problem:** Files created by agent disappear between runs.
+  <Accordion title="Agent Not Using Tools">
+    **Problem:** Agent ignores tools or doesn't use them as expected.
 
-**Solution:** Use a persistent backend:
+    **Solutions:**
 
-```typescript
-// Default: StateBackend (in-memory, ephemeral)
-const agent1 = createDeepAgent({
-  model: anthropic('claude-sonnet-4-5-20250929'),
-  // Files lost after agent.generate() completes
-});
+    1. **Explicitly instruct the agent:**
+    ```typescript
+    const result = await agent.generate({
+      prompt: `
+        Use the write_todos tool to create a plan, then work through each task.
+        Use write_file to save your results.
+      `,
+    });
+    ```
 
-// Persistent: FilesystemBackend (saved to disk)
-const agent2 = createDeepAgent({
-  model: anthropic('claude-sonnet-4-5-20250929'),
-  backend: new FilesystemBackend({ rootDir: './workspace' }),
-  // Files persist on disk
-});
-```
+    2. **Include tools in system prompt:**
+    ```typescript
+    const agent = createDeepAgent({
+      model: anthropic('claude-sonnet-4-5-20250929'),
+      systemPrompt: `
+        You have access to these tools:
+        - write_todos: Create and update task lists
+        - write_file: Create files
+        - read_file: Read file contents
 
-### Issue 5: Agent Not Using Tools
+        Always use write_todos before starting work.
+      `,
+    });
+    ```
+  </Accordion>
 
-**Problem:** Agent ignores tools or doesn't use them as expected.
+  <Accordion title="Conversation Context Lost">
+    **Problem:** Agent doesn't remember previous messages in multi-turn conversations.
 
-**Solutions:**
+    **Solution:** Always pass the messages array back:
 
-1. **Explicitly instruct the agent:**
-```typescript
-const result = await agent.generate({
-  prompt: `
-    Use the write_todos tool to create a plan, then work through each task.
-    Use write_file to save your results.
-  `,
-});
-```
+    ```typescript
+    let messages: ModelMessage[] = [];
 
-2. **Include tools in system prompt:**
-```typescript
-const agent = createDeepAgent({
-  model: anthropic('claude-sonnet-4-5-20250929'),
-  systemPrompt: `
-    You have access to these tools:
-    - write_todos: Create and update task lists
-    - write_file: Create files
-    - read_file: Read file contents
+    // First turn
+    for await (const event of agent.streamWithEvents({
+      messages: [{ role: 'user', content: 'First message' }],
+    })) {
+      if (event.type === 'done') {
+        messages = event.messages || []; // ✅ Save messages
+      }
+    }
 
-    Always use write_todos before starting work.
-  `,
-});
-```
+    // Second turn
+    for await (const event of agent.streamWithEvents({
+      messages: messages, // ✅ Pass messages back
+    })) {
+      // Agent has context
+    }
+    ```
+  </Accordion>
 
-### Issue 6: Conversation Context Lost
+  <Accordion title="Timeout Errors">
+    **Problem:** Agent takes too long and times out.
 
-**Problem:** Agent doesn't remember previous messages in multi-turn conversations.
+    **Solutions:**
 
-**Solution:** Always pass the messages array back:
+    1. **Increase max steps:**
+    ```typescript
+    const result = await agent.generate({
+      prompt: 'Complex task',
+      maxSteps: 100, // Default is 100, increase if needed
+    });
+    ```
 
-```typescript
-let messages: ModelMessage[] = [];
+    2. **Use streaming for real-time feedback:**
+    ```typescript
+    for await (const event of agent.streamWithEvents({
+      prompt: 'Complex task',
+    })) {
+      // See progress in real-time
+    }
+    ```
 
-// First turn
-for await (const event of agent.streamWithEvents({
-  messages: [{ role: 'user', content: 'First message' }],
-})) {
-  if (event.type === 'done') {
-    messages = event.messages || []; // ✅ Save messages
-  }
-}
+    3. **Optimize with prompt caching (Anthropic):**
+    ```typescript
+    const agent = createDeepAgent({
+      model: anthropic('claude-sonnet-4-5-20250929'),
+      enablePromptCaching: true, // Faster subsequent calls
+    });
+    ```
+  </Accordion>
 
-// Second turn
-for await (const event of agent.streamWithEvents({
-  messages: messages, // ✅ Pass messages back
-})) {
-  // Agent has context
-}
-```
+  <Accordion title="Web Tools Not Working">
+    **Problem:** `web_search` tool doesn't work.
 
-### Issue 7: Timeout Errors
+    **Solution:** Set `TAVILY_API_KEY`:
 
-**Problem:** Agent takes too long and times out.
+    ```bash
+    # Get key from https://tavily.com/
+    TAVILY_API_KEY=tvly-your-key-here
+    ```
 
-**Solutions:**
-
-1. **Increase max steps:**
-```typescript
-const result = await agent.generate({
-  prompt: 'Complex task',
-  maxSteps: 100, // Default is 100, increase if needed
-});
-```
-
-2. **Use streaming for real-time feedback:**
-```typescript
-for await (const event of agent.streamWithEvents({
-  prompt: 'Complex task',
-})) {
-  // See progress in real-time
-}
-```
-
-3. **Optimize with prompt caching (Anthropic):**
-```typescript
-const agent = createDeepAgent({
-  model: anthropic('claude-sonnet-4-5-20250929'),
-  enablePromptCaching: true, // Faster subsequent calls
-});
-```
-
-### Issue 8: Web Tools Not Working
-
-**Problem:** `web_search` tool doesn't work.
-
-**Solution:** Set `TAVILY_API_KEY`:
-
-```bash
-# Get key from https://tavily.com/
-TAVILY_API_KEY=tvly-your-key-here
-```
-
-Without this key, web tools are gracefully disabled (other tools still work).
+    Without this key, web tools are gracefully disabled (other tools still work).
+  </Accordion>
+</Accordions>
 
 ## Next Steps
 
-### Learn More
-
-- **[Architecture Documentation](./architecture.md)** - Deep dive into components and internals
-- **[Common Patterns](./patterns.md)** - Advanced usage patterns and examples
-- **[Checkpointers](./checkpointers.md)** - Session persistence in detail
-- **[Agent Memory](./agent-memory.md)** - Long-term memory for agents
+<Cards>
+  <Card title="Architecture Documentation" href="/docs/architecture">
+    Deep dive into components and internals
+  </Card>
+  <Card title="Common Patterns" href="/docs/patterns">
+    Advanced usage patterns and examples
+  </Card>
+  <Card title="Checkpointers" href="/docs/checkpointers">
+    Session persistence in detail
+  </Card>
+  <Card title="Agent Memory" href="/docs/agent-memory">
+    Long-term memory for agents
+  </Card>
+</Cards>
 
 ### Explore Examples
 
 Check out the `/examples` directory for working code:
 
+<Files>
+  <Folder name="examples" defaultOpen>
+    <File name="basic.ts" />
+    <File name="streaming.ts" />
+    <File name="with-custom-tools.ts" />
+    <File name="with-checkpointer.ts" />
+    <File name="with-subagents.ts" />
+    <File name="web-research.ts" />
+  </Folder>
+</Files>
+
 ```bash
-# Basic usage
+# Run any example
 bun run examples/basic.ts
-
-# Streaming with events
-bun run examples/streaming.ts
-
-# Custom tools
-bun run examples/with-custom-tools.ts
-
-# Checkpointing
-bun run examples/with-checkpointer.ts
-
-# Subagents
-bun run examples/with-subagents.ts
-
-# Web research
-bun run examples/web-research.ts
-
-# And more...
 ```
 
 ### Try the CLI
@@ -742,6 +767,10 @@ bunx ai-sdk-deep-agent --model anthropic/claude-sonnet-4-5-20250929
 ```
 
 ### Performance Tips
+
+<Callout title="Optimize Your Agent" type="idea">
+Follow these tips to improve performance and reduce costs
+</Callout>
 
 1. **Use Claude Haiku for faster responses:**
 ```typescript
@@ -791,13 +820,15 @@ console.log(result.output?.summary); // Fully typed!
 
 ## Summary
 
+<Callout type="success">
 You now have everything you need to build your first Deep Agent:
 
-1. ✅ Installed the package with Bun
-2. ✅ Configured API keys
-3. ✅ Created your first agent
-4. ✅ Understood core concepts (todos, files, subagents)
-5. ✅ Implemented common patterns
-6. ✅ Troubleshooting common issues
+- ✅ Installed the package with Bun
+- ✅ Configured API keys
+- ✅ Created your first agent
+- ✅ Understood core concepts (todos, files, subagents)
+- ✅ Implemented common patterns
+- ✅ Troubleshooting common issues
 
 **Ready to build?** Start with the basic example, then explore more advanced patterns as you need them. Happy building!
+</Callout>

@@ -3,20 +3,32 @@ title: Command Line Interface
 description: Interactive terminal interface for working with AI agents
 ---
 
-# Command Line Interface
-
 The Deep Agent CLI provides an interactive terminal interface for working with AI agents directly from your command line. Built with [Ink](https://github.com/vadimdemedes/ink) (React for CLI), it offers a rich, visual experience with real-time streaming, event rendering, and interactive workflows.
 
 ## What is the CLI?
 
 The Deep Agent CLI is a **terminal-based interactive agent** that combines:
 
-- **Natural language interaction** - Chat with the agent to accomplish tasks
-- **Real-time streaming** - See responses as they're generated
-- **Event visualization** - Watch tool calls, file operations, and subagents execute live
-- **Interactive approvals** - Approve or deny tool executions for safe operation
-- **Session persistence** - Save and resume conversations across sessions
-- **File operations** - Read, write, and edit files directly from the terminal
+<Cards>
+  <Card title="Natural Language">
+    Chat with the agent to accomplish tasks
+  </Card>
+  <Card title="Real-time Streaming">
+    See responses as they're generated
+  </Card>
+  <Card title="Event Visualization">
+    Watch tool calls execute live
+  </Card>
+  <Card title="Interactive Approvals">
+    Approve or deny tool executions
+  </Card>
+  <Card title="Session Persistence">
+    Save and resume conversations
+  </Card>
+  <Card title="File Operations">
+    Read, write, edit files from terminal
+  </Card>
+</Cards>
 
 ## When to Use the CLI
 
@@ -29,7 +41,7 @@ The CLI is ideal for:
 - **Learning** - Explore agent behavior and capabilities interactively
 - **Quick prototyping** - Test prompts and agent configurations without writing code
 
-**vs. Programmatic Usage:**
+### CLI vs. Programmatic Usage
 
 | CLI | Programmatic (`createDeepAgent`) |
 |-----|----------------------------------|
@@ -43,7 +55,9 @@ The CLI is ideal for:
 
 ### Prerequisites
 
-The CLI requires [Bun](https://bun.sh) runtime (>= 1.0.0):
+<Callout title="Bun Required" type="warn">
+The CLI requires [Bun](https://bun.sh) runtime (>= 1.0.0)
+</Callout>
 
 ```bash
 # Install Bun
@@ -52,43 +66,46 @@ curl -fsSL https://bun.sh/install | bash
 
 ### Installation Options
 
-**Option 1: Run without installing (Recommended)**
+<Tabs items={['Run without installing', 'Install globally', 'Install locally', 'From source']}>
+  <Tab value="Run without installing">
+    **Recommended for quick use**
 
-```bash
-bunx ai-sdk-deep-agent
-```
-
-**Option 2: Install globally**
-
-```bash
-bun add -g ai-sdk-deep-agent
-deep-agent
-```
-
-**Option 3: Install locally in a project**
-
-```bash
-cd your-project
-bun add ai-sdk-deep-agent
-bunx deep-agent
-```
-
-**Option 4: Development (from source)**
-
-```bash
-git clone https://github.com/chrispangg/ai-sdk-deepagent.git
-cd ai-sdk-deepagent
-bun install
-bun run cli
-```
+    ```bash
+    bunx ai-sdk-deep-agent
+    ```
+  </Tab>
+  <Tab value="Install globally">
+    ```bash
+    bun add -g ai-sdk-deep-agent
+    deep-agent
+    ```
+  </Tab>
+  <Tab value="Install locally">
+    ```bash
+    cd your-project
+    bun add ai-sdk-deep-agent
+    bunx deep-agent
+    ```
+  </Tab>
+  <Tab value="From source">
+    ```bash
+    git clone https://github.com/chrispangg/ai-sdk-deepagent.git
+    cd ai-sdk-deepagent
+    bun install
+    bun run cli
+    ```
+  </Tab>
+</Tabs>
 
 ## Quick Start
 
-1. **Set up API keys**
+<Steps>
+<Step>
+### Set up API keys
 
 Create a `.env` file in your working directory:
 
-```bash
+```bash title=".env"
 ANTHROPIC_API_KEY=sk-ant-...
 OPENAI_API_KEY=sk-...              # Optional
 TAVILY_API_KEY=tvly-...            # Optional, for web_search tool
@@ -100,14 +117,18 @@ Or set environment variables:
 export ANTHROPIC_API_KEY=sk-ant-...
 export TAVILY_API_KEY=tvly-...     # For web search capabilities
 ```
+</Step>
 
-2. **Start the CLI**
+<Step>
+### Start the CLI
 
 ```bash
 bunx ai-sdk-deep-agent
 ```
+</Step>
 
-3. **Interact with the agent**
+<Step>
+### Interact with the agent
 
 ```
 >_ Deep Agent
@@ -122,6 +143,8 @@ To get started, describe a task or try one of these commands:
 
 > Create a TypeScript function that sorts an array
 ```
+</Step>
+</Steps>
 
 ## Features Overview
 
@@ -157,7 +180,9 @@ See tool calls, file operations, and subagents execute live:
 
 ### Tool Approval Workflow
 
-Control which tools the agent can use:
+<Callout title="Stay Safe" type="warn">
+Control which tools the agent can use with interactive approvals
+</Callout>
 
 ```
 🛑 Tool Approval Required
@@ -192,7 +217,9 @@ Built-in optimizations for long-running conversations:
 
 ### Web Tools
 
-Search the web, make API calls, and fetch web content:
+<Callout type="info">
+Search the web, make API calls, and fetch web content (requires `TAVILY_API_KEY`)
+</Callout>
 
 - `web_search` - Powered by Tavily API
 - `http_request` - Make HTTP requests to any API
@@ -235,6 +262,19 @@ The CLI is built with:
 
 ### Key Components
 
+<Files>
+  <Folder name="src/cli" defaultOpen>
+    <File name="index.tsx" />
+    <Folder name="hooks">
+      <File name="useAgent.ts" />
+    </Folder>
+    <Folder name="components">
+      <File name="..." />
+    </Folder>
+    <File name="theme.ts" />
+  </Folder>
+</Files>
+
 - **App** (`src/cli/index.tsx`) - Main application component
 - **useAgent hook** (`src/cli/hooks/useAgent.ts`) - Agent state management
 - **Components** (`src/cli/components/`) - Reusable UI components
@@ -242,26 +282,41 @@ The CLI is built with:
 
 ## Next Steps
 
-- **[CLI Usage Guide](./use-the-cli.md)** - Detailed documentation on commands, flags, and workflows
-- **[Architecture](./architecture.md)** - Deep Agent architecture and components
-- **[Patterns](./patterns.md)** - Common usage patterns and code examples
-- **[Checkpointers](./checkpointers.md)** - Session persistence patterns
+<Cards>
+  <Card title="CLI Usage Guide" href="/docs/use-the-cli">
+    Detailed documentation on commands, flags, and workflows
+  </Card>
+  <Card title="Architecture" href="/docs/architecture">
+    Deep Agent architecture and components
+  </Card>
+  <Card title="Patterns" href="/docs/patterns">
+    Common usage patterns and code examples
+  </Card>
+  <Card title="Checkpointers" href="/docs/checkpointers">
+    Session persistence patterns
+  </Card>
+</Cards>
 
 ## Troubleshooting
 
-**CLI won't start:**
-- Ensure you're using Bun runtime (not Node.js)
-- Check that API keys are set correctly
-- Verify network connectivity
+<Accordions type="single">
+  <Accordion title="CLI won't start">
+    - Ensure you're using Bun runtime (not Node.js)
+    - Check that API keys are set correctly
+    - Verify network connectivity
+  </Accordion>
 
-**Tools not working:**
-- Check that `TAVILY_API_KEY` is set for web tools
-- Verify file permissions for filesystem operations
-- Check working directory is correct
+  <Accordion title="Tools not working">
+    - Check that `TAVILY_API_KEY` is set for web tools
+    - Verify file permissions for filesystem operations
+    - Check working directory is correct
+  </Accordion>
 
-**Session persistence issues:**
-- Ensure `.checkpoints` directory is writable
-- Use unique session names for different projects
-- Check available disk space
+  <Accordion title="Session persistence issues">
+    - Ensure `.checkpoints` directory is writable
+    - Use unique session names for different projects
+    - Check available disk space
+  </Accordion>
+</Accordions>
 
 For more help, see [GitHub Issues](https://github.com/chrispangg/ai-sdk-deepagent/issues).

@@ -3,15 +3,16 @@ title: Quickstart
 description: Get up and running with ai-sdk-deep-agent in minutes
 ---
 
-# Quickstart Guide
-
 Get up and running with **ai-sdk-deep-agent** in minutes. This guide will walk you through installation, basic usage, and key configuration options.
 
 ## Prerequisites
 
-Before you begin, ensure you have:
+<Callout title="Before You Begin" type="info">
+Ensure you have the following ready:
+</Callout>
 
 - **Node.js/Bun**: This package requires [Bun](https://bun.sh) runtime (>= 1.0.0)
+
   ```bash
   # Install Bun if needed
   curl -fsSL https://bun.sh/install | bash
@@ -27,29 +28,32 @@ Before you begin, ensure you have:
 
 Install the package in your project:
 
-```bash
-# Using Bun (recommended)
-bun add ai-sdk-deep-agent
-
-# Or npm
+```npm
 npm install ai-sdk-deep-agent
 ```
 
 You'll also need the AI SDK provider packages:
 
-```bash
-# For Anthropic (Claude)
-bun add @ai-sdk/anthropic
-
-# For OpenAI (GPT)
-bun add @ai-sdk/openai
-```
+<Tabs items={['Anthropic', 'OpenAI']}>
+  <Tab value="Anthropic">
+    ```bash
+    bun add @ai-sdk/anthropic
+    ```
+  </Tab>
+  <Tab value="OpenAI">
+    ```bash
+    bun add @ai-sdk/openai
+    ```
+  </Tab>
+</Tabs>
 
 ## Your First Agent
 
 Let's create a simple agent that can plan tasks, work with files, and respond to your requests.
 
-### Step 1: Create an Agent
+<Steps>
+<Step>
+### Create an Agent
 
 Create a file named `agent.ts`:
 
@@ -63,8 +67,10 @@ const agent = createDeepAgent({
   systemPrompt: 'You are a helpful research assistant.',
 });
 ```
+</Step>
 
-### Step 2: Generate a Response
+<Step>
+### Generate a Response
 
 Now let's ask the agent to do something:
 
@@ -78,8 +84,10 @@ console.log(result.text);
 console.log('Todos:', result.state.todos);
 console.log('Files:', Object.keys(result.state.files));
 ```
+</Step>
 
-### Step 3: Run It
+<Step>
+### Run It
 
 Set your API key and run:
 
@@ -91,11 +99,15 @@ export ANTHROPIC_API_KEY=sk-ant-...
 bun run agent.ts
 ```
 
+<Callout type="success">
 **That's it!** Your agent just:
 - Broke down the task into todos using the `write_todos` tool
 - Researched the topic
 - Created files in the virtual filesystem
 - Provided a comprehensive response
+</Callout>
+</Step>
+</Steps>
 
 ## Basic Configuration
 
@@ -103,20 +115,26 @@ bun run agent.ts
 
 Use any AI SDK provider (Anthropic, OpenAI, Azure, etc.):
 
-```typescript
-import { anthropic } from '@ai-sdk/anthropic';
-import { openai } from '@ai-sdk/openai';
+<Tabs items={['Anthropic Claude', 'OpenAI GPT']}>
+  <Tab value="Anthropic Claude">
+    ```typescript
+    import { anthropic } from '@ai-sdk/anthropic';
 
-// Anthropic Claude
-const agent1 = createDeepAgent({
-  model: anthropic('claude-sonnet-4-5-20250929'),
-});
+    const agent = createDeepAgent({
+      model: anthropic('claude-sonnet-4-5-20250929'),
+    });
+    ```
+  </Tab>
+  <Tab value="OpenAI GPT">
+    ```typescript
+    import { openai } from '@ai-sdk/openai';
 
-// OpenAI GPT
-const agent2 = createDeepAgent({
-  model: openai('gpt-4o'),
-});
-```
+    const agent = createDeepAgent({
+      model: openai('gpt-4o'),
+    });
+    ```
+  </Tab>
+</Tabs>
 
 ### Custom System Prompt
 
@@ -321,7 +339,9 @@ const agent = createDeepAgent({
 
 ### Enable Web Tools
 
-Add web search and HTTP request capabilities (requires Tavily API key):
+<Callout title="Tavily API Required" type="warn">
+Web search and HTTP request capabilities require a Tavily API key.
+</Callout>
 
 ```bash
 # Set Tavily API key
@@ -364,7 +384,7 @@ await agent.generate({
 
 Create a `.env` file in your project root:
 
-```bash
+```bash title=".env"
 # Required: API keys
 ANTHROPIC_API_KEY=sk-ant-...
 OPENAI_API_KEY=sk-...
@@ -392,40 +412,41 @@ const agent = createDeepAgent({
 
 ## Next Steps
 
-### Learn More
-
-- **[Architecture](./architecture.md)** - Deep dive into the architecture and components
-- **[Patterns](./patterns.md)** - Common usage patterns and advanced examples
-- **[Checkpointers](./checkpointers.md)** - Session persistence and state management
-- **[Agent Memory](./agent-memory.md)** - Cross-conversation memory system
+<Cards>
+  <Card title="Architecture" href="/docs/architecture">
+    Deep dive into the architecture and components
+  </Card>
+  <Card title="Patterns" href="/docs/patterns">
+    Common usage patterns and advanced examples
+  </Card>
+  <Card title="Checkpointers" href="/docs/checkpointers">
+    Session persistence and state management
+  </Card>
+  <Card title="Agent Memory" href="/docs/agent-memory">
+    Cross-conversation memory system
+  </Card>
+</Cards>
 
 ### Explore Examples
 
 Check out the `examples/` directory for 15+ working examples:
 
+<Files>
+  <Folder name="examples" defaultOpen>
+    <File name="basic.ts" />
+    <File name="streaming.ts" />
+    <File name="with-structured-output.ts" />
+    <File name="with-subagents.ts" />
+    <File name="with-custom-tools.ts" />
+    <File name="web-research.ts" />
+    <File name="with-local-sandbox.ts" />
+  </Folder>
+</Files>
+
+Run any example with:
+
 ```bash
-# Basic usage
 bun examples/basic.ts
-
-# Streaming with events
-bun examples/streaming.ts
-
-# Structured output
-bun examples/with-structured-output.ts
-
-# Subagents
-bun examples/with-subagents.ts
-
-# Custom tools
-bun examples/with-custom-tools.ts
-
-# Web research
-bun examples/web-research.ts
-
-# Command execution
-bun examples/with-local-sandbox.ts
-
-# And more...
 ```
 
 ### Try the CLI
@@ -441,46 +462,50 @@ bunx ai-sdk-deep-agent --model anthropic/claude-haiku-4-5-20251001
 
 ## Troubleshooting
 
-### "Cannot find module 'ai-sdk-deep-agent'"
+<Accordions type="single">
+  <Accordion title="Cannot find module 'ai-sdk-deep-agent'">
+    Make sure you've installed the package and its dependencies:
 
-Make sure you've installed the package and its dependencies:
+    ```bash
+    bun install
+    ```
+  </Accordion>
 
-```bash
-bun install
-```
+  <Accordion title="API key not found">
+    Set your API key as an environment variable or in a `.env` file:
 
-### "API key not found"
+    ```bash
+    export ANTHROPIC_API_KEY=sk-ant-...
+    ```
+  </Accordion>
 
-Set your API key as an environment variable or in a `.env` file:
+  <Accordion title="Module not found: @ai-sdk/anthropic">
+    Install the required AI SDK provider package:
 
-```bash
-export ANTHROPIC_API_KEY=sk-ant-...
-```
+    ```bash
+    bun add @ai-sdk/anthropic
+    ```
+  </Accordion>
 
-### "Module not found: @ai-sdk/anthropic"
-
-Install the required AI SDK provider package:
-
-```bash
-bun add @ai-sdk/anthropic
-```
-
-### Agent not using tools
-
-Check that:
-1. You're using a model that supports tool calling (Claude 3+, GPT-4)
-2. The task actually requires tools (agents decide when to use them)
-3. Your prompt encourages tool usage: "Use the write_todos tool to plan your work"
+  <Accordion title="Agent not using tools">
+    Check that:
+    1. You're using a model that supports tool calling (Claude 3+, GPT-4)
+    2. The task actually requires tools (agents decide when to use them)
+    3. Your prompt encourages tool usage: "Use the write_todos tool to plan your work"
+  </Accordion>
+</Accordions>
 
 ## Summary
 
 In this quickstart, you learned:
 
-- How to install and set up **ai-sdk-deep-agent**
-- How to create a basic agent with planning and filesystem capabilities
-- How to configure models, prompts, and storage backends
-- How to use streaming with real-time events
-- Key features like todos, structured output, and subagents
-- Common patterns for multi-turn conversations and custom tools
+- ✅ How to install and set up **ai-sdk-deep-agent**
+- ✅ How to create a basic agent with planning and filesystem capabilities
+- ✅ How to configure models, prompts, and storage backends
+- ✅ How to use streaming with real-time events
+- ✅ Key features like todos, structured output, and subagents
+- ✅ Common patterns for multi-turn conversations and custom tools
 
-You're now ready to build powerful AI agents! Explore the documentation and examples to learn more.
+<Callout type="success">
+**You're now ready to build powerful AI agents!** Explore the documentation and examples to learn more.
+</Callout>

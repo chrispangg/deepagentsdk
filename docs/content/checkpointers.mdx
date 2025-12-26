@@ -31,11 +31,27 @@ Each checkpoint saves:
 
 ## Built-in Checkpoint Savers
 
+<Cards>
+  <Card title="MemorySaver">
+    In-memory storage (ephemeral, lost on process exit)
+
+    **Use for:** Testing, single-session applications
+  </Card>
+  <Card title="FileSaver">
+    JSON file storage (persists to disk)
+
+    **Use for:** Local development, simple persistence
+  </Card>
+  <Card title="KeyValueStoreSaver">
+    Adapter for custom storage backends
+
+    **Use for:** Production deployments (Redis, databases)
+  </Card>
+</Cards>
+
 ### MemorySaver
 
 In-memory storage (ephemeral, lost on process exit).
-
-**Use for:** Testing, single-session applications
 
 **Features:** Fast, simple, namespace support
 
@@ -62,8 +78,6 @@ const agent2 = createDeepAgent({
 
 JSON file storage (persists to disk).
 
-**Use for:** Local development, simple persistence needs
-
 **Features:** Human-readable, easy debugging, survives restarts
 
 **Options:**
@@ -82,8 +96,6 @@ const agent = createDeepAgent({
 
 Adapter for `KeyValueStore` interface.
 
-**Use for:** Production deployments with Redis, databases, cloud storage
-
 **Features:** Scalable, distributed, custom storage backends
 
 **Options:**
@@ -100,7 +112,9 @@ const agent = createDeepAgent({
 });
 ```
 
-**Note:** Checkpoints are stored under `[namespace]/checkpoints/[threadId]` in the key-value store.
+<Callout type="info">
+Checkpoints are stored under `[namespace]/checkpoints/[threadId]` in the key-value store.
+</Callout>
 
 ## Basic Usage
 
@@ -143,17 +157,28 @@ for await (const event of agent.streamWithEvents({
 
 When resuming sessions, the agent follows this priority for message handling:
 
-1. **Explicit `messages` array** - Takes precedence over everything
-   - Non-empty: Uses provided messages, replaces checkpoint history
-   - Empty (`[]`): Clears checkpoint history, starts fresh
+<Steps>
+<Step>
+**Explicit `messages` array** - Takes precedence over everything
 
-2. **`prompt` parameter** (deprecated) - Converted to message format
-   - Used only if `messages` is not provided
-   - Will show deprecation warning in non-production environments
+- Non-empty: Uses provided messages, replaces checkpoint history
+- Empty (`[]`): Clears checkpoint history, starts fresh
+</Step>
 
-3. **Checkpoint history** - Default when neither `messages` nor `prompt` provided
-   - Loads conversation history from checkpoint
-   - Applies summarization if enabled
+<Step>
+**`prompt` parameter** (deprecated) - Converted to message format
+
+- Used only if `messages` is not provided
+- Will show deprecation warning in non-production environments
+</Step>
+
+<Step>
+**Checkpoint history** - Default when neither `messages` nor `prompt` provided
+
+- Loads conversation history from checkpoint
+- Applies summarization if enabled
+</Step>
+</Steps>
 
 **Example: Starting fresh from checkpoint**
 ```typescript
@@ -208,7 +233,9 @@ for await (const event of agent.streamWithEvents({
 
 ## Tool Approval (HITL)
 
-When using Human-in-the-Loop (HITL) tool approval, checkpoints save the interrupt state:
+<Callout title="Human-in-the-Loop" type="info">
+When using HITL tool approval, checkpoints save the interrupt state for seamless resumption
+</Callout>
 
 ```typescript
 const agent = createDeepAgent({
@@ -233,7 +260,13 @@ for await (const event of agent.streamWithEvents({
     console.log(`Checkpoint saved at step ${event.step}`);
   }
 }
+```
 
+<Callout title="Auto-Deny Behavior" type="warn">
+Tools configured with `interruptOn` but no `onApprovalRequest` callback will be automatically denied (not executed).
+</Callout>
+
+```typescript
 // Auto-deny behavior (no callback provided)
 const agent2 = createDeepAgent({
   model: anthropic('claude-sonnet-4-20250514'),
@@ -316,7 +349,9 @@ $ bun run cli --session my-project
 
 ## Known Limitations
 
-- ⚠️ **Auto-Deny Behavior**: Tools configured with `interruptOn` but no `onApprovalRequest` callback will be automatically denied (not executed).
+<Callout type="warn">
+**Auto-Deny Behavior**: Tools configured with `interruptOn` but no `onApprovalRequest` callback will be automatically denied (not executed).
+</Callout>
 
 ## Examples
 
@@ -324,5 +359,11 @@ See `examples/checkpointer-demo.ts` for comprehensive examples.
 
 ## See Also
 
-- [Architecture Documentation](./architecture.md) - Core components
-- [Common Patterns](./patterns.md) - Usage patterns
+<Cards>
+  <Card title="Architecture Documentation" href="/docs/architecture">
+    Core components and system design
+  </Card>
+  <Card title="Common Patterns" href="/docs/patterns">
+    Usage patterns and code examples
+  </Card>
+</Cards>
