@@ -17,6 +17,7 @@ on:
       - '!.agent/**'
       - '!.refs/**'
       - '!docs/**'
+      - '!.build-docs/**'
   workflow_dispatch:
 
 jobs:

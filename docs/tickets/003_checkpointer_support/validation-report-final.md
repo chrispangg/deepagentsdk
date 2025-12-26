@@ -1,4 +1,7 @@
-# Checkpointer Support - Final Validation Report
+---
+title: Checkpointer Support - Final Validation Report
+description: Documentation
+---
 
 **Date:** December 13, 2025
 **Validator:** Claude Code (Sonnet 4.5)

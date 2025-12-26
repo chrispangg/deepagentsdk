@@ -1,8 +1,15 @@
-# Common Patterns
+---
+title: Common Patterns
+description: Common usage patterns and code examples
+---
 
 This document contains common usage patterns and code examples for ai-sdk-deep-agent.
 
 ## Creating an Agent with Custom Backend
+
+### FilesystemBackend
+
+Persist files to disk for durability:
 
 ```typescript
 import { anthropic } from '@ai-sdk/anthropic';
@@ -11,6 +18,34 @@ import { createDeepAgent, FilesystemBackend } from 'ai-sdk-deep-agent';
 const agent = createDeepAgent({
   model: anthropic('claude-sonnet-4-20250514'),
   backend: new FilesystemBackend({ rootDir: './workspace' }),
+});
+```
+
+### StateBackend (Default)
+
+In-memory storage for ephemeral sessions:
+
+```typescript
+import { createDeepAgent, StateBackend } from 'ai-sdk-deep-agent';
+
+const state = { todos: [], files: {} };
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-20250514'),
+  backend: new StateBackend(state),
+});
+```
+
+### PersistentBackend
+
+Cross-session persistence with a key-value store:
+
+```typescript
+import { PersistentBackend, InMemoryStore } from 'ai-sdk-deep-agent';
+
+const store = new InMemoryStore();
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-20250514'),
+  backend: new PersistentBackend({ store, namespace: 'project-1' }),
 });
 ```
 
@@ -39,22 +74,69 @@ const azureAgent = createDeepAgent({
 
 ## Multi-Turn Conversation
 
-```typescript
-let messages: ModelMessage[] = [];
+### Using Messages Array
 
-for await (const event of agent.streamWithEvents({ prompt: "First message", messages })) {
+```typescript
+let messages = [];
+
+// First turn
+for await (const event of agent.streamWithEvents({
+  messages: [{ role: 'user', content: "First message" }],
+})) {
   if (event.type === 'done') {
-    messages = event.messages || [];
+    messages = event.messages;
   }
 }
 
 // Next turn with context
-for await (const event of agent.streamWithEvents({ prompt: "Follow up", messages })) {
-  // Agent remembers previous context
+for await (const event of agent.streamWithEvents({
+  messages: [
+    ...messages,
+    { role: 'user', content: "Follow up question" }
+  ],
+})) {
+  // Agent has full context from previous turns
+}
+```
+
+### Using Checkpointers for Session Persistence
+
+For production applications, use checkpointers to persist conversation state:
+
+```typescript
+import { FileSaver } from 'ai-sdk-deep-agent';
+
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-20250514'),
+  checkpointer: new FileSaver({ dir: './.checkpoints' }),
+});
+
+const threadId = 'user-session-123';
+
+// First interaction - automatically saves checkpoint
+for await (const event of agent.streamWithEvents({
+  messages: [{ role: 'user', content: "Hello" }],
+  threadId,
+})) {
+  if (event.type === 'checkpoint-saved') {
+    console.log('Checkpoint saved');
+  }
+}
+
+// Later session - automatically loads checkpoint
+for await (const event of agent.streamWithEvents({
+  messages: [{ role: 'user', content: "Follow up" }],
+  threadId,
+})) {
+  if (event.type === 'checkpoint-loaded') {
+    console.log('Restored previous session');
+  }
 }
 ```
 
 ## Adding Custom Subagents
+
+Create specialized agents for task delegation:
 
 ```typescript
 import { anthropic } from '@ai-sdk/anthropic';
@@ -65,11 +147,42 @@ const researchAgent: SubAgent = {
   description: 'Specialized for deep research tasks',
   systemPrompt: 'You are a research specialist...',
   tools: { custom_tool: myTool },
-  model: anthropic('claude-haiku-4-5-20251001'), // optional override with different model
+  model: anthropic('claude-haiku-4-5-20251001'), // Optional: use different model
 };
 
 const agent = createDeepAgent({
   model: anthropic('claude-sonnet-4-20250514'),
+  subagents: [researchAgent],
+});
+```
+
+### Subagent with Selective Tools
+
+Restrict which tools a subagent can access:
+
+```typescript
+import { createLsTool, createReadFileTool, write_todos } from 'ai-sdk-deep-agent';
+
+const readonlyAgent: SubAgent = {
+  name: 'reader',
+  description: 'Read-only agent for file inspection',
+  systemPrompt: 'You can only read files and list directories.',
+  tools: [
+    createLsTool,
+    createReadFileTool,
+    write_todos,
+  ],
+};
+```
+
+### Disable General-Purpose Subagent
+
+Prevent the agent from delegating to a general-purpose subagent:
+
+```typescript
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-20250514'),
+  includeGeneralPurposeAgent: false, // Only use defined subagents
   subagents: [researchAgent],
 });
 ```
@@ -91,6 +204,7 @@ const result = await agent.generate({
 });
 
 console.log(result.text);
+console.log('State:', result.state); // Access todos and files
 ```
 
 ### Streaming with Events
@@ -108,6 +222,10 @@ for await (const event of agent.streamWithEvents({
       break;
     case 'file-written':
       console.log(`\nWrote file: ${event.path}`);
+      break;
+    case 'done':
+      console.log('\nComplete!');
+      console.log('Messages:', event.messages);
       break;
   }
 }
@@ -142,19 +260,29 @@ const agent = createDeepAgent({
 
 ### Backend Composition
 
+Route files to different backends based on path prefix:
+
 ```typescript
 import { FilesystemBackend, CompositeBackend, StateBackend } from 'ai-sdk-deep-agent';
 
-// Combine filesystem persistence with in-memory ephemeral storage
-const backend = new CompositeBackend([
-  new FilesystemBackend({ rootDir: './workspace' }),
-  new StateBackend(), // For temporary files
-]);
+const state = { todos: [], files: {} };
+
+// Route files by path prefix
+const backend = new CompositeBackend(
+  new StateBackend(state), // Default: ephemeral storage
+  {
+    '/persistent/': new FilesystemBackend({ rootDir: './persistent' }), // Persistent files
+    '/cache/': new StateBackend(state), // Cached files (ephemeral)
+  }
+);
 
 const agent = createDeepAgent({
   model: anthropic('claude-sonnet-4-20250514'),
   backend,
 });
+
+// Files written to /persistent/ go to disk
+// Files written elsewhere are in-memory
 ```
 
 ### Conditional Tool Approval
@@ -170,7 +298,8 @@ const agent = createDeepAgent({
     write_file: {
       shouldApprove: (args) => {
         // Auto-approve writes to /tmp, require approval for others
-        return !args.file_path.startsWith('/tmp/');
+        const filePath = (args as any).file_path;
+        return !filePath?.startsWith('/tmp/');
       },
     },
   },
@@ -201,9 +330,11 @@ const agent = createDeepAgent({
   toolResultEvictionLimit: 15000, // tokens
 
   // Auto-summarize long conversations
-  autoSummarize: true,
-  summarizationThreshold: 150000, // tokens
-  messagesToKeepAfterSummarization: 8,
+  summarization: {
+    enabled: true,
+    tokenThreshold: 150000, // tokens
+    keepMessages: 8,
+  },
 });
 ```
 
@@ -214,8 +345,50 @@ import { anthropic } from '@ai-sdk/anthropic';
 
 const agent = createDeepAgent({
   model: anthropic('claude-sonnet-4-20250514'),
-  autoSummarize: true,
-  summarizationModel: anthropic('claude-haiku-4-5-20251001'), // Use faster model for summaries
+  summarization: {
+    enabled: true,
+    model: anthropic('claude-haiku-4-5-20251001'), // Use faster model for summaries
+  },
+});
+```
+
+### Using Middleware
+
+Add logging, telemetry, or custom behavior:
+
+```typescript
+import { wrapLanguageModel } from 'ai';
+
+const loggingMiddleware = {
+  wrapGenerate: async ({ doGenerate, params }) => {
+    console.log('Model called with:', params.prompt);
+    const result = await doGenerate();
+    console.log('Model returned:', result.text);
+    return result;
+  },
+};
+
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-20250514'),
+  middleware: [loggingMiddleware],
+});
+```
+
+### Agent Memory Middleware
+
+Load persistent agent-specific memory:
+
+```typescript
+import { createAgentMemoryMiddleware } from 'ai-sdk-deep-agent';
+
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-20250514'),
+  agentId: 'code-architect', // Loads ~/.deepagents/code-architect/agent.md
+  middleware: [
+    createAgentMemoryMiddleware({
+      agentId: 'code-architect',
+    }),
+  ],
 });
 ```
 
@@ -252,6 +425,7 @@ test("agent creates files", async () => {
 ### When to Use
 
 Use structured output when you need:
+
 - Type-safe agent responses
 - Validated data format
 - Consistent output structure
@@ -308,6 +482,8 @@ const schema = z.discriminatedUnion('type', [
 #### Combining with Other Features
 
 ```typescript
+import { MemorySaver } from 'ai-sdk-deep-agent';
+
 const agent = createDeepAgent({
   model: anthropic('claude-sonnet-4-20250514'),
   middleware: [loggingMiddleware],
@@ -337,8 +513,37 @@ const agent = createDeepAgent({
   ],
 });
 
-// Subagent results include formatted structured output:
-// "Research complete. [Structured Output]\n{\"summary\": \"...\", \"sources\": [...], \"confidence\": 0.9}"
+// Access structured output from events
+for await (const event of agent.streamWithEvents({
+  prompt: "Research AI safety",
+})) {
+  if (event.type === 'subagent-finish' && event.output) {
+    console.log('Structured output:', event.output);
+  }
+}
+```
+
+### Streaming with Structured Output
+
+```typescript
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-20250514'),
+  output: {
+    schema: z.object({
+      answer: z.string(),
+      confidence: z.number(),
+    }),
+  },
+});
+
+for await (const event of agent.streamWithEvents({
+  prompt: "What is the capital of France?",
+})) {
+  if (event.type === 'done' && event.output) {
+    console.log('Answer:', event.output.answer);
+    console.log('Confidence:', event.output.confidence);
+  }
+}
 ```
 
 ### Common Pitfalls
@@ -350,12 +555,162 @@ const agent = createDeepAgent({
 ### Best Practices
 
 1. **Start simple**: Use basic types, add complexity as needed
-2. **Add descriptions**: Help the LLM understand the schema
+2. **Add descriptions**: Help the LLM understand the schema with `.describe()`
 3. **Test validation**: Verify schema handles edge cases
 4. **Type inference**: Let TypeScript infer types from schema
+
+## Generation Options
+
+Control sampling behavior and response characteristics:
+
+```typescript
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-20250514'),
+  generationOptions: {
+    temperature: 0.7,        // 0-2, higher = more creative
+    topP: 0.9,              // Nucleus sampling
+    maxOutputTokens: 4096,   // Limit response length
+    presencePenalty: 0.5,    // -1 to 1, reduce repetition
+    frequencyPenalty: 0.5,   // -1 to 1, reduce repetition
+    seed: 42,                // For deterministic outputs
+  },
+});
+```
+
+## Advanced Loop Control
+
+### Prepare Step Hook
+
+Dynamically adjust settings before each step:
+
+```typescript
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-20250514'),
+  loopControl: {
+    prepareStep: async ({ stepNumber, model, messages }) => {
+      // Use smaller model for later steps
+      if (stepNumber > 5) {
+        return {
+          model: anthropic('claude-haiku-4-5-20251001'),
+        };
+      }
+      return {};
+    },
+  },
+});
+```
+
+### Custom Stop Conditions
+
+```typescript
+import { stepCountIs } from 'ai';
+
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-20250514'),
+  loopControl: {
+    stopWhen: [
+      stepCountIs(10), // Max 10 steps
+      // Custom: stop when specific tool is called
+      ({ toolCalls }) => {
+        return toolCalls.some(tc => tc.toolName === 'finish_task');
+      },
+    ],
+  },
+});
+```
+
+### Step Finish Hook
+
+React to completed steps:
+
+```typescript
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-20250514'),
+  loopControl: {
+    onStepFinish: async ({ toolCalls, toolResults }) => {
+      console.log(`Step completed with ${toolCalls.length} tool calls`);
+      // Log to analytics, update UI, etc.
+    },
+  },
+});
+```
+
+## Sandbox Backend
+
+Enable code execution with a sandbox backend:
+
+```typescript
+import { LocalSandbox } from 'ai-sdk-deep-agent';
+
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-20250514'),
+  backend: new LocalSandbox({
+    rootDir: './sandbox',
+    timeoutMs: 30000, // 30 second timeout
+  }),
+  // Now agent can use execute tool to run code
+});
+```
+
+## Skills System
+
+Load custom skills to extend agent capabilities:
+
+```typescript
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-20250514'),
+  agentId: 'code-architect', // Loads skills from ~/.deepagents/code-architect/skills/
+});
+
+// Skills are automatically discovered and loaded
+```
+
+Or with a custom directory:
+
+```typescript
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-20250514'),
+  skillsDir: './my-skills', // Deprecated: use agentId instead
+});
+```
+
+## Provider-Specific Options
+
+Pass options directly to the model provider:
+
+```typescript
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-20250514'),
+  advancedOptions: {
+    providerOptions: {
+      anthropic: {
+        headers: {
+          'anthropic-beta': 'max-tokens-3-5-2024-01-01',
+        },
+      },
+    },
+  },
+});
+```
+
+## OpenTelemetry Integration
+
+Enable telemetry for observability:
+
+```typescript
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-20250514'),
+  advancedOptions: {
+    experimental_telemetry: {
+      isEnabled: true,
+      functionId: 'my-agent',
+    },
+  },
+});
+```
 
 ## See Also
 
 - [Architecture Documentation](./architecture.md) - Core components and systems
 - [Checkpointer Documentation](./checkpointers.md) - Session persistence patterns
-- [Publishing Guide](../.github/PUBLISHING.md) - Release and deployment
+- [Publishing Guide](https://github.com/chrispangg/ai-sdk-deep-agent/blob/main/.github/PUBLISHING.md) - Release and deployment

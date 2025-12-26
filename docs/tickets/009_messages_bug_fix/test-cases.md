@@ -1,4 +1,7 @@
-# Test Cases: Hybrid Prompt-to-Messages API Implementation
+---
+title: "Test Cases: Hybrid Prompt-to-Messages API Implementation"
+description: Documentation
+---
 
 **Test File**: `test/messages/messages.test.ts`
 **Generated**: 2025-12-20

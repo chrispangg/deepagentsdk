@@ -1,4 +1,5 @@
 ---
+title: Checkpointer Support - Persist agent state between invocations (pause/resume)
 date: 2025-12-13 09:35:00 AEDT
 researcher: Claude Code (Opus 4.5)
 git_commit: 6479239d7976e3ea62be9a3368ba5b9de607f1d3
@@ -10,8 +11,6 @@ status: complete
 last_updated: 2025-12-13
 last_updated_by: Claude Code
 ---
-
-# Research: Checkpointer Support
 
 ## Research Question
 

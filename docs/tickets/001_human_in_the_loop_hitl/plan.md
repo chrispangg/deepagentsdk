@@ -1,4 +1,7 @@
-# Human-in-the-Loop (HITL) Implementation Plan
+---
+title: Human-in-the-Loop (HITL) Implementation Plan
+description: Documentation
+---
 
 ## Overview
 

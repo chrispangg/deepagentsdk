@@ -1,4 +1,7 @@
-# Architectural Refactoring Implementation Plan
+---
+title: Architectural Refactoring Implementation Plan
+description: Documentation
+---
 
 ## Overview
 

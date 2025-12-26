@@ -1,4 +1,5 @@
 ---
+title: Sandbox vs Filesystem Architecture Research
 date: 2025-12-24 06:11:49 AEDT
 researcher: claude
 git_commit: 45f2b563d7e4fb2ebec766cc5571886ac496654a
@@ -10,8 +11,6 @@ status: complete
 last_updated: 2025-12-24
 last_updated_by: claude
 ---
-
-# Research: Sandbox vs Filesystem and LocalSandbox vs execute()
 
 ## Research Question
 

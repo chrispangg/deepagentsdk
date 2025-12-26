@@ -1,4 +1,7 @@
-# Test Cases: Structured Output
+---
+title: "Test Cases: Structured Output"
+description: Documentation
+---
 
 **Test File**: `test/structured-output.test.ts`
 **Generated**: 2025-12-19

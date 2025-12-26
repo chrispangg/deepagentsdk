@@ -1,4 +1,7 @@
-# Hybrid Prompt-to-Messages API Implementation Plan
+---
+title: Hybrid Prompt-to-Messages API Implementation Plan
+description: Documentation
+---
 
 ## Overview
 

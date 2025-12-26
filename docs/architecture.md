@@ -1,12 +1,17 @@
-# Architecture
+---
+title: Architecture
+description: Deep Agent architecture and components
+---
 
 This document provides detailed architectural information about ai-sdk-deep-agent.
+
+**Version**: 0.9.2
 
 ## Core Components
 
 ### 1. DeepAgent (`src/agent.ts`)
 
-Main agent class that wraps `ToolLoopAgent` with state management.
+Main agent class that wraps AI SDK v6's `ToolLoopAgent` with state management.
 
 **Key features:**
 
@@ -15,13 +20,27 @@ Main agent class that wraps `ToolLoopAgent` with state management.
 - Supports three generation modes: `generate()`, `stream()`, `streamWithEvents()`
 - Handles conversation history via `messages` array for multi-turn conversations
 - Implements prompt caching (Anthropic), tool result eviction, and auto-summarization
+- Supports agent-specific skills and memory via `agentId` parameter
+- Provides middleware support via `wrapLanguageModel` for logging, telemetry, and context injection
 
-### 2. State Management (`src/types.ts`)
+### 2. State Management (`src/types/`)
 
 ```typescript
 interface DeepAgentState {
   todos: TodoItem[];  // Task planning/tracking
   files: Record<string, FileData>;  // Virtual filesystem
+}
+
+interface TodoItem {
+  id: string;  // Unique identifier
+  content: string;  // Task description (max 100 chars)
+  status: 'pending' | 'in_progress' | 'completed' | 'cancelled';
+}
+
+interface FileData {
+  content: string;
+  created_at?: string;
+  updated_at?: string;
 }
 ```
 
@@ -29,16 +48,51 @@ interface DeepAgentState {
 
 All backends implement `BackendProtocol` interface with methods: `read()`, `write()`, `edit()`, `ls()`, `lsInfo()`, `glob()`, `grep()`
 
+**Standard Backends:**
+
 - **`StateBackend`**: In-memory storage (default, ephemeral)
 - **`FilesystemBackend`**: Persists files to actual disk
 - **`PersistentBackend`**: Cross-conversation memory with key-value store
 - **`CompositeBackend`**: Combines multiple backends (e.g., filesystem + cloud storage)
 
+**Sandbox Backends** (implement `SandboxBackendProtocol` with `execute()` method):
+
+- **`BaseSandbox`**: Abstract base class for implementing sandbox backends
+- **`LocalSandbox`**: Executes commands in local shell with Node.js scripts
+- Extensible to: Modal, Runloop, Daytona, cloud providers, etc.
+
+Sandbox backends implement all filesystem operations via shell commands, requiring only the `execute()` method to be implemented.
+
 ### 4. Tools (`src/tools/`)
 
-- **Planning**: `write_todos` - Manages task lists with merge/replace strategies
-- **Filesystem**: `ls`, `read_file`, `write_file`, `edit_file`, `glob`, `grep`
-- **Subagents**: `task` - Spawns isolated subagents that share filesystem with parent
+**Planning:**
+- `write_todos` - Manages task lists with merge/replace strategies
+  - Supports merge mode (update by id) or replace mode (full replacement)
+  - Emits `todos-changed` events
+
+**Filesystem:**
+- `ls` - List files and directories
+- `read_file` - Read file contents (configurable line limit)
+- `write_file` - Write new files (error if exists)
+- `edit_file` - String-based find-and-replace editing
+- `glob` - Find files with glob patterns (e.g., `**/*.py`)
+- `grep` - Search for regex patterns in files
+
+**Web:**
+- `web_search` - Tavily-powered web search (requires `TAVILY_API_KEY`)
+- `http_request` - Raw HTTP requests with custom headers
+- `fetch_url` - Fetch and convert HTML to Markdown (uses Readability)
+
+**Execution** (sandbox backends only):
+- `execute` - Run shell commands in sandbox environment
+  - Emits `execute-start` and `execute-finish` events
+  - Includes exit code and truncation status
+
+**Subagents:**
+- `task` - Spawns isolated subagents that share filesystem with parent
+  - Inherits parent's user tools
+  - Independent todos and conversation history
+  - Can have own system prompts and output schemas
 
 ### 5. CLI (`src/cli/index.tsx`)
 
@@ -47,20 +101,64 @@ All backends implement `BackendProtocol` interface with methods: `read()`, `writ
 - Slash commands: `/help`, `/todos`, `/files`, `/read <path>`, `/clear`, `/model <name>`, `/exit`
 - Feature toggles: `/cache`, `/eviction`, `/summarize`, `/approve`, `/features`
 - Tool approval: Safe mode (default) requires approval for write/edit/execute operations
+- Uses `parseModelString()` to convert string model IDs to `LanguageModel` instances (backward compatibility)
+
+### 6. Skills (`src/skills/`)
+
+Agent-specific skills loaded from standardized directories:
+
+**Load Locations (via `agentId` parameter):**
+- User skills: `~/.deepagents/{agentId}/skills/*/SKILL.md`
+- Project skills: `[git-root]/.deepagents/skills/*/SKILL.md`
+
+**Skill Format:**
+```markdown
+---
+name: skill-name
+description: What this skill does
+---
+
+# Skill Content
+
+Detailed instructions for the agent...
+```
+
+Skills are automatically injected into the system prompt, providing agent-specific capabilities and context.
 
 ## Event System
 
 The `streamWithEvents()` method emits granular events during generation:
 
+**Core Events:**
 - `text`: Streamed text chunks
 - `step-start`, `step-finish`: Agent reasoning steps
-- `tool-call`, `tool-result`: Tool invocations
-- `todos-changed`: Todo list modifications
-- `file-write-start`, `file-written`, `file-edited`: Filesystem changes
-- `subagent-start`, `subagent-finish`: Subagent delegation
-- `approval-requested`, `approval-response`: Tool approval flow (HITL)
-- `done`: Final state with conversation messages
+- `done`: Final state with conversation messages and optional structured output
 - `error`: Error occurred
+
+**Tool Events:**
+- `tool-call`, `tool-result`: Generic tool invocation events
+- `todos-changed`: Todo list modifications
+- `file-read`, `file-write-start`, `file-written`, `file-edited`: Filesystem changes
+- `ls`, `glob`, `grep`: File operation results
+
+**Execution Events:**
+- `execute-start`, `execute-finish`: Command execution in sandbox
+- `web-search-start`, `web-search-finish`: Web search operations
+- `http-request-start`, `http-request-finish`: HTTP requests
+- `fetch-url-start`, `fetch-url-finish`: URL fetching and HTML conversion
+
+**Subagent Events:**
+- `subagent-start`, `subagent-finish`: Subagent lifecycle
+- `subagent-step`: Subagent reasoning steps
+- `text-segment`, `user-message`: Subagent communication
+
+**HITL Events:**
+- `approval-requested`: Tool approval requested (before execution)
+- `approval-response`: Approval decision received
+
+**Checkpoint Events:**
+- `checkpoint-saved`: Checkpoint saved to storage (with threadId and step number)
+- `checkpoint-loaded`: Checkpoint restored from storage
 
 ## Message Handling
 
@@ -69,6 +167,12 @@ The `streamWithEvents()` method emits granular events during generation:
 1. The `done` event includes `event.messages` - the updated conversation history
 2. Pass this back to the next `streamWithEvents()` call to maintain context
 3. The library automatically patches "dangling tool calls" (calls without results) via `patchToolCalls()`
+
+**Message Priority Logic** (in `streamWithEvents`):
+- Explicit `messages` array takes highest priority
+- `prompt` parameter is converted to a user message (backward compatibility)
+- `threadId` loads checkpoint history
+- Empty `messages` array clears checkpoint history (resets conversation)
 
 **Example:**
 
@@ -87,24 +191,67 @@ for await (const event of agent.streamWithEvents({ prompt: "Follow up", messages
 }
 ```
 
+**Deprecation Notice**: The `prompt` parameter is deprecated in favor of explicit `messages` array. A warning is emitted in non-production environments.
+
 ## Performance Features
 
 ### 1. Prompt Caching (Anthropic only)
 
 - Caches system prompt for faster subsequent calls
 - Enabled via `enablePromptCaching: true`
+- Uses Anthropic's `cacheControl` header for ephemeral caching
+- Reduces token usage and latency for repeated prompts
 
 ### 2. Tool Result Eviction
 
 - Large tool results (>20k tokens default) are evicted to virtual filesystem
 - Prevents context overflow in long agent loops
 - Controlled via `toolResultEvictionLimit` parameter
+- Evicted content stored in backend with summary in conversation
 
 ### 3. Auto-Summarization
 
 - When conversation exceeds token threshold (170k default), older messages are summarized
 - Keeps recent messages (6 default) intact for context
-- Uses fast model (Haiku) for summarization by default
+- Uses configurable model (default: same as main model) for summarization
+- Configuration:
+  ```typescript
+  summarization: {
+    enabled: true,
+    tokenThreshold: 170000,  // Trigger threshold
+    keepMessages: 6,         // Recent messages to preserve
+    model: anthropic('claude-haiku-4-5-20250929'),  // Optional: custom summarization model
+  }
+  ```
+
+### 4. Loop Control
+
+Advanced control over agent execution via `loopControl` parameter:
+
+- `stopWhen`: Custom stop conditions (can combine with `maxSteps`)
+- `prepareStep`: Hook to modify parameters before each step
+- `onStepFinish`: Callback after each tool execution step
+- `onFinish`: Callback when agent completes
+
+Example:
+```typescript
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-20250514'),
+  loopControl: {
+    stopWhen: [
+      stepCountIs(50),
+      ({ state }) => state.todos.every(t => t.status === 'completed')
+    ],
+    prepareStep: async ({ tools, toolResults }) => {
+      // Modify step parameters dynamically
+      return { maxSteps: 100 };
+    },
+    onStepFinish: async ({ toolCalls, toolResults }) => {
+      console.log(`Step completed with ${toolCalls.length} tool calls`);
+    },
+  },
+});
+```
 
 ## Human-in-the-Loop (HITL)
 
@@ -139,6 +286,11 @@ for await (const event of agent.streamWithEvents({
 }
 ```
 
+**Approval Configuration:**
+- `true`: Always require approval for this tool
+- `false`: Never require approval
+- `{ shouldApprove: (args) => boolean }`: Dynamic approval based on arguments
+
 **CLI Approval Modes:**
 
 The CLI operates in two modes for tool execution:
@@ -153,7 +305,7 @@ The CLI operates in two modes for tool execution:
 
 ## Model Specification
 
-**Important**: The library now requires AI SDK `LanguageModel` instances instead of string-based model IDs.
+**Important**: The library requires AI SDK `LanguageModel` instances instead of string-based model IDs.
 
 ```typescript
 import { anthropic } from '@ai-sdk/anthropic';
@@ -163,17 +315,17 @@ import { createDeepAgent } from 'ai-sdk-deep-agent';
 
 // Anthropic (recommended)
 const agent1 = createDeepAgent({
-  model: anthropic('claude-sonnet-4-20250514'),
+  model: anthropic('claude-sonnet-4-5-20250929'),
 });
 
 // OpenAI
 const agent2 = createDeepAgent({
-  model: openai('gpt-4o'),
+  model: openai('gpt-5'),
 });
 
 // Azure OpenAI
 const agent3 = createDeepAgent({
-  model: azure('gpt-4', {
+  model: azure('gpt-5-mini', {
     apiKey: process.env.AZURE_OPENAI_API_KEY,
     resourceName: 'my-resource',
   }),
@@ -181,14 +333,16 @@ const agent3 = createDeepAgent({
 
 // Custom configuration
 const agent4 = createDeepAgent({
-  model: anthropic('claude-sonnet-4-20250514', {
+  model: anthropic('claude-sonnet-4-5-20250929', {
     apiKey: process.env.CUSTOM_API_KEY,
     baseURL: 'https://custom-endpoint.com',
   }),
 });
 ```
 
-**CLI Backward Compatibility**: The CLI internally uses `parseModelString()` from `src/utils/model-parser.ts` to convert string formats like `"anthropic/claude-sonnet-4-20250514"` into `LanguageModel` instances. This is only for the CLI - when using the library programmatically, always pass provider instances.
+**Supported Providers**: Any provider from the Vercel AI SDK ecosystem (Anthropic, OpenAI, Azure, Bedrock, Groq, Mistral, etc.)
+
+**CLI Backward Compatibility**: The CLI internally uses `parseModelString()` from `src/utils/model-parser.ts` to convert string formats like `"anthropic/claude-sonnet-4-5-20250929"` into `LanguageModel` instances. This is only for the CLI - when using the library programmatically, always pass provider instances.
 
 ## Structured Output
 
@@ -199,7 +353,7 @@ DeepAgent supports structured output via AI SDK v6's ToolLoopAgent native `outpu
 **Architecture**:
 
 - Optional `output: { schema, description? }` in `CreateDeepAgentParams`
-- Pass-through to ToolLoopAgent constructor
+- Pass-through to ToolLoopAgent constructor via `Output.object()` helper
 - Output exposed in `generate()`, `stream()`, and `streamWithEvents()` results
 - Subagents can have their own output schemas
 
@@ -232,3 +386,108 @@ Research completed successfully.
   "confidence": 0.9
 }
 ```
+
+## Agent Memory
+
+Agent memory provides persistent, long-term memory across conversations using markdown files. See [agent-memory.md](./agent-memory.md) for full documentation.
+
+**Quick Start:**
+
+```typescript
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-20250514'),
+  agentId: 'my-coding-assistant',  // Enables memory + skills
+  // Memory automatically loaded from:
+  // - ~/.deepagents/my-coding-assistant/agent.md (user)
+  // - .deepagents/agent.md (project)
+});
+```
+
+**Two-tier architecture:**
+- User-level memory: `~/.deepagents/{agentId}/agent.md`
+- Project-level memory: `[git-root]/.deepagents/agent.md`
+
+Memory is injected into system prompt and can be updated via filesystem tools.
+
+## Skills System
+
+Agent-specific skills provide reusable capabilities loaded from standardized directories.
+
+**Using `agentId` for Skills:**
+
+```typescript
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-20250514'),
+  agentId: 'my-coding-assistant',
+  // Skills automatically loaded from:
+  // - ~/.deepagents/my-coding-assistant/skills/*/SKILL.md (user)
+  // - .deepagents/skills/*/SKILL.md (project)
+});
+```
+
+**Skill Format:**
+
+Each skill is a subdirectory with a `SKILL.md` file:
+
+```
+~/.deepagents/my-coding-assistant/skills/
+  my-skill/
+    SKILL.md
+```
+
+```markdown
+---
+name: my-skill
+description: What this skill does
+---
+
+# Skill Content
+
+Detailed instructions for the agent...
+```
+
+Skills are automatically parsed and their content injected into the system prompt.
+
+## Advanced Options
+
+### Generation Options
+
+Pass additional options to the underlying `streamText` or `generateText` calls:
+
+```typescript
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-20250514'),
+  generationOptions: {
+    temperature: 0.7,
+    maxTokens: 4096,
+    topP: 0.9,
+  },
+});
+```
+
+### Advanced Options
+
+Configure advanced AI SDK behavior:
+
+```typescript
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-20250514'),
+  advancedOptions: {
+    // Experimental features, internal settings, etc.
+  },
+});
+```
+
+## Constants and Limits
+
+Important default values (can be customized):
+
+- `DEFAULT_MAX_STEPS`: 100 (main agent)
+- `DEFAULT_SUBAGENT_MAX_STEPS`: 50 (subagents)
+- `DEFAULT_EVICTION_TOKEN_LIMIT`: 20,000 tokens
+- `DEFAULT_SUMMARIZATION_THRESHOLD`: 170,000 tokens
+- `DEFAULT_KEEP_MESSAGES`: 6 recent messages
+- `DEFAULT_READ_LIMIT`: 2,000 lines per file
+- `CONTEXT_WINDOW`: 200,000 tokens (Claude)
+
+See `src/constants/limits.ts` for complete list.

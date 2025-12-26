@@ -1,4 +1,7 @@
-# Test Cases: Architectural Refactoring
+---
+title: "Test Cases: Architectural Refactoring"
+description: Documentation
+---
 
 **Test File**: `test/architecture/architectural-refactoring.test.ts`
 **Generated**: 2025-12-21

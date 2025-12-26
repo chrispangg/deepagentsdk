@@ -1,0 +1,260 @@
+---
+title: Welcome
+description: Deep Agents architecture using Vercel AI SDK v6
+icon: Sparkles
+---
+
+Welcome to **ai-sdk-deep-agent**, a TypeScript library implementing "Deep Agents" architecture using Vercel AI SDK v6.
+
+## What are Deep Agents?
+
+Deep Agents extend basic LLM tool-calling with four core pillars:
+
+1. **Planning tools** (`write_todos`) - Task planning and tracking
+2. **Virtual filesystem** - Stateful file operations across tool calls
+3. **Subagent spawning** (`task`) - Delegate work to specialized agents
+4. **Detailed prompting** - Rich system prompts and tool descriptions
+
+## Quick Start
+
+```bash
+# Install the library
+bun add ai-sdk-deep-agent
+
+# Create a basic agent
+import { createDeepAgent } from 'ai-sdk-deep-agent';
+import { anthropic } from '@ai-sdk/anthropic';
+
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-5-20250929'),
+});
+
+const result = await agent.generate({
+  prompt: 'Plan and execute a research task',
+});
+```
+
+<Cards>
+  <Card
+    title="CLI Guide"
+    description="Interactive terminal interface for working with agents"
+    href="/docs/command-line-interface"
+  />
+  <Card
+    title="Architecture"
+    description="Learn about the core architecture and components"
+    href="/docs/architecture"
+  />
+  <Card
+    title="Patterns"
+    description="Common usage patterns and code examples"
+    href="/docs/patterns"
+  />
+  <Card
+    title="Checkpointers"
+    description="Session persistence patterns and state management"
+    href="/docs/checkpointers"
+  />
+  <Card
+    title="Agent Memory"
+    description="Cross-conversation memory and context management"
+    href="/docs/agent-memory"
+  />
+</Cards>
+
+## Key Concepts
+
+### Virtual Filesystem
+
+The virtual filesystem enables agents to maintain state across tool calls, allowing for complex file-based workflows:
+
+```ts
+import { createDeepAgent } from 'ai-sdk-deep-agent';
+import { anthropic } from '@ai-sdk/anthropic';
+import { FilesystemBackend } from 'ai-sdk-deep-agent';
+
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-5-20250929'),
+  backend: new FilesystemBackend({ rootDir: './workspace' }),
+});
+
+await agent.generate({
+  prompt: 'Create a file called notes.txt with some content',
+});
+await agent.generate({
+  prompt: 'Read the notes.txt file and summarize it',
+});
+```
+
+### Subagent Spawning
+
+Agents can delegate work to specialized subagents with their own context and todos:
+
+```ts
+await agent.generate({
+  prompt: 'Use the task tool to research this topic and report back',
+});
+```
+
+### Planning & Tracking
+
+Built-in todo management enables agents to plan and track complex multi-step tasks:
+
+```ts
+await agent.generate({
+  prompt: 'Create a plan for building a web app, then execute it step by step',
+});
+```
+
+## Project Status
+
+This library is a TypeScript reimplementation of LangChain's DeepAgents framework using Vercel AI SDK v6, providing better type safety, streaming support, and modern async patterns.
+
+**Current Version:** 0.9.2
+
+## Features
+
+### Core Capabilities
+
+- **Planning & Task Management** - Built-in `write_todos` tool for breaking down complex tasks
+- **Virtual Filesystem** - Stateful file operations (`read_file`, `write_file`, `edit_file`, `ls`, `glob`, `grep`)
+- **Subagent Spawning** - Delegate specialized work to isolated agents with the `task` tool
+- **Web Tools** - Search the web, fetch pages, and make HTTP requests (requires `TAVILY_API_KEY`)
+- **Command Execution** - Run shell commands in a sandboxed environment with `LocalSandbox` backend
+- **Streaming with Events** - Real-time events for tool calls, file operations, subagent lifecycle
+- **Structured Output** - Type-safe, validated responses using Zod schemas
+- **Middleware Support** - Add cross-cutting concerns (logging, telemetry, memory)
+- **Agent Memory** - Persistent, project-aware memory across conversations
+- **Skills System** - Load domain-specific knowledge and workflows from markdown files
+- **Checkpointers** - Session persistence and resumption
+
+### Backends
+
+Choose how your agent stores state:
+
+- **StateBackend** (default) - In-memory storage for ephemeral sessions
+- **FilesystemBackend** - Persist files to disk
+- **LocalSandbox** - Execute shell commands + filesystem access
+- **PersistentBackend** - Cross-conversation memory with custom stores (Redis, SQLite, etc.)
+- **CompositeBackend** - Route files to different backends based on path prefixes
+
+### Installation
+
+```bash
+bun add ai-sdk-deep-agent
+```
+
+**Requirements:**
+- Bun runtime (>=1.0.0)
+- TypeScript (>=5)
+- API keys for Anthropic or OpenAI models
+
+## Quick Examples
+
+### Basic Agent
+
+```typescript
+import { createDeepAgent } from 'ai-sdk-deep-agent';
+import { anthropic } from '@ai-sdk/anthropic';
+
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-5-20250929'),
+});
+
+const result = await agent.generate({
+  prompt: 'Research the latest AI developments',
+});
+
+console.log(result.text);
+console.log('Todos:', result.state.todos);
+console.log('Files:', Object.keys(result.state.files));
+```
+
+### Streaming with Events
+
+```typescript
+for await (const event of agent.streamWithEvents({
+  prompt: 'Build a simple web app',
+})) {
+  switch (event.type) {
+    case 'text':
+      process.stdout.write(event.text);
+      break;
+    case 'file-written':
+      console.log(`Created: ${event.path}`);
+      break;
+    case 'todos-changed':
+      console.log('Tasks:', event.todos.length);
+      break;
+  }
+}
+```
+
+### Web Research
+
+```typescript
+// Requires TAVILY_API_KEY environment variable
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-5-20250929'),
+});
+
+const result = await agent.generate({
+  prompt: 'Search the web for recent AI news and summarize findings',
+});
+
+// Agent uses web_search, fetch_url, and http_request tools
+```
+
+### Command Execution
+
+```typescript
+import { LocalSandbox } from 'ai-sdk-deep-agent';
+
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-5-20250929'),
+  backend: new LocalSandbox({
+    cwd: './workspace',
+    timeout: 60000,
+  }),
+});
+
+// execute tool is automatically added
+await agent.generate({
+  prompt: 'Initialize a TypeScript project and install dependencies',
+});
+```
+
+### Structured Output
+
+```typescript
+import { z } from 'zod';
+
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-5-20250929'),
+  output: {
+    schema: z.object({
+      summary: z.string(),
+      keyPoints: z.array(z.string()),
+      confidence: z.number(),
+    }),
+    description: 'Research findings with confidence score',
+  },
+});
+
+const result = await agent.generate({
+  prompt: 'Analyze the market trends',
+});
+
+console.log(result.output?.summary);     // string
+console.log(result.output?.keyPoints);   // string[]
+console.log(result.output?.confidence);  // number
+```
+
+## Additional Resources
+
+- **CLI**: Interactive terminal interface - `bunx ai-sdk-deep-agent`
+  - [CLI Overview](./command-line-interface) - What the CLI is and when to use it
+  - [Using the CLI](./use-the-cli) - Complete CLI usage guide
+- **Examples**: See `examples/` directory for 15+ working examples
+- **GitHub**: [chrispangg/ai-sdk-deepagent](https://github.com/chrispangg/ai-sdk-deepagent)
+- **NPM**: [ai-sdk-deep-agent](https://www.npmjs.com/package/ai-sdk-deep-agent)

@@ -1,4 +1,7 @@
-# Test Cases: Code Smell Refactoring
+---
+title: "Test Cases: Code Smell Refactoring"
+description: Documentation
+---
 
 **Generated**: 2025-12-23
 **Test Files**: 3 new test files

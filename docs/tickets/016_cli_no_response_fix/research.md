@@ -1,4 +1,5 @@
 ---
+title: CLI tool not returning anything when prompted
 date: 2024-12-24 06:45:00 AEDT
 researcher: Claude (Sonnet 4.5)
 git_commit: e7398eff8adb8b64d1bca9d7ea5273b9b9d5d011
@@ -10,8 +11,6 @@ status: complete
 last_updated: 2024-12-24
 last_updated_by: Claude
 ---
-
-# Research
 
 ## Research Question
 

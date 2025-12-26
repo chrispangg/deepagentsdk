@@ -1,4 +1,7 @@
-# Test Cases: Subagent Selective Builtin Tools
+---
+title: "Test Cases: Subagent Selective Builtin Tools"
+description: Documentation
+---
 
 **Test File**: `test/subagents/selective-tools.test.ts`
 **Generated**: 2025-12-20

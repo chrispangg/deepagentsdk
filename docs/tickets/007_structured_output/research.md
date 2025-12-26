@@ -1,4 +1,5 @@
 ---
+title: How should we implement Structured Output (responseFormat) support in ai-sdk-deep-agent?
 date: 2025-12-19 08:15:00 AEDT
 researcher: Research Agent
 git_commit: 0a93689550e65e096523f25cba0c36c87e7a74a1
@@ -11,8 +12,6 @@ last_updated: 2025-12-19
 last_updated_by: Research Agent
 last_updated_note: "Corrected with ToolLoopAgent native output parsing support"
 ---
-
-# Research: Structured Output (responseFormat) Implementation
 
 ## Research Question
 

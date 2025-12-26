@@ -1,4 +1,5 @@
 ---
+title: Provider Options Passthrough Implementation Research
 date: 2025-12-21 17:30:00 AEDT
 researcher: Claude (Sonnet 4.5)
 git_commit: 3299adb7a6f9df9dc63a32ef4686252fcd22e1c8
@@ -10,8 +11,6 @@ status: complete
 last_updated: 2025-12-21
 last_updated_by: Claude (Sonnet 4.5)
 ---
-
-# Research: Provider Options Passthrough
 
 ## Research Question
 

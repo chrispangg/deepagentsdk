@@ -1,4 +1,5 @@
 ---
+title: "ToolLoopAgent Constructor Passthrough: Complete Technical Specification"
 date: 2025-12-20 17:10:00 AEDT
 researcher: AI Assistant
 git_commit: 3026f4b2935df92b7d71fadf9e1c0dafb2015a68
@@ -10,8 +11,6 @@ status: complete
 last_updated: 2025-12-20
 last_updated_by: AI Assistant
 ---
-
-# Research: ToolLoopAgent Constructor Passthrough
 
 ## Research Question
 

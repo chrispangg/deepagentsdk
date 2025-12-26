@@ -1,4 +1,7 @@
-# Test Cases: ToolLoopAgent Passthrough
+---
+title: "Test Cases: ToolLoopAgent Passthrough"
+description: Documentation
+---
 
 **Test File**: `test/passthrough/passthrough.test.ts`
 **Generated**: 2025-12-20

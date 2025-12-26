@@ -1,4 +1,7 @@
-# Structured Output Support Implementation Plan
+---
+title: Structured Output Support Implementation Plan
+description: Documentation
+---
 
 ## Overview
 

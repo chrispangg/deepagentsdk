@@ -1,4 +1,7 @@
-# Test Cases: Telemetry Passthrough Implementation
+---
+title: "Test Cases: Telemetry Passthrough Implementation"
+description: Documentation
+---
 
 **Test File**: `src/agent.test.ts`
 **Generated**: 2025-12-22

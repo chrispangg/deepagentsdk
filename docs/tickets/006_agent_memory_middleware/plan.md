@@ -1,4 +1,7 @@
-# Agent Memory Middleware Implementation Plan
+---
+title: Agent Memory Middleware Implementation Plan
+description: Documentation
+---
 
 ## Overview
 

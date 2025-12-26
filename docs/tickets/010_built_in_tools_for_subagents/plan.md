@@ -1,4 +1,7 @@
-# Subagent Selective Builtin Tools Implementation Plan
+---
+title: Subagent Selective Builtin Tools Implementation Plan
+description: Documentation
+---
 
 ## Overview
 

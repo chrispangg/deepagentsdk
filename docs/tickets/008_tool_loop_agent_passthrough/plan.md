@@ -1,4 +1,7 @@
-# ToolLoopAgent Passthrough Implementation Plan
+---
+title: ToolLoopAgent Passthrough Implementation Plan
+description: Documentation
+---
 
 ## Overview
 

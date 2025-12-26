@@ -1,4 +1,5 @@
 ---
+title: Web Tools Implementation (web_search, http_request, fetch_url)
 date: 2025-12-13 15:12:00 AEDT
 researcher: Claude Code
 git_commit: 2664d1bf98bffc37301f2c0add4cc97877eae932
@@ -10,8 +11,6 @@ status: complete
 last_updated: 2025-12-13
 last_updated_by: Claude Code
 ---
-
-# Web Tools Implementation Guide
 
 ## Research Question
 

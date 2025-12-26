@@ -1,4 +1,7 @@
-# CLI No Response Bug Fix Implementation Plan
+---
+title: CLI No Response Bug Fix Implementation Plan
+description: Documentation
+---
 
 ## Overview
 

@@ -1,4 +1,7 @@
-# Code Smell Refactoring Plan
+---
+title: Code Smell Refactoring Plan
+description: Documentation
+---
 
 **Created**: 2025-12-23
 **Status**: In Progress
@@ -533,6 +536,6 @@ refactor: extract event creation helpers
 ## References
 
 - **Research Document**: [research.md](./research.md)
-- **PROJECT-STATE**: [.agent/PROJECT-STATE.md](../../../.agent/PROJECT-STATE.md)
-- **AGENTS.md**: [AGENTS.md](../../../AGENTS.md)
-- **Publishing Guide**: [.github/PUBLISHING.md](../../../.github/PUBLISHING.md)
+- **PROJECT-STATE**: [.agent/PROJECT-STATE.md](https://github.com/chrispangg/ai-sdk-deep-agent/blob/main/.agent/PROJECT-STATE.md)
+- **AGENTS.md**: [AGENTS.md](https://github.com/chrispangg/ai-sdk-deep-agent/blob/main/AGENTS.md)
+- **Publishing Guide**: [.github/PUBLISHING.md](https://github.com/chrispangg/ai-sdk-deep-agent/blob/main/.github/PUBLISHING.md)

@@ -1,4 +1,5 @@
 ---
+title: 006 Agent Memory Middleware
 date: 2025-12-17 09:30:00 AEDT
 researcher: Claude Code
 git_commit: 3a2f830e3b434aabd7b93e70e6e19ea7483c7000
@@ -10,8 +11,6 @@ status: complete
 last_updated: 2025-12-17
 last_updated_by: Claude Code
 ---
-
-# Agent Memory Middleware Research
 
 ## Research Question
 

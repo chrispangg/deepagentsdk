@@ -1,4 +1,7 @@
-# Checkpointer Support - Implementation Summary
+---
+title: Checkpointer Support - Implementation Summary
+description: Documentation
+---
 
 **Status:** ✅ Complete  
 **Date:** December 12, 2025  

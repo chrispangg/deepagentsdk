@@ -1,4 +1,5 @@
 ---
+title: Middleware vs Non-Middleware Architecture Research
 date: 2025-12-19 07:04:10 AEDT
 researcher: Claude (Sonnet 4.5)
 git_commit: 0a93689550e65e096523f25cba0c36c87e7a74a1
@@ -10,8 +11,6 @@ status: complete
 last_updated: 2025-12-19
 last_updated_by: Claude (Sonnet 4.5)
 ---
-
-# Middleware vs Non-Middleware Architecture: Comparative Analysis
 
 > **TL;DR**: ✅ The hybrid middleware approach is **already fully implemented** in the codebase ([`src/agent.ts:124-136`](https://github.com/chrispangg/ai-sdk-deepagent/blob/0a93689550e65e096523f25cba0c36c87e7a74a1/src/agent.ts#L124-L136), [`examples/with-middleware.ts`](https://github.com/chrispangg/ai-sdk-deepagent/blob/0a93689550e65e096523f25cba0c36c87e7a74a1/examples/with-middleware.ts)). This research **validates** that design decision and provides architectural rationale. No migration needed.
 

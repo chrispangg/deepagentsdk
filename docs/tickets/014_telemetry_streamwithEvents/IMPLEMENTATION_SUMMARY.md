@@ -10,8 +10,6 @@ status: completed
 implemented_by: Claude Code
 ---
 
-# Implementation Summary: Comprehensive Telemetry Passthrough
-
 ## Overview
 
 Successfully implemented complete telemetry and options passthrough across all DeepAgent methods to ensure consistent behavior between `generate()` and `streamWithEvents()`, and extended telemetry coverage to summarization utilities.

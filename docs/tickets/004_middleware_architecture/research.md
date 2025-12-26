@@ -1,4 +1,5 @@
 ---
+title: 004 Middleware Architecture
 date: 2025-12-15 08:18:07 AEDT
 researcher: Claude Code
 git_commit: ea8a5d7fdcf9a014298385c4fac47acb69d81155
@@ -10,8 +11,6 @@ status: complete
 last_updated: 2025-12-15
 last_updated_by: Claude Code
 ---
-
-# Middleware Architecture Research
 
 ## Research Question
 

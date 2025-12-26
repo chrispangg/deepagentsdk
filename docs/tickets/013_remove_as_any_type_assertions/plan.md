@@ -1,4 +1,7 @@
-# Remove `as any` Type Assertions from src/ and examples/ Implementation Plan
+---
+title: Remove `as any` Type Assertions from src/ and examples/ Implementation Plan
+description: Documentation
+---
 
 ## Overview
 

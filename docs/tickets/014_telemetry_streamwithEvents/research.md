@@ -1,4 +1,5 @@
 ---
+title: 014 Telemetry StreamwithEvents
 date: 2025-12-22 08:27:51 AEDT
 researcher: Claude Code
 git_commit: 706dba5bc7b0b985a52ac9e06d2f7a5e8a257d07
@@ -11,8 +12,6 @@ last_updated: 2025-12-22
 last_updated_by: Claude Code
 last_updated_note: "Added validation review confirming research accuracy and identifying additional gaps"
 ---
-
-# Research: Telemetry Not Sent to Langfuse When Using streamWithEvents
 
 ## Research Question
 
@@ -35,7 +34,7 @@ The investigation confirms the user's suspicion. The issue is that `buildStreamT
 
 **Implementation Flow** (`src/agent.ts:424-443`):
 
-```424:443:src/agent.ts
+```typescript
   async generate(options: { prompt: string; maxSteps?: number }) {
     // Create fresh state for this invocation
     const state: DeepAgentState = {
@@ -66,7 +65,7 @@ The investigation confirms the user's suspicion. The issue is that `buildStreamT
 
 **buildAgentSettings() Implementation** (`src/agent.ts:345-381`):
 
-```345:381:src/agent.ts
+```typescript
   private buildAgentSettings(onEvent?: EventCallback) {
     const settings: any = {
       model: this.model,
@@ -108,7 +107,7 @@ The investigation confirms the user's suspicion. The issue is that `buildStreamT
 
 **createAgent() Implementation** (`src/agent.ts:389-399`):
 
-```389:399:src/agent.ts
+```typescript
   private createAgent(state: DeepAgentState, maxSteps?: number, onEvent?: EventCallback) {
     const tools = this.createTools(state, onEvent);
     const settings = this.buildAgentSettings(onEvent);
@@ -128,7 +127,7 @@ The investigation confirms the user's suspicion. The issue is that `buildStreamT
 
 **Implementation Flow** (`src/agent.ts:850-1001`):
 
-```850:925:src/agent.ts
+```typescript
   async *streamWithEvents(
     options: StreamWithEventsOptions
   ): AsyncGenerator<DeepAgentEvent, void, unknown> {
@@ -215,7 +214,7 @@ The investigation confirms the user's suspicion. The issue is that `buildStreamT
 
 **buildStreamTextOptions() Implementation** (`src/agent.ts:603-680`):
 
-```603:680:src/agent.ts
+```typescript
   private buildStreamTextOptions(
     inputMessages: ModelMessage[],
     tools: ToolSet,
@@ -309,7 +308,7 @@ The investigation confirms the user's suspicion. The issue is that `buildStreamT
 
 **Type Definition** (`src/types/core.ts:148-159`):
 
-```148:159:src/types/core.ts
+```typescript
 export interface AdvancedAgentOptions {
   /** OpenTelemetry configuration for observability. */
   experimental_telemetry?: ToolLoopAgentSettings["experimental_telemetry"];
@@ -326,7 +325,7 @@ export interface AdvancedAgentOptions {
 
 **Storage in DeepAgent** (`src/agent.ts:113-167`):
 
-```113:167:src/agent.ts
+```typescript
   // AI SDK ToolLoopAgent passthrough options
   private loopControl?: CreateDeepAgentParams["loopControl"];
   private generationOptions?: CreateDeepAgentParams["generationOptions"];
@@ -369,7 +368,7 @@ The `advancedOptions` are stored as a private field and should be included in op
 
 **Example File** (`examples/with-langfuse.ts:67-100`):
 
-```67:100:examples/with-langfuse.ts
+```typescript
 async function streamingWithTelemetryExample() {
   console.log("📊 Example 3: Streaming with Telemetry\n");
 

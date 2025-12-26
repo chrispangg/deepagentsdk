@@ -1,4 +1,7 @@
-# Comprehensive Telemetry Passthrough Implementation Plan
+---
+title: Comprehensive Telemetry Passthrough Implementation Plan
+description: Documentation
+---
 
 ## Overview
 

@@ -1,4 +1,5 @@
 ---
+title: Comprehensive Architectural Health Assessment for Refactoring Planning
 date: 2025-12-21 12:00:00 AEDT
 researcher: codebase-pattern-finder
 git_commit: 3299adb7a6f9df9dc63a32ef4686252fcd22e1c8
@@ -10,8 +11,6 @@ status: complete
 last_updated: 2025-12-21
 last_updated_by: codebase-pattern-finder
 ---
-
-# Architectural Health Assessment Research
 
 ## Research Question
 

@@ -1,4 +1,5 @@
 ---
+title: Comprehensive codebase code smell analysis and refactoring opportunities
 date: 2025-12-23 06:33:58 AEDT
 researcher: Claude (Sonnet 4.5)
 git_commit: 4fac6660ed59556574d8443dc0026e121f6bb0ed
@@ -10,8 +11,6 @@ status: complete
 last_updated: 2025-12-23
 last_updated_by: Claude (Sonnet 4.5)
 ---
-
-# Codebase Code Smell Analysis: ai-sdk-deep-agent
 
 ## Research Question
 

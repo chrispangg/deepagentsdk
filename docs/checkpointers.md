@@ -1,4 +1,7 @@
-# Checkpointers (Session Persistence)
+---
+title: Checkpointers
+description: Session persistence patterns
+---
 
 Enable conversation persistence and pause/resume functionality with checkpointers.
 
@@ -12,6 +15,20 @@ Checkpointers allow agents to save and restore conversation state across session
 - ✅ Pluggable storage backends
 - ✅ Namespace support for multi-tenancy
 
+### What Gets Stored
+
+Each checkpoint saves:
+
+- **threadId**: Unique identifier for the conversation thread
+- **step**: Step number when checkpoint was created
+- **messages**: Full conversation history (user and assistant messages)
+- **state**: Agent state including:
+  - `todos`: Array of todo items
+  - `files`: Virtual filesystem state
+- **interrupt**: Pending tool approval data (if interrupted)
+- **createdAt**: ISO 8601 timestamp
+- **updatedAt**: ISO 8601 timestamp
+
 ## Built-in Checkpoint Savers
 
 ### MemorySaver
@@ -22,6 +39,9 @@ In-memory storage (ephemeral, lost on process exit).
 
 **Features:** Fast, simple, namespace support
 
+**Options:**
+- `namespace?: string` - Optional namespace prefix for isolation (default: "default")
+
 ```typescript
 import { anthropic } from '@ai-sdk/anthropic';
 import { createDeepAgent, MemorySaver } from 'ai-sdk-deep-agent';
@@ -29,6 +49,12 @@ import { createDeepAgent, MemorySaver } from 'ai-sdk-deep-agent';
 const agent = createDeepAgent({
   model: anthropic('claude-sonnet-4-20250514'),
   checkpointer: new MemorySaver(),
+});
+
+// With namespace
+const agent2 = createDeepAgent({
+  model: anthropic('claude-sonnet-4-20250514'),
+  checkpointer: new MemorySaver({ namespace: 'my-app' }),
 });
 ```
 
@@ -39,6 +65,9 @@ JSON file storage (persists to disk).
 **Use for:** Local development, simple persistence needs
 
 **Features:** Human-readable, easy debugging, survives restarts
+
+**Options:**
+- `dir: string` - Directory to store checkpoint files (required)
 
 ```typescript
 import { FileSaver } from 'ai-sdk-deep-agent';
@@ -57,6 +86,10 @@ Adapter for `KeyValueStore` interface.
 
 **Features:** Scalable, distributed, custom storage backends
 
+**Options:**
+- `store: KeyValueStore` - The KeyValueStore implementation to use (required)
+- `namespace?: string` - Optional namespace prefix for isolation (default: "default")
+
 ```typescript
 import { KeyValueStoreSaver, InMemoryStore } from 'ai-sdk-deep-agent';
 
@@ -66,6 +99,8 @@ const agent = createDeepAgent({
   checkpointer: new KeyValueStoreSaver({ store, namespace: 'my-app' }),
 });
 ```
+
+**Note:** Checkpoints are stored under `[namespace]/checkpoints/[threadId]` in the key-value store.
 
 ## Basic Usage
 
@@ -84,7 +119,7 @@ const threadId = 'user-session-123';
 
 // First interaction - checkpoint is automatically saved
 for await (const event of agent.streamWithEvents({
-  prompt: "Create a project plan",
+  messages: [{ role: "user", content: "Create a project plan" }],
   threadId,
 })) {
   if (event.type === 'checkpoint-saved') {
@@ -94,7 +129,7 @@ for await (const event of agent.streamWithEvents({
 
 // Later: Resume same thread - checkpoint is automatically loaded
 for await (const event of agent.streamWithEvents({
-  prompt: "Now implement the first task",
+  messages: [{ role: "user", content: "Now implement the first task" }],
   threadId, // Same threadId loads the checkpoint
 })) {
   if (event.type === 'checkpoint-loaded') {
@@ -104,9 +139,76 @@ for await (const event of agent.streamWithEvents({
 }
 ```
 
-## Resume from Interrupts (HITL)
+### Message Priority Logic
 
-When using Human-in-the-Loop (HITL) tool approval, you can resume from interrupts:
+When resuming sessions, the agent follows this priority for message handling:
+
+1. **Explicit `messages` array** - Takes precedence over everything
+   - Non-empty: Uses provided messages, replaces checkpoint history
+   - Empty (`[]`): Clears checkpoint history, starts fresh
+
+2. **`prompt` parameter** (deprecated) - Converted to message format
+   - Used only if `messages` is not provided
+   - Will show deprecation warning in non-production environments
+
+3. **Checkpoint history** - Default when neither `messages` nor `prompt` provided
+   - Loads conversation history from checkpoint
+   - Applies summarization if enabled
+
+**Example: Starting fresh from checkpoint**
+```typescript
+// Clear checkpoint history and start new conversation
+for await (const event of agent.streamWithEvents({
+  messages: [], // Empty array clears checkpoint history
+  threadId: 'existing-session',
+})) {
+  // Agent starts fresh without previous context
+}
+```
+
+### Checkpoint Events
+
+The agent emits two checkpoint-related events:
+
+**CheckpointSavedEvent** - Emitted after each step when checkpoint is saved
+```typescript
+{
+  type: "checkpoint-saved",
+  threadId: string,
+  step: number,
+}
+```
+
+**CheckpointLoadedEvent** - Emitted when a checkpoint is loaded on resume
+```typescript
+{
+  type: "checkpoint-loaded",
+  threadId: string,
+  step: number,
+  messagesCount: number,
+}
+```
+
+**Example: Tracking checkpoints**
+```typescript
+for await (const event of agent.streamWithEvents({
+  messages: [{ role: "user", content: "Hello" }],
+  threadId: 'my-session',
+})) {
+  switch (event.type) {
+    case 'checkpoint-loaded':
+      console.log(`Resumed from step ${event.step} with ${event.messagesCount} messages`);
+      break;
+    case 'checkpoint-saved':
+      console.log(`Checkpoint saved at step ${event.step}`);
+      break;
+  }
+}
+```
+
+## Tool Approval (HITL)
+
+When using Human-in-the-Loop (HITL) tool approval, checkpoints save the interrupt state:
 
 ```typescript
 const agent = createDeepAgent({
@@ -117,29 +219,37 @@ const agent = createDeepAgent({
   },
 });
 
-let pendingApproval: any = null;
-
-// First invocation - will interrupt on file write
+// Tool approval with callback
 for await (const event of agent.streamWithEvents({
-  prompt: "Write a config file",
+  messages: [{ role: "user", content: "Write a config file" }],
   threadId: 'session-123',
   onApprovalRequest: async (request) => {
-    pendingApproval = request;
-    return false; // Deny for now
+    console.log(`Approval requested for ${request.toolName}`);
+    console.log(`Args:`, request.args);
+    return true; // Approve
   },
 })) {
-  // Checkpoint is saved with interrupt data
+  if (event.type === 'checkpoint-saved') {
+    console.log(`Checkpoint saved at step ${event.step}`);
+  }
 }
 
-// Later: Resume with approval decision
-for await (const event of agent.streamWithEvents({
-  threadId: 'session-123',
-  resume: {
-    decisions: [{ type: 'approve', toolCallId: pendingApproval.toolCallId }],
+// Auto-deny behavior (no callback provided)
+const agent2 = createDeepAgent({
+  model: anthropic('claude-sonnet-4-20250514'),
+  checkpointer: new FileSaver({ dir: './.checkpoints' }),
+  interruptOn: {
+    write_file: true,
   },
-  onApprovalRequest: async () => true, // Approve this time
+  // Note: No onApprovalRequest callback provided
+  // Tools requiring approval will be automatically denied
+});
+
+for await (const event of agent2.streamWithEvents({
+  messages: [{ role: "user", content: "Write a file" }],
+  threadId: 'session-456',
 })) {
-  // Agent continues from where it left off
+  // File write will be automatically denied
 }
 ```
 
@@ -178,6 +288,12 @@ class RedisCheckpointSaver implements BaseCheckpointSaver {
     return await this.redis.exists(`checkpoint:${threadId}`) === 1;
   }
 }
+
+// Usage
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-20250514'),
+  checkpointer: new RedisCheckpointSaver(redisClient),
+});
 ```
 
 ## CLI Session Management
@@ -200,9 +316,7 @@ $ bun run cli --session my-project
 
 ## Known Limitations
 
-- ⚠️ **HITL Resume from Interrupts**: The `resume` option and `InterruptData` are defined but not fully implemented. Tools requiring approval cannot currently be paused and resumed across sessions. This feature is planned for a future release.
-- ⚠️ **Approval Events**: `ApprovalRequestedEvent` and `ApprovalResponseEvent` types exist but are not emitted by the agent's event stream. The CLI emits these as UI-level events. Track approvals via the `onApprovalRequest` callback instead.
-- ℹ️ **Auto-Deny Behavior**: Tools configured with `interruptOn` but no `onApprovalRequest` callback will be automatically denied (not executed).
+- ⚠️ **Auto-Deny Behavior**: Tools configured with `interruptOn` but no `onApprovalRequest` callback will be automatically denied (not executed).
 
 ## Examples
 

@@ -1,4 +1,7 @@
-# Validation Report: Architectural Refactoring
+---
+title: "Validation Report: Architectural Refactoring"
+description: Documentation
+---
 
 **Date**: 2025-12-21
 **Validator**: Claude Code Agent

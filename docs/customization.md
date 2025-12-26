@@ -1,0 +1,1559 @@
+---
+title: Customization Guide
+description: Comprehensive guide to customizing agent behavior, tools, backends, and configuration
+---
+
+This guide covers all customization options for ai-sdk-deep-agent, from basic prompts to advanced middleware and control hooks.
+
+## Table of Contents
+
+1. [System Prompts](#1-system-prompts)
+2. [Tool Configuration](#2-tool-configuration)
+3. [Adding Custom Tools](#3-adding-custom-tools)
+4. [Backend Selection and Configuration](#4-backend-selection-and-configuration)
+5. [Middleware Usage](#5-middleware-usage)
+6. [Loop Control Customization](#6-loop-control-customization)
+7. [Generation Options](#7-generation-options)
+8. [Subagent Customization](#8-subagent-customization)
+9. [Provider-Specific Options](#9-provider-specific-options)
+10. [Agent Memory and Skills](#10-agent-memory-and-skills)
+11. [Structured Output](#11-structured-output)
+12. [Human-in-the-Loop](#12-human-in-the-loop)
+
+---
+
+## 1. System Prompts
+
+### Basic Custom Prompt
+
+Provide custom instructions to shape agent behavior:
+
+```typescript
+import { createDeepAgent } from 'ai-sdk-deep-agent';
+import { anthropic } from '@ai-sdk/anthropic';
+
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-20250514'),
+  systemPrompt: `You are a senior software architect specializing in TypeScript.
+Focus on clean code, type safety, and testing best practices.
+Always explain trade-offs when making architectural decisions.`,
+});
+```
+
+### Custom Prompt Components
+
+The library builds a complete system prompt from multiple components:
+
+```typescript
+// Full prompt composition (in order):
+1. Your custom systemPrompt (if provided)
+2. BASE_PROMPT - "In order to complete the objective..."
+3. TODO_SYSTEM_PROMPT - Task planning instructions
+4. FILESYSTEM_SYSTEM_PROMPT - Virtual filesystem usage
+5. EXECUTE_SYSTEM_PROMPT - Shell command execution (if sandbox backend)
+6. TASK_SYSTEM_PROMPT - Subagent spawning instructions (if subagents enabled)
+7. Skills prompt - Agent-specific skills (if agentId provided)
+8. Agent memory - Persistent memory context (if agent memory middleware)
+```
+
+### Replacing Default Prompts
+
+To completely override default prompts, provide an empty systemPrompt and use middleware:
+
+```typescript
+import { wrapLanguageModel } from 'ai';
+
+const customPromptMiddleware = {
+  wrapGenerate: async ({ doGenerate, params }) => {
+    // Replace all prompts with your custom version
+    const customPrompt = params.prompt.map(msg => {
+      if (msg.role === 'system') {
+        return { ...msg, content: 'Your completely custom prompt here' };
+      }
+      return msg;
+    });
+    return doGenerate({ ...params, prompt: customPrompt });
+  },
+};
+
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-20250514'),
+  middleware: customPromptMiddleware,
+});
+```
+
+---
+
+## 2. Tool Configuration
+
+### Default Tools
+
+By default, agents include:
+
+- `write_todos` - Task planning and tracking
+- `ls` - List directories
+- `read_file` - Read file contents
+- `write_file` - Write new files
+- `edit_file` - Edit existing files
+- `glob` - Find files by pattern
+- `grep` - Search file contents
+- `web_search` - Web search (if TAVILY_API_KEY set)
+- `http_request` - HTTP requests
+- `fetch_url` - Fetch and convert URLs to markdown
+- `execute` - Shell commands (if sandbox backend)
+- `task` - Spawn subagents
+
+### Disabling Web Tools
+
+Remove web tools by not setting `TAVILY_API_KEY`:
+
+```typescript
+// Web tools only load when TAVILY_API_KEY is set
+delete process.env.TAVILY_API_KEY;
+
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-20250514'),
+  // web_search, http_request, fetch_url will not be available
+});
+```
+
+### Disabling Subagent Tool
+
+Prevent agent from spawning subagents:
+
+```typescript
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-20250514'),
+  includeGeneralPurposeAgent: false, // Disable general subagent
+  subagents: [], // No custom subagents
+  // task tool will not be available
+});
+```
+
+### Custom Tool Selection
+
+Replace specific tools with custom implementations:
+
+```typescript
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-20250514'),
+  tools: {
+    // Override default write_todos with custom version
+    write_todos: myCustomTodosTool,
+
+    // Add new custom tools
+    my_custom_tool: customTool,
+  },
+  // Your tools are merged with built-in tools
+  // (except tools you explicitly override)
+});
+```
+
+---
+
+## 3. Adding Custom Tools
+
+### Basic Custom Tool
+
+Use AI SDK's `tool()` function:
+
+```typescript
+import { tool } from 'ai';
+import { z } from 'zod';
+
+const weatherTool = tool({
+  description: 'Get current weather for a location',
+  parameters: z.object({
+    location: z.string().describe('City name or coordinates'),
+    units: z.enum(['celsius', 'fahrenheit']).default('celsius'),
+  }),
+  execute: async ({ location, units }) => {
+    // Call weather API
+    const response = await fetch(`https://api.weather.com/${location}`);
+    const data = await response.json();
+    return {
+      location,
+      temperature: data.temp,
+      units,
+      condition: data.condition,
+    };
+  },
+});
+
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-20250514'),
+  tools: { get_weather: weatherTool },
+});
+```
+
+### Tool with Event Emission
+
+Emit custom events during tool execution:
+
+```typescript
+import type { EventCallback } from 'ai-sdk-deep-agent';
+
+function createCustomTool(onEvent?: EventCallback) {
+  return tool({
+    description: 'Custom tool with events',
+    parameters: z.object({
+      input: z.string(),
+    }),
+    execute: async ({ input }) => {
+      // Emit start event
+      onEvent?.({
+        type: 'custom-start',
+        input,
+      });
+
+      const result = await doWork(input);
+
+      // Emit finish event
+      onEvent?.({
+        type: 'custom-finish',
+        result,
+      });
+
+      return result;
+    },
+  });
+}
+```
+
+### Tool with Backend Access
+
+Create tools that interact with the virtual filesystem:
+
+```typescript
+function createBackendTool(backend: BackendProtocol) {
+  return tool({
+    description: 'Analyze all files in a directory',
+    parameters: z.object({
+      directory: z.string(),
+    }),
+    execute: async ({ directory }) => {
+      const files = await backend.lsInfo(directory);
+
+      const analysis = await Promise.all(
+        files.map(async (file) => {
+          if (!file.is_dir) {
+            const content = await backend.read(file.path);
+            return { path: file.path, analysis: analyzeContent(content) };
+          }
+        })
+      );
+
+      return analysis;
+    },
+  });
+}
+```
+
+### Advanced Tool Example: Database Query
+
+```typescript
+const dbQueryTool = tool({
+  description: 'Execute read-only SQL queries against the database',
+  parameters: z.object({
+    query: z.string().describe('SELECT query to execute'),
+  }),
+  execute: async ({ query }) => {
+    // Validate query is read-only
+    if (!query.trim().toLowerCase().startsWith('select')) {
+      throw new Error('Only SELECT queries are allowed');
+    }
+
+    const result = await db.execute(query);
+
+    return {
+      columns: result.columns,
+      rows: result.rows.slice(0, 100), // Limit results
+      count: result.rows.length,
+    };
+  },
+});
+```
+
+---
+
+## 4. Backend Selection and Configuration
+
+### StateBackend (Default)
+
+In-memory storage for ephemeral sessions:
+
+```typescript
+import { StateBackend } from 'ai-sdk-deep-agent';
+
+const state = { todos: [], files: {} };
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-20250514'),
+  backend: new StateBackend(state),
+});
+
+// Access state after generation
+const result = await agent.generate({
+  prompt: "Create a file",
+});
+
+console.log(result.state.files); // Files created during generation
+```
+
+### FilesystemBackend
+
+Persist files to disk:
+
+```typescript
+import { FilesystemBackend } from 'ai-sdk-deep-agent';
+
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-20250514'),
+  backend: new FilesystemBackend({
+    rootDir: './workspace', // Files written to this directory
+  }),
+});
+```
+
+### PersistentBackend
+
+Cross-session persistence with key-value store:
+
+```typescript
+import { PersistentBackend, InMemoryStore } from 'ai-sdk-deep-agent';
+
+const store = new InMemoryStore();
+// Or use Redis, SQLite, etc.
+
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-20250514'),
+  backend: new PersistentBackend({
+    store,
+    namespace: 'project-1', // Isolate state by namespace
+  }),
+});
+
+// State persists across agent instances
+await agent.generate({ prompt: "Create file.txt" });
+
+// Later session...
+const agent2 = createDeepAgent({
+  model: anthropic('claude-sonnet-4-20250514'),
+  backend: new PersistentBackend({ store, namespace: 'project-1' }),
+});
+// file.txt is still available
+```
+
+### CompositeBackend
+
+Route files to different backends by path prefix:
+
+```typescript
+import { CompositeBackend, FilesystemBackend, StateBackend } from 'ai-sdk-deep-agent';
+
+const state = { todos: [], files: {} };
+
+const backend = new CompositeBackend(
+  new StateBackend(state), // Default backend
+  {
+    '/persistent/': new FilesystemBackend({ rootDir: './persistent' }),
+    '/cache/': new StateBackend(state),
+    '/temp/': new FilesystemBackend({ rootDir: './tmp' }),
+  }
+);
+
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-20250514'),
+  backend,
+});
+
+// Agent writes to /persistent/file.txt → disk
+// Agent writes to /cache/file.txt → memory
+// Agent writes to /other/file.txt → memory (default)
+```
+
+### LocalSandbox
+
+Enable code execution:
+
+```typescript
+import { LocalSandbox } from 'ai-sdk-deep-agent';
+
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-20250514'),
+  backend: new LocalSandbox({
+    rootDir: './sandbox',
+    timeoutMs: 30000, // 30 second timeout per command
+  }),
+  // execute tool is now available
+});
+```
+
+### Custom Backend
+
+Implement the `BackendProtocol` interface:
+
+```typescript
+import type {
+  BackendProtocol,
+  FileData,
+  FileInfo,
+  WriteResult,
+  EditResult,
+  GrepMatch,
+} from 'ai-sdk-deep-agent';
+
+class CloudStorageBackend implements BackendProtocol {
+  async lsInfo(path: string): Promise<FileInfo[]> {
+    // List files in cloud storage
+  }
+
+  async read(filePath: string, offset?: number, limit?: number): Promise<string> {
+    // Read from cloud
+  }
+
+  async readRaw(filePath: string): Promise<FileData> {
+    // Read raw file data
+  }
+
+  async write(filePath: string, content: string): Promise<WriteResult> {
+    // Write to cloud
+  }
+
+  async edit(
+    filePath: string,
+    oldString: string,
+    newString: string,
+    replaceAll?: boolean
+  ): Promise<EditResult> {
+    // Edit file in cloud
+  }
+
+  async grepRaw(
+    pattern: string,
+    path?: string,
+    glob?: string | null
+  ): Promise<GrepMatch[] | string> {
+    // Search cloud files
+  }
+
+  async globInfo(pattern: string, path?: string): Promise<FileInfo[]> {
+    // Glob cloud files
+  }
+}
+
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-20250514'),
+  backend: new CloudStorageBackend(),
+});
+```
+
+---
+
+## 5. Middleware Usage
+
+### Logging Middleware
+
+Log all model calls:
+
+```typescript
+import { wrapLanguageModel } from 'ai';
+
+const loggingMiddleware = {
+  wrapGenerate: async ({ doGenerate, params }) => {
+    console.log('=== Model Call ===');
+    console.log('Prompt:', params.prompt);
+    console.log('Tools:', Object.keys(params.tools || {}));
+
+    const start = Date.now();
+    const result = await doGenerate();
+
+    console.log('Response:', result.text);
+    console.log('Duration:', Date.now() - start, 'ms');
+    console.log('==================');
+
+    return result;
+  },
+};
+
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-20250514'),
+  middleware: [loggingMiddleware],
+});
+```
+
+### Agent Memory Middleware
+
+Load persistent agent memory from filesystem:
+
+```typescript
+import { createAgentMemoryMiddleware } from 'ai-sdk-deep-agent/middleware';
+
+const memoryMiddleware = createAgentMemoryMiddleware({
+  agentId: 'code-architect',
+  workingDirectory: process.cwd(),
+  // Memory loaded from:
+  // - ~/.deepagents/code-architect/agent.md (user-level)
+  // - .deepagents/agent.md (project-level)
+});
+
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-20250514'),
+  middleware: [memoryMiddleware],
+});
+
+// Agent remembers preferences and context across conversations
+// Agent can update memory using write_file tool
+```
+
+### Custom Telemetry Middleware
+
+Track token usage and costs:
+
+```typescript
+let totalTokens = 0;
+let totalCost = 0;
+
+const telemetryMiddleware = {
+  wrapGenerate: async ({ doGenerate, params }) => {
+    const result = await doGenerate();
+
+    // Track usage (if available)
+    if ('usage' in result) {
+      const usage = result.usage as { totalTokens: number };
+      totalTokens += usage.totalTokens;
+      totalCost += calculateCost(usage.totalTokens);
+    }
+
+    console.log(`Cumulative: ${totalTokens} tokens, $${totalCost.toFixed(2)}`);
+
+    return result;
+  },
+};
+```
+
+### Rate Limiting Middleware
+
+Prevent API overuse:
+
+```typescript
+const rateLimiter = {
+  lastCall: 0,
+  minInterval: 1000, // 1 second between calls
+
+  wrapGenerate: async ({ doGenerate }) => {
+    const now = Date.now();
+    const elapsed = now - rateLimiter.lastCall;
+
+    if (elapsed < rateLimiter.minInterval) {
+      const delay = rateLimiter.minInterval - elapsed;
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+
+    rateLimiter.lastCall = Date.now();
+    return doGenerate();
+  },
+};
+```
+
+### Multiple Middleware
+
+Combine multiple middleware functions:
+
+```typescript
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-20250514'),
+  middleware: [
+    loggingMiddleware,
+    memoryMiddleware,
+    telemetryMiddleware,
+  ],
+  // Middleware applied in order
+});
+```
+
+---
+
+## 6. Loop Control Customization
+
+### Custom Stop Conditions
+
+Stop the agent loop based on custom conditions:
+
+```typescript
+import { stepCountIs } from 'ai';
+
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-20250514'),
+  loopControl: {
+    stopWhen: [
+      stepCountIs(50), // Max 50 steps
+
+      // Stop when all todos completed
+      ({ state }) => {
+        return state.todos.length > 0 &&
+          state.todos.every(t => t.status === 'completed');
+      },
+
+      // Stop when specific tool called
+      ({ toolCalls }) => {
+        return toolCalls.some(tc => tc.toolName === 'finish');
+      },
+    ],
+  },
+});
+```
+
+### Prepare Step Hook
+
+Modify parameters before each step:
+
+```typescript
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-20250514'),
+  loopControl: {
+    prepareStep: async ({ stepNumber, model, tools }) => {
+      console.log(`Preparing step ${stepNumber}`);
+
+      // Use smaller model for later steps
+      if (stepNumber > 10) {
+        return {
+          model: anthropic('claude-haiku-4-5-20251001'),
+        };
+      }
+
+      // Limit tool choices for first step
+      if (stepNumber === 1) {
+        return {
+          activeTools: ['write_todos'], // Only allow planning
+        };
+      }
+
+      return {}; // No changes
+    },
+  },
+});
+```
+
+### On Step Finish Hook
+
+React to completed steps:
+
+```typescript
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-20250514'),
+  loopControl: {
+    onStepFinish: async ({ toolCalls, toolResults, messages }) => {
+      // Log to analytics
+      analytics.track('agent_step', {
+        toolCount: toolCalls.length,
+        toolsUsed: toolCalls.map(tc => tc.toolName),
+      });
+
+      // Check for errors
+      const failedTools = toolResults.filter(
+        r => !('output' in r) || r.error
+      );
+
+      if (failedTools.length > 0) {
+        console.warn('Failed tools:', failedTools);
+      }
+    },
+  },
+});
+```
+
+### On Finish Hook
+
+Cleanup after agent completes:
+
+```typescript
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-20250514'),
+  loopControl: {
+    onFinish: async ({ finishReason, usage, messages }) => {
+      console.log('Agent finished:', finishReason);
+
+      // Save to database
+      await db.conversations.create({
+        messages,
+        usage,
+        timestamp: new Date(),
+      });
+    },
+  },
+});
+```
+
+---
+
+## 7. Generation Options
+
+### Temperature and Sampling
+
+Control response creativity:
+
+```typescript
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-20250514'),
+  generationOptions: {
+    temperature: 0.7,        // 0-2, higher = more creative
+    topP: 0.9,              // Nucleus sampling (0-1)
+    topK: 40,               // Top-K sampling
+  },
+});
+
+// Low temperature for deterministic tasks
+const codeAgent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-20250514'),
+  generationOptions: {
+    temperature: 0.1, // More focused, deterministic
+  },
+});
+
+// High temperature for creative tasks
+const creativeAgent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-20250514'),
+  generationOptions: {
+    temperature: 1.5, // More varied, creative
+  },
+});
+```
+
+### Response Length Control
+
+```typescript
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-20250514'),
+  generationOptions: {
+    maxOutputTokens: 4096,    // Limit response length
+  },
+});
+```
+
+### Penalties
+
+Reduce repetition:
+
+```typescript
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-20250514'),
+  generationOptions: {
+    presencePenalty: 0.5,    // -1 to 1, penalize new topics
+    frequencyPenalty: 0.5,   // -1 to 1, penalize repetition
+  },
+});
+```
+
+### Deterministic Outputs
+
+Use seed for reproducible results:
+
+```typescript
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-20250514'),
+  generationOptions: {
+    temperature: 0,      // Must be 0 for deterministic
+    seed: 42,            // Same seed = same output
+  },
+});
+```
+
+### Stop Sequences
+
+Define custom stop strings:
+
+```typescript
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-20250514'),
+  generationOptions: {
+    stopSequences: ['END_CONVERSATION', '---'],
+  },
+});
+```
+
+### Retry Configuration
+
+```typescript
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-20250514'),
+  generationOptions: {
+    maxRetries: 3, // Retry failed API calls up to 3 times
+  },
+});
+```
+
+---
+
+## 8. Subagent Customization
+
+### Basic Subagent
+
+Create specialized subagents:
+
+```typescript
+import { type SubAgent } from 'ai-sdk-deep-agent';
+
+const researchAgent: SubAgent = {
+  name: 'researcher',
+  description: 'Specialized for deep research and analysis tasks',
+  systemPrompt: `You are a research specialist.
+Focus on finding accurate information and citing sources.
+Provide detailed, well-structured reports.`,
+};
+
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-20250514'),
+  subagents: [researchAgent],
+});
+```
+
+### Subagent with Custom Tools
+
+```typescript
+const readonlyAgent: SubAgent = {
+  name: 'code-reviewer',
+  description: 'Read-only agent for code review',
+  systemPrompt: 'Review code for bugs and improvements',
+
+  // Only provide read tools
+  tools: [
+    createLsTool,
+    createReadFileTool,
+    createGrepTool,
+    createGlobTool,
+  ],
+};
+```
+
+### Subagent with Different Model
+
+Use faster/cheaper model for subagents:
+
+```typescript
+import { anthropic } from '@ai-sdk/anthropic';
+
+const summarizerAgent: SubAgent = {
+  name: 'summarizer',
+  description: 'Quickly summarize content',
+  systemPrompt: 'Provide concise summaries',
+
+  model: anthropic('claude-haiku-4-5-20251001'), // Faster, cheaper
+};
+
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-20250514'), // Main model
+  subagents: [summarizerAgent],
+});
+```
+
+### Subagent with Structured Output
+
+```typescript
+const analystAgent: SubAgent = {
+  name: 'analyst',
+  description: 'Analyze data and return structured insights',
+  systemPrompt: 'Analyze the data and extract key insights',
+
+  output: {
+    schema: z.object({
+      summary: z.string(),
+      keyFindings: z.array(z.string()),
+      confidence: z.number().min(0).max(1),
+      recommendations: z.array(z.string()).optional(),
+    }),
+    description: 'Structured analysis report',
+  },
+};
+
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-20250514'),
+  subagents: [analystAgent],
+});
+
+// Access structured output in events
+for await (const event of agent.streamWithEvents({ prompt: 'Analyze data' })) {
+  if (event.type === 'subagent-finish' && event.subagentName === 'analyst') {
+    if (event.output) {
+      console.log('Summary:', event.output.summary);
+      console.log('Confidence:', event.output.confidence);
+    }
+  }
+}
+```
+
+### Subagent with Custom Generation Options
+
+```typescript
+const creativeSubagent: SubAgent = {
+  name: 'writer',
+  description: 'Creative writing assistant',
+  systemPrompt: 'Write engaging content',
+
+  generationOptions: {
+    temperature: 0.9,        // More creative
+    maxOutputTokens: 2048,
+    topP: 0.95,
+  },
+};
+```
+
+### Subagent with HITL
+
+```typescript
+const destructiveAgent: SubAgent = {
+  name: 'file-operations',
+  description: 'Handle file operations with approval',
+  systemPrompt: 'Perform file operations carefully',
+
+  interruptOn: {
+    write_file: true,     // Always approve
+    edit_file: true,      // Always approve
+  },
+};
+
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-20250514'),
+  subagents: [destructiveAgent],
+  interruptOn: {
+    // Main agent requires approval for subagent calls
+    task: true,
+  },
+});
+```
+
+### Multiple Specialized Subagents
+
+```typescript
+const agents: SubAgent[] = [
+  {
+    name: 'researcher',
+    description: 'Conduct research and gather information',
+    systemPrompt: 'You are a research specialist...',
+    model: anthropic('claude-haiku-4-5-20251001'),
+  },
+  {
+    name: 'writer',
+    description: 'Write and edit content',
+    systemPrompt: 'You are a professional writer...',
+    generationOptions: { temperature: 0.8 },
+  },
+  {
+    name: 'analyst',
+    description: 'Analyze data and provide insights',
+    systemPrompt: 'You are a data analyst...',
+    output: {
+      schema: z.object({
+        insights: z.array(z.string()),
+        summary: z.string(),
+      }),
+    },
+  },
+];
+
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-20250514'),
+  subagents: agents,
+});
+```
+
+### Disable General-Purpose Agent
+
+```typescript
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-20250514'),
+  includeGeneralPurposeAgent: false, // Remove default subagent
+  subagents: [
+    // Only use explicitly defined subagents
+    researchAgent,
+    writerAgent,
+  ],
+});
+```
+
+---
+
+## 9. Provider-Specific Options
+
+### Anthropic-Specific Options
+
+```typescript
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-20250514'),
+  advancedOptions: {
+    providerOptions: {
+      anthropic: {
+        headers: {
+          'anthropic-beta': 'max-tokens-3-5-2024-01-01',
+          'anthropic-dangerous-direct-browser-access': 'true',
+        },
+      },
+    },
+  },
+});
+```
+
+### OpenAI-Specific Options
+
+```typescript
+import { openai } from '@ai-sdk/openai';
+
+const agent = createDeepAgent({
+  model: openai('gpt-4o'),
+  advancedOptions: {
+    providerOptions: {
+      openai: {
+        user: 'user-123', // User identification
+        includeUsage: true,
+      },
+    },
+  },
+});
+```
+
+### Azure OpenAI
+
+```typescript
+import { azure } from '@ai-sdk/azure';
+
+const agent = createDeepAgent({
+  model: azure('gpt-4', {
+    apiKey: process.env.AZURE_API_KEY,
+    resourceName: 'my-resource',
+    apiVersion: '2024-02-01',
+  }),
+  advancedOptions: {
+    providerOptions: {
+      azure: {
+        headers: {
+          'x-ms-user-agent': 'my-app/1.0',
+        },
+      },
+    },
+  },
+});
+```
+
+### Prompt Caching (Anthropic)
+
+Enable caching for repeated prompts:
+
+```typescript
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-20250514'),
+  enablePromptCaching: true, // Cache system prompt
+
+  // Or manually via provider options
+  advancedOptions: {
+    providerOptions: {
+      anthropic: {
+        cacheControl: {
+          type: 'ephemeral',
+        },
+      },
+    },
+  },
+});
+```
+
+### Custom Endpoint
+
+```typescript
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-20250514', {
+    baseURL: 'https://custom-endpoint.com',
+    apiKey: process.env.CUSTOM_API_KEY,
+  }),
+});
+```
+
+---
+
+## 10. Agent Memory and Skills
+
+### Agent Memory
+
+Enable persistent memory across conversations:
+
+```typescript
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-20250514'),
+  agentId: 'my-coding-assistant',
+  // Memory loaded from:
+  // - ~/.deepagents/my-coding-assistant/agent.md (user-level)
+  // - .deepagents/agent.md (project-level, if in git repo)
+
+  // Agent can update memory using filesystem tools
+});
+
+// Agent remembers:
+// - User preferences
+// - Project conventions
+// - Past decisions
+// - Working patterns
+```
+
+### Skills System
+
+Load reusable skills from standardized directories:
+
+```typescript
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-20250514'),
+  agentId: 'my-agent',
+  // Skills loaded from:
+  // - ~/.deepagents/my-agent/skills/*/SKILL.md (user)
+  // - .deepagents/skills/*/SKILL.md (project)
+});
+```
+
+**Skill Format:**
+
+```markdown
+---
+name: code-review
+description: Best practices for reviewing code
+---
+
+# Code Review Skill
+
+When reviewing code:
+1. Check for security vulnerabilities
+2. Verify error handling
+3. Assess test coverage
+4. Check performance implications
+5. Verify style guide compliance
+```
+
+**Agent automatically:**
+- Discovers skills on startup
+- Injects skill descriptions into system prompt
+- Reads full skill instructions when needed
+- Follows skill workflows
+
+### Custom Memory with Middleware
+
+```typescript
+import { createAgentMemoryMiddleware } from 'ai-sdk-deep-agent/middleware';
+
+const memoryMiddleware = createAgentMemoryMiddleware({
+  agentId: 'my-agent',
+  workingDirectory: process.cwd(),
+  userDeepagentsDir: '/custom/path/.deepagents',
+  requestProjectApproval: async (projectPath) => {
+    console.log(`Create .deepagents/ in ${projectPath}?`);
+    // Ask user for approval
+    return true; // User approved
+  },
+});
+
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-20250514'),
+  middleware: [memoryMiddleware],
+});
+```
+
+---
+
+## 11. Structured Output
+
+### Basic Structured Output
+
+Enforce typed responses:
+
+```typescript
+import { z } from 'zod';
+
+const schema = z.object({
+  title: z.string().describe('Document title'),
+  summary: z.string().describe('Brief summary'),
+  tags: z.array(z.string()).describe('Relevant tags'),
+  confidence: z.number().min(0).max(1).describe('Confidence score'),
+});
+
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-20250514'),
+  output: {
+    schema,
+    description: 'Structured document analysis',
+  },
+});
+
+const result = await agent.generate({
+  prompt: 'Analyze this document',
+});
+
+// result.output is typed: { title: string, summary: string, tags: string[], confidence: number }
+console.log(result.output.title);
+```
+
+### Complex Nested Schemas
+
+```typescript
+const schema = z.object({
+  overview: z.string(),
+  sections: z.array(z.object({
+    heading: z.string(),
+    content: z.string(),
+    subsections: z.array(z.object({
+      title: z.string(),
+      points: z.array(z.string()),
+    })).optional(),
+  })),
+  metadata: z.object({
+    wordCount: z.number(),
+    readingTime: z.number(),
+    difficulty: z.enum(['beginner', 'intermediate', 'advanced']),
+  }),
+});
+```
+
+### Subagent Structured Output
+
+```typescript
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-20250514'),
+  subagents: [
+    {
+      name: 'researcher',
+      description: 'Research and return structured findings',
+      systemPrompt: 'Conduct thorough research',
+
+      output: {
+        schema: z.object({
+          topic: z.string(),
+          findings: z.array(z.string()),
+          sources: z.array(z.string()),
+          confidence: z.number(),
+        }),
+      },
+    },
+  ],
+});
+
+// Access subagent output
+for await (const event of agent.streamWithEvents({ prompt: 'Research AI' })) {
+  if (event.type === 'subagent-finish' && event.output) {
+    console.log('Findings:', event.output.findings);
+    console.log('Sources:', event.output.sources);
+  }
+}
+```
+
+### Streaming with Structured Output
+
+```typescript
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-20250514'),
+  output: {
+    schema: z.object({
+      answer: z.string(),
+      confidence: z.number(),
+    }),
+  },
+});
+
+for await (const event of agent.streamWithEvents({
+  prompt: 'What is 2+2?',
+})) {
+  if (event.type === 'done' && event.output) {
+    console.log('Answer:', event.output.answer);
+    console.log('Confidence:', event.output.confidence);
+  }
+}
+```
+
+---
+
+## 12. Human-in-the-Loop
+
+### Always Require Approval
+
+```typescript
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-20250514'),
+  interruptOn: {
+    execute: true,        // Shell commands
+    write_file: true,     // File writes
+    edit_file: true,      // File edits
+  },
+});
+
+for await (const event of agent.streamWithEvents({
+  prompt: 'Create a config file',
+  onApprovalRequest: async (request) => {
+    console.log(`Approve ${request.toolName}?`, request.args);
+
+    // Get user input (in CLI, readline; in web, API endpoint)
+    const approved = await getUserApproval(request);
+
+    return approved;
+  },
+})) {
+  // Handle events
+}
+```
+
+### Conditional Approval
+
+Auto-approve safe operations:
+
+```typescript
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-20250514'),
+  interruptOn: {
+    write_file: {
+      shouldApprove: (args) => {
+        const filePath = (args as any).file_path;
+        // Auto-approve writes to /tmp, require approval for others
+        return !filePath?.startsWith('/tmp/');
+      },
+    },
+    edit_file: {
+      shouldApprove: (args) => {
+        const filePath = (args as any).file_path;
+        // Auto-approve edits to test files
+        return !filePath?.includes('.test.');
+      },
+    },
+    execute: true, // Always approve shell commands
+  },
+});
+```
+
+### Subagent Approval
+
+```typescript
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-20250514'),
+  interruptOn: {
+    task: true, // Require approval before spawning subagents
+  },
+});
+
+for await (const event of agent.streamWithEvents({
+  prompt: 'Delegate work',
+  onApprovalRequest: async (request) => {
+    if (request.toolName === 'task') {
+      console.log(`Approve subagent?`, request.args);
+      return await confirm('Allow subagent?');
+    }
+    return true;
+  },
+})) {
+  // Handle events
+}
+```
+
+### Approval in Subagents
+
+```typescript
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-20250514'),
+  subagents: [
+    {
+      name: 'file-operator',
+      description: 'Handles file operations',
+      systemPrompt: 'Perform file operations with approval',
+
+      interruptOn: {
+        write_file: true,
+        edit_file: true,
+      },
+    },
+  ],
+  interruptOn: {
+    // Main agent must approve spawning file-operator
+    task: {
+      shouldApprove: (args) => {
+        const subagentType = (args as any).subagent_type;
+        return subagentType === 'file-operator';
+      },
+    },
+  },
+});
+```
+
+### Web-Based Approval
+
+```typescript
+import express from 'express';
+
+const pendingApprovals = new Map<string, {
+  resolve: (approved: boolean) => void;
+  request: any;
+}>();
+
+const app = express();
+
+app.post('/approve/:id', (req, res) => {
+  const { id } = req.params;
+  const { approved } = req.body;
+
+  const approval = pendingApprovals.get(id);
+  if (approval) {
+    approval.resolve(approved);
+    pendingApprovals.delete(id);
+    res.json({ success: true });
+  } else {
+    res.status(404).json({ error: 'Not found' });
+  }
+});
+
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-20250514'),
+  interruptOn: {
+    execute: true,
+    write_file: true,
+  },
+});
+
+for await (const event of agent.streamWithEvents({
+  prompt: 'Run build',
+  onApprovalRequest: async (request) => {
+    const id = crypto.randomUUID();
+
+    return new Promise((resolve) => {
+      pendingApprovals.set(id, { resolve, request });
+
+      // Send notification to frontend
+      notifyFrontend({
+        type: 'approval-request',
+        id,
+        toolName: request.toolName,
+        args: request.args,
+      });
+
+      // Timeout after 30 seconds
+      setTimeout(() => {
+        if (pendingApprovals.has(id)) {
+          pendingApprovals.delete(id);
+          resolve(false); // Deny on timeout
+        }
+      }, 30000);
+    });
+  },
+})) {
+  // Handle events
+}
+```
+
+---
+
+## Advanced Combinations
+
+### Production-Ready Configuration
+
+```typescript
+import {
+  createDeepAgent,
+  PersistentBackend,
+  LocalSandbox,
+  CompositeBackend,
+  FilesystemBackend,
+  StateBackend,
+  createAgentMemoryMiddleware,
+} from 'ai-sdk-deep-agent';
+import { anthropic } from '@ai-sdk/anthropic';
+import { Redis } from 'ioredis';
+
+// Redis store for persistence
+const redis = new Redis();
+const redisStore = {
+  async get(key: string) {
+    const value = await redis.get(key);
+    return value ? JSON.parse(value) : null;
+  },
+  async set(key: string, value: any) {
+    await redis.set(key, JSON.stringify(value));
+  },
+};
+
+// Composite backend for different storage needs
+const backend = new CompositeBackend(
+  new StateBackend({ todos: [], files: {} }),
+  {
+    '/workspace/': new LocalSandbox({ rootDir: './workspace' }),
+    '/persistent/': new PersistentBackend({
+      store: redisStore,
+      namespace: 'app',
+    }),
+    '/cache/': new FilesystemBackend({ rootDir: './cache' }),
+  }
+);
+
+// Agent with all features
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-20250514'),
+
+  // Memory and skills
+  agentId: 'production-assistant',
+  middleware: [
+    createAgentMemoryMiddleware({
+      agentId: 'production-assistant',
+    }),
+  ],
+
+  // Backend
+  backend,
+
+  // Performance optimizations
+  enablePromptCaching: true,
+  toolResultEvictionLimit: 20000,
+  summarization: {
+    enabled: true,
+    tokenThreshold: 150000,
+    keepMessages: 8,
+    model: anthropic('claude-haiku-4-5-20251001'),
+  },
+
+  // Safety
+  interruptOn: {
+    execute: true,
+    write_file: {
+      shouldApprove: (args) => {
+        const path = (args as any).file_path;
+        return !path?.startsWith('/tmp/');
+      },
+    },
+  },
+
+  // Loop control
+  loopControl: {
+    stopWhen: [
+      stepCountIs(100),
+      ({ state }) => state.todos.every(t => t.status === 'completed'),
+    ],
+    onStepFinish: async ({ toolCalls, usage }) => {
+      // Track usage in analytics
+      await analytics.track('agent_step', {
+        tools: toolCalls.map(tc => tc.toolName),
+        tokens: usage?.totalTokens,
+      });
+    },
+  },
+
+  // Generation settings
+  generationOptions: {
+    temperature: 0.7,
+    maxOutputTokens: 4096,
+  },
+
+  // Structured output for consistency
+  output: {
+    schema: z.object({
+      summary: z.string(),
+      actions: z.array(z.string()),
+      status: z.enum(['success', 'partial', 'failed']),
+    }),
+  },
+});
+```
+
+---
+
+## See Also
+
+- [Architecture Documentation](./architecture.md) - Core components and systems
+- [Common Patterns](./patterns.md) - Usage examples and patterns
+- [Agent Memory](./agent-memory.md) - Persistent memory system
+- [Checkpointers](./checkpointers.md) - Session persistence

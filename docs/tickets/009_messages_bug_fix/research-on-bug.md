@@ -1,4 +1,5 @@
 ---
+title: Research
 date: 2025-12-20 10:32:00 AEDT
 researcher: claude-sonnet-4-5-20251001
 git_commit: d8cff28e51a84bf19436e47fedba27240673d0ac
@@ -10,8 +11,6 @@ status: complete
 last_updated: 2025-12-20
 last_updated_by: claude-sonnet-4-5-20251001
 ---
-
-# Research
 
 ## Research Question
 

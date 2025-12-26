@@ -1,4 +1,7 @@
-# Middleware Architecture Implementation Plan
+---
+title: Middleware Architecture Implementation Plan
+description: Documentation
+---
 
 ## Overview
 

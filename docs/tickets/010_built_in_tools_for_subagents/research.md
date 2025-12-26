@@ -1,4 +1,5 @@
 ---
+title: Subagent Web Tools Access - Investigation and Analysis
 date: 2025-12-20
 researcher: Research Agent
 git_commit: 071941a2fcde7bcf803aa29632c5dec9bbda5630
@@ -10,8 +11,6 @@ status: complete
 last_updated: 2025-12-20
 last_updated_by: Research Agent
 ---
-
-# Research: Subagent Web Tools Access
 
 ## Research Question
 

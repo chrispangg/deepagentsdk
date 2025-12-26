@@ -1,6 +1,9 @@
-# Agent Memory Middleware
+---
+title: Agent Memory Middleware
+description: Persistent memory middleware for AI SDK language models
+---
 
-Agent memory gives your DeepAgent persistent, long-term memory across conversations. The agent can remember user preferences, project context, past decisions, and learned patterns - all stored in simple markdown files.
+Agent memory gives your language model persistent, long-term memory across conversations. The model can remember user preferences, project context, past decisions, and learned patterns - all stored in simple markdown files.
 
 ## Overview
 
@@ -9,42 +12,68 @@ The agent memory system uses a two-tier architecture:
 1. **User-level memory**: Personal agent configuration at `~/.deepagents/{agentId}/agent.md`
 2. **Project-level memory**: Shared project context at `[git-root]/.deepagents/agent.md`
 
-Memory content is injected into the agent's system prompt on every model call, and the agent can read/update memory files using filesystem tools.
+Memory content is injected into the model's system prompt on every call, and the model can read/update memory files using filesystem tools.
+
+**⚠️ Important**: This middleware is designed for direct AI SDK usage (`generateText`, `streamText`). It does not currently work with `createDeepAgent` due to ToolLoopAgent's use of `params.instructions` instead of `params.prompt` for the system prompt. See the [integration examples](#integration-examples) for workarounds.
 
 ## Quick Start
 
 ### Basic Usage
 
 ```typescript
-import { createDeepAgent, createAgentMemoryMiddleware } from 'ai-sdk-deep-agent';
+import { generateText, wrapLanguageModel } from 'ai';
 import { anthropic } from '@ai-sdk/anthropic';
+import { createAgentMemoryMiddleware } from 'ai-sdk-deep-agent';
 
 // Create memory middleware
 const memoryMiddleware = createAgentMemoryMiddleware({
   agentId: 'my-coding-assistant',
 });
 
-// Create agent with memory
-const agent = createDeepAgent({
+// Wrap model with memory middleware
+const model = wrapLanguageModel({
   model: anthropic('claude-sonnet-4-20250514'),
   middleware: memoryMiddleware,
 });
-```
 
-### Simplified with agentId
-
-```typescript
-// Even simpler: use agentId parameter (enables both memory and skills)
-const agent = createDeepAgent({
-  model: anthropic('claude-sonnet-4-20250514'),
-  agentId: 'my-coding-assistant',
-  // Memory automatically loaded from:
-  // - ~/.deepagents/my-coding-assistant/agent.md
-  // - .deepagents/agent.md (if in git repo)
+// Use with generateText - memory is automatically injected
+const result = await generateText({
+  model,
+  prompt: [
+    { role: 'system', content: 'You are a helpful coding assistant' },
+    { role: 'user', content: 'Help me write a TypeScript function' },
+  ],
 });
 ```
 
-**Note**: The `agentId` parameter automatically creates memory middleware internally and also enables agent-specific skills loading.
+### With Other Features
+
+Agent memory can be combined with other AI SDK features:
+
+```typescript
+// Memory + Manual Skills Loading
+import { listSkills } from 'ai-sdk-deep-agent';
+
+const model = wrapLanguageModel({
+  model: anthropic('claude-sonnet-4-20250514'),
+  middleware: createAgentMemoryMiddleware({
+    agentId: 'my-coding-assistant',
+  }),
+});
+
+const skills = await listSkills({ agentId: 'my-coding-assistant' });
+console.log('Loaded skills:', skills.map(s => s.name));
+
+const result = await generateText({
+  model,
+  prompt: [
+    { role: 'system', content: `You are a helpful assistant with these skills: ${skills.map(s => s.name).join(', ')}` },
+    { role: 'user', content: 'Help me write code' },
+  ],
+});
+```
+
+For DeepAgent integration, see the [manual memory workaround](#manual-memory-with-deepagent-workaround) below.
 
 ## Memory File Locations
 
@@ -57,6 +86,7 @@ const agent = createDeepAgent({
 **Auto-created**: Yes (directory created automatically if it doesn't exist)
 
 **Example content**:
+
 ```markdown
 # My Coding Assistant
 
@@ -83,6 +113,7 @@ I am a helpful TypeScript expert who values code quality and clarity.
 **Auto-created**: Only with user approval (see `requestProjectApproval`)
 
 **Example content**:
+
 ```markdown
 # Project Context
 
@@ -173,6 +204,7 @@ const memoryMiddleware = createAgentMemoryMiddleware({
 3. **On subsequent calls**: Cached memory is reused (files not re-read)
 
 This means:
+
 - ✅ Memory is loaded once per agent instance (performance)
 - ❌ File changes during runtime won't be reflected (restart required)
 
@@ -190,6 +222,10 @@ Memory is injected into the system prompt using AI SDK v6's `transformParams` ho
   },
 }
 ```
+
+**⚠️ Important Compatibility Note**: The current implementation of `createAgentMemoryMiddleware` enhances `params.prompt` by looking for system messages. However, DeepAgent uses ToolLoopAgent which passes the system prompt via `params.instructions`. This means the middleware currently **does not work** with DeepAgent's agent-based APIs (`generate()`, `stream()`, `streamWithEvents()`).
+
+The middleware is designed for direct AI SDK usage with `generateText()` and `streamText()` where system messages are part of the prompt array. A future update will add DeepAgent compatibility.
 
 ### System Prompt Template
 
@@ -238,16 +274,19 @@ await agent.generate({
 The system prompt teaches the agent:
 
 **When to update memory**:
+
 - User explicitly asks to remember something
 - Discover recurring preferences or patterns
 - Learn project-specific conventions
 
 **When NOT to update memory**:
+
 - Temporary task information (use todos instead)
 - Information already in codebase
 - Obvious facts from documentation
 
 **How to organize memory**:
+
 - Use markdown headings for structure
 - Keep entries concise and relevant
 - Remove outdated information
@@ -255,21 +294,36 @@ The system prompt teaches the agent:
 
 ## Integration Examples
 
-### With Skills
+### Direct AI SDK Usage (Recommended)
+
+The memory middleware is designed for direct AI SDK usage:
 
 ```typescript
-const agent = createDeepAgent({
+import { generateText, wrapLanguageModel } from 'ai';
+import { anthropic } from '@ai-sdk/anthropic';
+import { createAgentMemoryMiddleware } from 'ai-sdk-deep-agent';
+
+// Wrap model with memory middleware
+const model = wrapLanguageModel({
   model: anthropic('claude-sonnet-4-20250514'),
-  agentId: 'research-agent',
-  // Loads:
-  // - Memory: ~/.deepagents/research-agent/agent.md
-  // - Skills: ~/.deepagents/research-agent/skills/
-  // - Project memory: .deepagents/agent.md
-  // - Project skills: .deepagents/skills/
+  middleware: createAgentMemoryMiddleware({
+    agentId: 'research-agent',
+  }),
+});
+
+// Use with generateText - memory is automatically injected
+const result = await generateText({
+  model,
+  prompt: [
+    { role: 'system', content: 'You are a helpful research assistant' },
+    { role: 'user', content: 'Help me research TypeScript patterns' },
+  ],
 });
 ```
 
 ### With Custom Middleware
+
+You can combine memory middleware with other middleware:
 
 ```typescript
 const loggingMiddleware = {
@@ -280,29 +334,49 @@ const loggingMiddleware = {
   },
 };
 
-const memoryMiddleware = createAgentMemoryMiddleware({
-  agentId: 'my-agent',
+const model = wrapLanguageModel({
+  model: anthropic('claude-sonnet-4-20250514'),
+  middleware: [
+    loggingMiddleware,
+    createAgentMemoryMiddleware({ agentId: 'my-agent' }),
+  ],
 });
 
-const agent = createDeepAgent({
-  model: anthropic('claude-sonnet-4-20250514'),
-  middleware: [loggingMiddleware, memoryMiddleware],
-  // Middlewares applied in order
+const result = await generateText({
+  model,
+  prompt: [{ role: 'user', content: 'Hello' }],
 });
 ```
 
-### With Checkpointer
+### Manual Memory with DeepAgent (Workaround)
+
+For DeepAgent usage, manually load and inject memory:
 
 ```typescript
-import { MemorySaver } from 'ai-sdk-deep-agent';
+import { createDeepAgent } from 'ai-sdk-deep-agent';
+import { anthropic } from '@ai-sdk/anthropic';
+import * as fs from 'node:fs/promises';
+import * as path from 'node:path';
+import os from 'node:os';
+
+async function loadAgentMemory(agentId: string) {
+  const userMemoryPath = path.join(os.homedir(), '.deepagents', agentId, 'agent.md');
+  try {
+    return await fs.readFile(userMemoryPath, 'utf-8');
+  } catch {
+    return ''; // Return empty string if file doesn't exist
+  }
+}
+
+const memory = await loadAgentMemory('my-agent');
 
 const agent = createDeepAgent({
   model: anthropic('claude-sonnet-4-20250514'),
-  agentId: 'persistent-agent',
-  checkpointer: new MemorySaver(),
-  // Combines:
-  // - Long-term memory (agent.md files)
-  // - Session memory (checkpointer)
+  agentId: 'my-agent', // For skills loading
+  systemPrompt: `You are a helpful assistant.
+
+${memory}`,
+  // Memory manually injected via systemPrompt
 });
 ```
 
@@ -335,23 +409,28 @@ Memory files are **plain markdown** - no YAML frontmatter or special structure r
 ### Anti-patterns
 
 ❌ **Don't** store temporary task tracking:
+
 ```markdown
 ## Current Tasks
 - [ ] Implement feature X
 - [ ] Fix bug Y
 ```
+
 Use the `write_todos` tool instead.
 
 ❌ **Don't** duplicate codebase information:
+
 ```markdown
 ## File Structure
 src/
   agent.ts
   tools/
 ```
+
 The agent can use `ls` and `glob` tools.
 
 ❌ **Don't** store obvious facts:
+
 ```markdown
 ## Facts
 - TypeScript is a typed superset of JavaScript
@@ -359,6 +438,7 @@ The agent can use `ls` and `glob` tools.
 ```
 
 ✅ **Do** store preferences and patterns:
+
 ```markdown
 ## Code Style
 - Use functional components over class components
@@ -398,6 +478,7 @@ const agent = createDeepAgent({
 ```
 
 **Migration steps**:
+
 1. Create `~/.deepagents/{agentId}/skills/` directory
 2. Move skill directories from old location to new location
 3. Update agent creation to use `agentId`
@@ -407,14 +488,74 @@ const agent = createDeepAgent({
 
 ## Troubleshooting
 
+### Memory not working with DeepAgent
+
+**Symptom**: Memory middleware doesn't inject content into agent responses
+
+**Cause**: Current implementation incompatibility with ToolLoopAgent
+
+The middleware is designed for direct AI SDK functions:
+
+```typescript
+// ✅ Works - Direct AI SDK usage
+import { generateText } from 'ai';
+import { createAgentMemoryMiddleware } from 'ai-sdk-deep-agent';
+
+const model = wrapLanguageModel({
+  model: anthropic('claude-sonnet-4-20250514'),
+  middleware: createAgentMemoryMiddleware({ agentId: 'my-agent' }),
+});
+
+const result = await generateText({
+  model,
+  prompt: [{ role: 'system', content: 'You are helpful' }, { role: 'user', content: 'Hello' }],
+});
+```
+
+```typescript
+// ❌ Doesn't work yet - DeepAgent usage
+import { createDeepAgent, createAgentMemoryMiddleware } from 'ai-sdk-deep-agent';
+
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-20250514'),
+  middleware: createAgentMemoryMiddleware({ agentId: 'my-agent' }),
+  // Memory won't be injected - middleware needs update for ToolLoopAgent
+});
+```
+
+**Workaround**: Use manual memory injection via `systemPrompt` parameter:
+
+```typescript
+import { fs } from 'node:fs/promises';
+import path from 'node:path';
+import os from 'node:os';
+
+async function loadMemory(agentId: string) {
+  const userMemoryPath = path.join(os.homedir(), '.deepagents', agentId, 'agent.md');
+  try {
+    return await fs.readFile(userMemoryPath, 'utf-8');
+  } catch {
+    return '';
+  }
+}
+
+const memory = await loadMemory('my-agent');
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-20250514'),
+  systemPrompt: `You are a helpful assistant.\n\n${memory}`,
+});
+```
+
 ### Memory not loading
 
 **Check**:
+
 1. File exists at correct path (`~/.deepagents/{agentId}/agent.md`)
 2. File has read permissions
 3. Working directory is correct (for project memory)
 
 **Debug**:
+
 ```typescript
 const middleware = createAgentMemoryMiddleware({
   agentId: 'my-agent',
@@ -439,11 +580,13 @@ const agent = createDeepAgent({
 ### Project memory not loading
 
 **Check**:
+
 1. You're in a git repository
 2. `.deepagents/agent.md` exists
 3. File has read permissions
 
 **Debug**:
+
 ```typescript
 import { findGitRoot } from 'ai-sdk-deep-agent';
 
@@ -473,16 +616,25 @@ const memoryMiddleware = createAgentMemoryMiddleware({
 Creates a memory middleware instance for AI SDK v6.
 
 **Parameters**:
-- `options: AgentMemoryOptions` - Configuration options
 
-**Returns**: `LanguageModelMiddleware` - Middleware instance compatible with AI SDK v6
+- `options.agentId: string` - Unique identifier for the agent (e.g., "code-architect", "research-agent"). Used to locate agent-specific memory at `~/.deepagents/{agentId}/agent.md`
+- `options.workingDirectory?: string` - Optional working directory for project-level memory detection. Defaults to `process.cwd()`
+- `options.userDeepagentsDir?: string` - Optional custom path for user-level `.deepagents` directory. Defaults to `os.homedir() + '/.deepagents'`
+- `options.requestProjectApproval?: (projectPath: string) => Promise<boolean>` - Optional callback to request user approval for creating project-level `.deepagents/` directory
+
+**Returns**: `LanguageModelMiddleware` - Middleware instance compatible with AI SDK v6 (specification version: 'v3')
 
 **Example**:
+
 ```typescript
 const middleware = createAgentMemoryMiddleware({
   agentId: 'my-agent',
   workingDirectory: '/path/to/project',
-  requestProjectApproval: async (path) => true,
+  userDeepagentsDir: '/custom/path/.deepagents',
+  requestProjectApproval: async (path) => {
+    console.log(`Create .deepagents/ in ${path}?`);
+    return true; // User approves
+  },
 });
 ```
 
@@ -491,11 +643,13 @@ const middleware = createAgentMemoryMiddleware({
 Finds the git repository root by walking up the directory tree.
 
 **Parameters**:
+
 - `startPath?: string` - Starting directory (defaults to `process.cwd()`)
 
 **Returns**: `Promise<string | null>` - Absolute path to git root, or null if not found
 
 **Example**:
+
 ```typescript
 import { findGitRoot } from 'ai-sdk-deep-agent';
 
@@ -511,30 +665,36 @@ if (gitRoot) {
 
 - [Middleware Architecture](./middleware.md) - How middleware works in DeepAgent
 - [Skills System](./skills.md) - Loading and using skills
-- [Examples](../examples/with-agent-memory.ts) - Working code examples
-- [API Reference](../README.md) - Full API documentation
+- [Examples](https://github.com/chrispangg/ai-sdk-deep-agent/tree/main/examples) - Working code examples
+- [API Reference](https://github.com/chrispangg/ai-sdk-deep-agent) - Full API documentation
 
 ## FAQ
 
+**Q: Does the memory middleware work with DeepAgent?**
+
+A: Not yet. The current implementation of `createAgentMemoryMiddleware` is designed for direct AI SDK usage (`generateText`, `streamText`). DeepAgent uses ToolLoopAgent which passes the system prompt via `params.instructions` instead of `params.prompt`, so the middleware doesn't inject memory correctly.
+
+Use the manual memory loading workaround shown in the integration examples until DeepAgent compatibility is added.
+
 **Q: Can I use multiple agentIds in the same application?**
 
-A: Yes! Each agent instance can have its own `agentId`:
+A: Yes! You can create multiple middleware instances with different `agentId` values:
 
 ```typescript
-const researchAgent = createDeepAgent({
+const researchModel = wrapLanguageModel({
   model: anthropic('claude-sonnet-4-20250514'),
-  agentId: 'research-agent',
+  middleware: createAgentMemoryMiddleware({ agentId: 'research-agent' }),
 });
 
-const codingAgent = createDeepAgent({
+const codingModel = wrapLanguageModel({
   model: anthropic('claude-sonnet-4-20250514'),
-  agentId: 'coding-agent',
+  middleware: createAgentMemoryMiddleware({ agentId: 'coding-agent' }),
 });
 ```
 
 **Q: Can I manually edit memory files?**
 
-A: Yes! Memory files are plain markdown. Edit them with any text editor. Changes take effect on next agent restart.
+A: Yes! Memory files are plain markdown. Edit them with any text editor. Changes take effect on next agent restart (middleware caches memory on first load).
 
 **Q: Does memory persist across agent restarts?**
 
@@ -542,20 +702,27 @@ A: Yes! Memory files are stored on disk and persist across restarts, unlike chec
 
 **Q: Can I use memory without skills?**
 
-A: Yes! Memory and skills are independent:
+A: Yes! Memory and skills are independent features. The `agentId` parameter only loads skills, not memory. To use memory, you must explicitly use `createAgentMemoryMiddleware`:
 
 ```typescript
-// Memory only (using middleware)
-const agent = createDeepAgent({
+// Memory middleware only (for direct AI SDK usage)
+const model = wrapLanguageModel({
   model: anthropic('claude-sonnet-4-20250514'),
   middleware: createAgentMemoryMiddleware({ agentId: 'my-agent' }),
 });
 
-// Both memory and skills (using agentId)
+// Skills only (using agentId with DeepAgent)
 const agent = createDeepAgent({
   model: anthropic('claude-sonnet-4-20250514'),
-  agentId: 'my-agent',
+  agentId: 'my-agent', // Loads skills from ~/.deepagents/my-agent/skills/
 });
+
+// Both memory and skills (for direct AI SDK usage)
+const model = wrapLanguageModel({
+  model: anthropic('claude-sonnet-4-20250514'),
+  middleware: createAgentMemoryMiddleware({ agentId: 'my-agent' }),
+});
+// Then load skills separately with listSkills()
 ```
 
 **Q: Is memory secure?**
@@ -564,4 +731,14 @@ A: Memory files are stored in your home directory with default file permissions.
 
 **Q: Can I use a custom directory instead of ~/.deepagents/?**
 
-A: Not currently supported. The directory structure is intentionally standardized for consistency. If you need custom paths, consider symlinking `~/.deepagents/` to your preferred location.
+A: Yes! Use the `userDeepagentsDir` option:
+
+```typescript
+const middleware = createAgentMemoryMiddleware({
+  agentId: 'my-agent',
+  userDeepagentsDir: '/custom/path/.deepagents',
+  // Memory will be loaded from: /custom/path/.deepagents/my-agent/agent.md
+});
+```
+
+This is useful for testing or custom deployment environments. Alternatively, you can symlink `~/.deepagents/` to your preferred location.

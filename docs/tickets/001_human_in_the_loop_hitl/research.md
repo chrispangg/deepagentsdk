@@ -1,4 +1,5 @@
 ---
+title: Human-in-the-Loop (HITL) Implementation
 date: 2025-12-12T00:00:00.000Z
 researcher: Claude
 topic: "Human-in-the-Loop (HITL) Implementation"
@@ -6,8 +7,6 @@ tags: [research, codebase, hitl, tool-approval, ai-sdk-6, needsApproval]
 status: complete
 updated: 2025-12-12
 ---
-
-# Research: Human-in-the-Loop (HITL) Implementation
 
 ## Research Question
 

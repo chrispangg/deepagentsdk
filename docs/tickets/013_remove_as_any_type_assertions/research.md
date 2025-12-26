@@ -1,4 +1,5 @@
 ---
+title: Remove all 'as any' type assertions from codebase
 date: 2025-12-21 15:22:00 AEDT
 researcher: Claude Code
 git_commit: 3159edf99372af24e59b2d45c110d5115f0e62ae
@@ -10,8 +11,6 @@ status: complete
 last_updated: 2025-12-21
 last_updated_by: Claude Code
 ---
-
-# Research: Remove All `as any` Type Assertions from Codebase
 
 ## Research Question
 
