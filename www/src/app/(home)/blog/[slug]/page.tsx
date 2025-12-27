@@ -2,6 +2,7 @@ import { blog } from '@/lib/source';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
+import { ThemeToggle } from '@/components/theme-toggle';
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -24,7 +25,7 @@ export default async function BlogPostPage({ params }: PageProps) {
 
       <div className="relative z-10">
         {/* Header */}
-        <header className="border-b border-[var(--home-border-secondary)] py-6 bg-gradient-to-b from-[rgba(10,10,10,0.95)] to-[rgba(10,10,10,0.8)] backdrop-blur-[10px] sticky top-0 z-[100]">
+        <header className="home-header border-b border-[var(--home-border-secondary)] py-6 backdrop-blur-[10px] sticky top-0 z-[100]">
           <div className="max-w-5xl mx-auto px-6">
             <div className="flex items-center justify-between">
               <Link
@@ -46,6 +47,7 @@ export default async function BlogPostPage({ params }: PageProps) {
                 >
                   Blog
                 </Link>
+                <ThemeToggle />
               </div>
             </div>
           </div>

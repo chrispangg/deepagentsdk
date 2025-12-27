@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { getLatestVersion } from '@/lib/version';
+import { ThemeToggle } from '@/components/theme-toggle';
 
 const features = [
   {
@@ -89,7 +90,7 @@ export default async function HomePage() {
 
       <div className="relative z-10">
         {/* Header */}
-        <header className="border-b border-[var(--home-border-secondary)] py-6 bg-gradient-to-b from-[rgba(10,10,10,0.95)] to-[rgba(10,10,10,0.8)] backdrop-blur-[10px] sticky top-0 z-[100]">
+        <header className="home-header border-b border-[var(--home-border-secondary)] py-6 backdrop-blur-[10px] sticky top-0 z-[100]">
           <div className="max-w-5xl mx-auto px-6">
             <div className="flex items-center justify-between">
               <div className="text-sm font-semibold tracking-tight font-[family-name:var(--font-ibm-plex-mono)]">
@@ -109,12 +110,7 @@ export default async function HomePage() {
                 >
                   Blog
                 </Link>
-                <div className="flex items-center gap-3">
-                  <div className="w-2 h-2 rounded-full bg-[var(--home-accent)] opacity-80" />
-                  <span className="text-xs uppercase tracking-widest text-[var(--home-text-muted)]">
-                    Deep Agents
-                  </span>
-                </div>
+                <ThemeToggle />
               </div>
             </div>
           </div>

@@ -2,8 +2,54 @@
 @import 'fumadocs-ui/css/neutral.css';
 @import 'fumadocs-ui/css/preset.css';
 
-/* Custom theme variables for home page */
+/* ========================================
+   THEME VARIABLES
+   Light mode defaults, dark mode overrides
+   ======================================== */
+
 :root {
+  /* Font configuration */
+  --font-sans: var(--font-ibm-plex-sans), system-ui, -apple-system, sans-serif;
+  --font-mono: var(--font-ibm-plex-mono), 'Courier New', monospace;
+
+  /* Home page variables - Light mode */
+  --home-bg-primary: #FAFAFA;
+  --home-bg-elevated: #FFFFFF;
+  --home-bg-card: #FFFFFF;
+  --home-text-primary: #0A0A0A;
+  --home-text-secondary: #6B7280;
+  --home-text-muted: #9CA3AF;
+  --home-border-primary: #D1D5DB;
+  --home-border-secondary: #E5E7EB;
+  --home-border-accent: #9CA3AF;
+  --home-accent: #0A0A0A;
+
+  /* Fumadocs variables - Light mode */
+  --background: #FAFAFA;
+  --foreground: #0A0A0A;
+  --muted: #F5F5F5;
+  --muted-foreground: #6B7280;
+  --popover: #FFFFFF;
+  --popover-foreground: #0A0A0A;
+  --card: #FFFFFF;
+  --card-foreground: #0A0A0A;
+  --border: #E5E5E5;
+  --input: #E5E5E5;
+  --primary: #0A0A0A;
+  --primary-foreground: #FAFAFA;
+  --secondary: #F5F5F5;
+  --secondary-foreground: #0A0A0A;
+  --accent: #0A0A0A;
+  --accent-foreground: #FAFAFA;
+  --destructive: #DC2626;
+  --destructive-foreground: #FAFAFA;
+  --ring: #0A0A0A;
+  --code-block-bg: #F5F5F5;
+  --code-inline-bg: #F5F5F5;
+}
+
+.dark {
+  /* Home page variables - Dark mode */
   --home-bg-primary: #0A0A0A;
   --home-bg-elevated: #141414;
   --home-bg-card: #0D0D0D;
@@ -14,6 +60,29 @@
   --home-border-secondary: #1A1A1A;
   --home-border-accent: #404040;
   --home-accent: #FFFFFF;
+
+  /* Fumadocs variables - Dark mode */
+  --background: #0A0A0A;
+  --foreground: #F5F5F5;
+  --muted: #141414;
+  --muted-foreground: #9CA3AF;
+  --popover: #0D0D0D;
+  --popover-foreground: #F5F5F5;
+  --card: #0D0D0D;
+  --card-foreground: #F5F5F5;
+  --border: #1A1A1A;
+  --input: #262626;
+  --primary: #FFFFFF;
+  --primary-foreground: #0A0A0A;
+  --secondary: #141414;
+  --secondary-foreground: #F5F5F5;
+  --accent: #FFFFFF;
+  --accent-foreground: #0A0A0A;
+  --destructive: #EF4444;
+  --destructive-foreground: #F5F5F5;
+  --ring: #FFFFFF;
+  --code-block-bg: #0D0D0D;
+  --code-inline-bg: #141414;
 }
 
 /* Custom animations */
@@ -56,16 +125,33 @@
   animation: blink 1s step-end infinite;
 }
 
-/* Geometric grid background */
+/* Geometric grid background - Light mode */
 .geometric-grid {
   position: fixed;
   inset: 0;
-  background-image: 
-    linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+  background-image:
+    linear-gradient(rgba(0, 0, 0, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 0, 0, 0.03) 1px, transparent 1px);
   background-size: 80px 80px;
   pointer-events: none;
   z-index: 1;
+}
+
+/* Geometric grid background - Dark mode */
+.dark .geometric-grid {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+}
+
+/* Home page header gradient - Light mode */
+.home-header {
+  background: linear-gradient(to bottom, rgba(250, 250, 250, 0.95), rgba(250, 250, 250, 0.8));
+}
+
+/* Home page header gradient - Dark mode */
+.dark .home-header {
+  background: linear-gradient(to bottom, rgba(10, 10, 10, 0.95), rgba(10, 10, 10, 0.8));
 }
 
 /* Feature card hover effect */
@@ -253,94 +339,6 @@
    FUMADOCS THEME OVERRIDES
    Terminal-inspired aesthetic matching homepage
    ======================================== */
-
-/* Override fumadocs CSS variables for light theme */
-:root {
-  /* Background colors - Light terminal palette */
-  --background: #FAFAFA;
-  --foreground: #0A0A0A;
-  --muted: #F5F5F5;
-  --muted-foreground: #6B7280;
-  --popover: #FFFFFF;
-  --popover-foreground: #0A0A0A;
-  --card: #FFFFFF;
-  --card-foreground: #0A0A0A;
-
-  /* Border colors - Subtle grid lines */
-  --border: #E5E5E5;
-  --input: #E5E5E5;
-
-  /* Primary accent - Black for terminal focus */
-  --primary: #0A0A0A;
-  --primary-foreground: #FAFAFA;
-
-  /* Secondary - Elevated surfaces */
-  --secondary: #F5F5F5;
-  --secondary-foreground: #0A0A0A;
-
-  /* Accent - Black for highlights */
-  --accent: #0A0A0A;
-  --accent-foreground: #FAFAFA;
-
-  /* Destructive/Error states */
-  --destructive: #DC2626;
-  --destructive-foreground: #FAFAFA;
-
-  /* Ring/Focus states */
-  --ring: #0A0A0A;
-
-  /* Code blocks - Light terminal */
-  --code-block-bg: #F5F5F5;
-  --code-inline-bg: #F5F5F5;
-}
-
-/* Override fumadocs CSS variables for dark theme */
-.dark {
-  /* Background colors - Terminal black palette */
-  --background: #0A0A0A;
-  --foreground: #F5F5F5;
-  --muted: #141414;
-  --muted-foreground: #9CA3AF;
-  --popover: #0D0D0D;
-  --popover-foreground: #F5F5F5;
-  --card: #0D0D0D;
-  --card-foreground: #F5F5F5;
-
-  /* Border colors - Subtle grid lines */
-  --border: #1A1A1A;
-  --input: #262626;
-
-  /* Primary accent - White for terminal focus */
-  --primary: #FFFFFF;
-  --primary-foreground: #0A0A0A;
-
-  /* Secondary - Elevated surfaces */
-  --secondary: #141414;
-  --secondary-foreground: #F5F5F5;
-
-  /* Accent - Bright white for highlights */
-  --accent: #FFFFFF;
-  --accent-foreground: #0A0A0A;
-
-  /* Destructive/Error states */
-  --destructive: #EF4444;
-  --destructive-foreground: #F5F5F5;
-
-  /* Ring/Focus states */
-  --ring: #FFFFFF;
-
-  /* Code blocks - Match blog styling */
-  --code-block-bg: #0D0D0D;
-  --code-inline-bg: #141414;
-}
-
-/* Apply IBM Plex fonts globally */
-:root {
-  /* Base font - IBM Plex Sans for body text */
-  --font-sans: var(--font-ibm-plex-sans), system-ui, -apple-system, sans-serif;
-  /* Monospace font - IBM Plex Mono for code and technical elements */
-  --font-mono: var(--font-ibm-plex-mono), 'Courier New', monospace;
-}
 
 body {
   font-family: var(--font-ibm-plex-sans), system-ui, sans-serif;

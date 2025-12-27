@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { blog } from '@/lib/source';
+import { ThemeToggle } from '@/components/theme-toggle';
 
 export default function BlogPage() {
   const posts = blog.getPages();
@@ -11,7 +12,7 @@ export default function BlogPage() {
 
       <div className="relative z-10">
         {/* Header */}
-        <header className="border-b border-[var(--home-border-secondary)] py-6 bg-gradient-to-b from-[rgba(10,10,10,0.95)] to-[rgba(10,10,10,0.8)] backdrop-blur-[10px] sticky top-0 z-[100]">
+        <header className="home-header border-b border-[var(--home-border-secondary)] py-6 backdrop-blur-[10px] sticky top-0 z-[100]">
           <div className="max-w-5xl mx-auto px-6">
             <div className="flex items-center justify-between">
               <Link
@@ -27,12 +28,13 @@ export default function BlogPage() {
                 >
                   Docs
                 </Link>
-                <div className="flex items-center gap-3">
-                  <div className="w-2 h-2 rounded-full bg-[var(--home-accent)] opacity-80" />
-                  <span className="text-xs uppercase tracking-widest text-[var(--home-text-muted)]">
-                    Blog
-                  </span>
-                </div>
+                <Link
+                  href="/blog"
+                  className="text-xs uppercase tracking-widest text-[var(--home-text-muted)] hover:text-[var(--home-text-primary)] transition-colors font-[family-name:var(--font-ibm-plex-mono)]"
+                >
+                  Blog
+                </Link>
+                <ThemeToggle />
               </div>
             </div>
           </div>
