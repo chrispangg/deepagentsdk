@@ -46,7 +46,7 @@ Main agent class that wraps AI SDK v6's `ToolLoopAgent` with state management.
 
 ### 2. State Management (`src/types/`)
 
-```ts twoslash
+```typescript
 interface DeepAgentState {
   todos: TodoItem[];  // Task planning/tracking
   files: Record<string, FileData>;  // Virtual filesystem
@@ -63,14 +63,6 @@ interface FileData {
   created_at?: string;
   updated_at?: string;
 }
-
-// Example usage
-const state: DeepAgentState = {
-  todos: [{ id: '1', content: 'Build API', status: 'in_progress' }],
-  files: {}
-};
-state.todos[0].status
-//              ^?
 ```
 
 ### 3. Backends (`src/backends/`)
@@ -160,6 +152,30 @@ Skills are automatically injected into the system prompt, providing agent-specif
 ## Event System
 
 The `streamWithEvents()` method emits granular events during generation:
+
+<Mermaid chart={`
+sequenceDiagram
+    participant User
+    participant Agent as DeepAgent
+    participant Model as LLM
+    participant Tools
+
+    User->>Agent: streamWithEvents()
+    Agent->>Agent: checkpoint-loaded
+    Agent->>Model: step-start
+
+    loop Tool Loop
+        Model->>Agent: text chunks
+        Agent->>User: text event
+        Model->>Tools: tool-call
+        Tools->>Agent: tool-result
+        Agent->>User: tool events
+        Agent->>Agent: checkpoint-saved
+        Agent->>Model: step-finish
+    end
+
+    Agent->>User: done event
+`} />
 
 **Core Events:**
 - `text`: Streamed text chunks

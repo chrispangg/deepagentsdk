@@ -466,6 +466,21 @@ await backend.write('/shared/doc.md', '...');        // → PersistentBackend (s
 
 ### Path Transformation Flow
 
+<Mermaid chart={`
+flowchart TD
+    A["lsInfo('/persistent/src/')"] --> B{Check Routes}
+    B --> C["/persistent/"]
+    B --> D["/persistent/cache/"]
+    B --> E["/shared/"]
+
+    C --> F{Longest Match?}
+    F -->|Yes| G["Use PersistentBackend"]
+    G --> H["Strip prefix: '/src/'"]
+    H --> I["Call backend.lsInfo('/src/')"]
+    I --> J["Add prefix back"]
+    J --> K["['/persistent/src/main.ts']"]
+`} />
+
 ```
 lsInfo('/persistent/src/')
      ↓

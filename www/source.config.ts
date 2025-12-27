@@ -5,8 +5,9 @@ import {
   frontmatterSchema,
   metaSchema,
 } from 'fumadocs-mdx/config';
+import { rehypeCodeDefaultOptions } from 'fumadocs-core/mdx-plugins';
+import { transformerTwoslash } from 'fumadocs-twoslash';
 import { z } from 'zod';
-import { rehypeCode } from 'fumadocs-core/mdx-plugins';
 
 // You can customise Zod schemas for frontmatter and `meta.json` here
 // see https://fumadocs.dev/docs/mdx/collections
@@ -35,16 +36,16 @@ export const blogPosts = defineCollections({
 
 export default defineConfig({
   mdxOptions: {
-    rehypePlugins: [
-      [
-        rehypeCode,
-        {
-          themes: {
-            light: 'github-light',
-            dark: 'github-dark',
-          },
-        },
+    rehypeCodeOptions: {
+      themes: {
+        light: 'github-light',
+        dark: 'github-dark',
+      },
+      langs: ['typescript', 'ts', 'javascript', 'js', 'json', 'bash', 'shell', 'markdown', 'md', 'tsx', 'jsx', 'css'],
+      transformers: [
+        ...(rehypeCodeDefaultOptions.transformers ?? []),
+        transformerTwoslash(),
       ],
-    ],
+    },
   },
 });

@@ -230,6 +230,35 @@ const result = await agent.generate({
 
 ### What's Shared vs Isolated
 
+<Mermaid chart={`
+flowchart TB
+    subgraph Parent[Parent Agent]
+        PTodos[Todos]
+        PMessages[Messages]
+        PFiles[Files]
+        PBackend[Backend]
+    end
+
+    subgraph Subagent[Subagent]
+        STodos[Todos - Fresh]
+        SMessages[Messages - Fresh]
+        SFiles[Files - Shared]
+        SBackend[Backend - Shared]
+    end
+
+    PFiles -.->|shared reference| SFiles
+    PBackend -.->|same instance| SBackend
+
+    style PTodos fill:#e8f5e9
+    style PMessages fill:#e8f5e9
+    style STodos fill:#fff3e0
+    style SMessages fill:#fff3e0
+    style PFiles fill:#e3f2fd
+    style SFiles fill:#e3f2fd
+    style PBackend fill:#e3f2fd
+    style SBackend fill:#e3f2fd
+`} />
+
 ```typescript
 const parentResult = await agent.generate({
   prompt: 'Use a subagent to analyze the codebase',

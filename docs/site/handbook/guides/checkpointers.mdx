@@ -155,6 +155,24 @@ for await (const event of agent.streamWithEvents({
 
 When resuming sessions, the agent follows this priority for message handling:
 
+<Mermaid chart={`
+flowchart TD
+    A[Start Session] --> B{messages provided?}
+    B -->|Yes, non-empty| C[Use provided messages]
+    B -->|Yes, empty array| D[Clear checkpoint, start fresh]
+    B -->|No| E{prompt provided?}
+    E -->|Yes| F[Convert prompt to message]
+    E -->|No| G{threadId exists?}
+    G -->|Yes| H[Load checkpoint history]
+    G -->|No| I[Start with empty history]
+
+    C --> J[Continue with messages]
+    D --> J
+    F --> J
+    H --> J
+    I --> J
+`} />
+
 <Steps>
 <Step>
 **Explicit `messages` array** - Takes precedence over everything
@@ -286,6 +304,8 @@ Implement `BaseCheckpointSaver` interface for custom storage:
 
 ```typescript
 import type { BaseCheckpointSaver, Checkpoint } from 'ai-sdk-deep-agent';
+import { createDeepAgent } from 'ai-sdk-deep-agent';
+import { anthropic } from '@ai-sdk/anthropic';
 
 class RedisCheckpointSaver implements BaseCheckpointSaver {
   constructor(private redis: RedisClient) {}

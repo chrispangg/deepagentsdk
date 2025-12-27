@@ -220,22 +220,28 @@ const result = await agent.generate({
 
 **ai-sdk-deep-agent** wraps AI SDK's `ToolLoopAgent` with additional capabilities:
 
-```
-┌─────────────────────────────────────────────┐
-│           Deep Agent (Facade)               │
-│  - State management (todos, files)          │
-│  - Tool composition (core + user tools)     │
-│  - Event streaming                          │
-│  - Checkpointing                            │
-└─────────────────┬───────────────────────────┘
-                  │
-┌─────────────────▼───────────────────────────┐
-│       AI SDK ToolLoopAgent                  │
-│  - Model orchestration                      │
-│  - Tool calling loop                        │
-│  - Streaming & events                       │
-└─────────────────────────────────────────────┘
-```
+<Mermaid chart={`
+flowchart TB
+    subgraph DeepAgent[Deep Agent Facade]
+        State[State Management]
+        Tools[Tool Composition]
+        Events[Event Streaming]
+        Checkpoint[Checkpointing]
+    end
+
+    subgraph ToolLoop[AI SDK ToolLoopAgent]
+        Model[Model Orchestration]
+        Loop[Tool Calling Loop]
+        Stream[Streaming and Events]
+    end
+
+    DeepAgent --> ToolLoop
+
+    State --> |todos, files| Loop
+    Tools --> |core + user tools| Loop
+    Events --> |granular events| Stream
+    Checkpoint --> |session persistence| State
+`} />
 
 This approach means:
 - **Compatibility**: Works with any AI SDK model provider
