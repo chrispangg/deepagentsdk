@@ -279,7 +279,7 @@ export default async function HomePage() {
                   Built with Vercel AI SDK v6, Next.js, and Fumadocs
                 </div>
                 <div className="text-xs text-[var(--home-text-muted)] font-[family-name:var(--font-ibm-plex-mono)]">
-                  © 2025 ai-sdk-deep-agent
+                  © 2025 ai-sdk-deepagent
                 </div>
               </div>
             </footer>

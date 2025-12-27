@@ -1,14 +1,13 @@
 # AI SDK Deep Agent
 
 <p align="center">
-  <img src="assets/ai-sdk-deep-agent.png" alt="AI SDK Deep Agent" width="500" />
+  <img src="assets/www-hero.png" alt="AI SDK Deep Agent" width="100%" />
 </p>
 
 [![npm version](https://badge.fury.io/js/ai-sdk-deep-agent.svg)](https://www.npmjs.com/package/ai-sdk-deep-agent)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/chrispangg/ai-sdk-deepagent)
-
-📚 **Documentation**: [ai-sdk-deepagent.vercel.app/docs](https://ai-sdk-deepagent.vercel.app/docs)
+[![Documentation](https://img.shields.io/badge/docs-ai--sdk--deepagent-blue)](https://ai-sdk-deepagent.vercel.app/docs)
 
 > **Note:** This package requires [Bun](https://bun.sh) runtime. It uses Bun-specific features and TypeScript imports.
 

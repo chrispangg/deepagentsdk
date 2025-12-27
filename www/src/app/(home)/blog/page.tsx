@@ -149,7 +149,7 @@ export default function BlogPage() {
             {/* Footer */}
             <footer className="border-t border-[var(--home-border-secondary)] pt-8 pb-6">
               <div className="flex items-center justify-between text-xs text-[var(--home-text-muted)] font-[family-name:var(--font-ibm-plex-mono)]">
-                <div>© 2025 ai-sdk-deep-agent</div>
+                <div>© 2025 ai-sdk-deepagent</div>
                 <Link
                   href="/"
                   className="hover:text-[var(--home-text-primary)] transition-colors"
