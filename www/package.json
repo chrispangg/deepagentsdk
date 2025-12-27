@@ -12,6 +12,8 @@
     "format": "biome format --write"
   },
   "dependencies": {
+    "@radix-ui/react-tabs": "^1.1.13",
+    "class-variance-authority": "^0.7.1",
     "d3-force": "^3.0.0",
     "fumadocs-core": "16.4.0",
     "fumadocs-mdx": "14.2.2",
@@ -20,7 +22,8 @@
     "next": "16.0.10",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
-    "react-force-graph-2d": "^1.29.0"
+    "react-force-graph-2d": "^1.29.0",
+    "tailwind-merge": "^3.4.0"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.18",

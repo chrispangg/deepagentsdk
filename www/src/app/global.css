@@ -480,7 +480,8 @@ article li::marker {
 }
 
 /* Code blocks - Terminal monospace aesthetic */
-article code {
+/* Inline code only - CodeBlock component handles pre elements */
+article code:not(pre code) {
   font-family: var(--font-ibm-plex-mono);
   font-size: 0.875rem;
   padding: 0.25rem 0.5rem;
@@ -488,36 +489,6 @@ article code {
   border: 1px solid var(--border);
   color: var(--accent);
   border-radius: 0;
-}
-
-article pre {
-  position: relative;
-  margin: 2rem 0;
-  padding: 1.5rem;
-  background-color: var(--code-block-bg);
-  border: 1px solid var(--border);
-  overflow-x: auto;
-  font-family: var(--font-ibm-plex-mono);
-  font-size: 0.875rem;
-  line-height: 1.6;
-}
-
-article pre::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 4px;
-  height: 100%;
-  background: var(--accent);
-}
-
-article pre code {
-  padding: 0;
-  background: transparent;
-  border: none;
-  color: var(--foreground);
-  font-size: 0.875rem;
 }
 
 /* Blockquotes - Terminal callout style */

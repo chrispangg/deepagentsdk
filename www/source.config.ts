@@ -6,6 +6,7 @@ import {
   metaSchema,
 } from 'fumadocs-mdx/config';
 import { z } from 'zod';
+import { rehypeCode } from 'fumadocs-core/mdx-plugins';
 
 // You can customise Zod schemas for frontmatter and `meta.json` here
 // see https://fumadocs.dev/docs/mdx/collections
@@ -34,6 +35,16 @@ export const blogPosts = defineCollections({
 
 export default defineConfig({
   mdxOptions: {
-    // MDX options
+    rehypePlugins: [
+      [
+        rehypeCode,
+        {
+          themes: {
+            light: 'github-light',
+            dark: 'github-dark',
+          },
+        },
+      ],
+    ],
   },
 });

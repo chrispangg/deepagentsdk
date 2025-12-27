@@ -19,9 +19,12 @@ export function getMDXComponents(components?: MDXComponents): MDXComponents {
     Accordions,
     // Banner
     Banner,
-    // Code Block
-    CodeBlock,
-    Pre,
+    // Code Block - Wrap pre element with CodeBlock
+    pre: ({ ref: _ref, ...props }) => (
+      <CodeBlock {...props}>
+        <Pre>{props.children}</Pre>
+      </CodeBlock>
+    ),
     // Files
     File,
     Files,
@@ -37,5 +40,5 @@ export function getMDXComponents(components?: MDXComponents): MDXComponents {
     // Type Table
     TypeTable,
     ...components,
-  };
+  } as MDXComponents;
 }
