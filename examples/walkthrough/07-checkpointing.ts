@@ -1,5 +1,5 @@
 // Test: Checkpointing for Session Persistence
-// Reference: docs/content/get-started/get-started.mdx lines 337-368 (Pattern 2)
+// Reference: docs/site/handbook/get-started/get-started.mdx lines 337-368 (Pattern 2)
 // Description: Tests FileSaver checkpointer for resuming conversations across sessions
 
 import { createDeepAgent, FileSaver } from 'ai-sdk-deep-agent';

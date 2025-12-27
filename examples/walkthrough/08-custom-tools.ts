@@ -1,5 +1,5 @@
 // Test: Custom Tools
-// Reference: docs/content/get-started/get-started.mdx lines 370-402 (Pattern 3)
+// Reference: docs/site/handbook/get-started/get-started.mdx lines 370-402 (Pattern 3)
 // Description: Tests adding custom tools alongside built-in ones
 
 import { createDeepAgent } from 'ai-sdk-deep-agent';

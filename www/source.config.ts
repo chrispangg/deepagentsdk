@@ -11,7 +11,7 @@ import { rehypeCode } from 'fumadocs-core/mdx-plugins';
 // You can customise Zod schemas for frontmatter and `meta.json` here
 // see https://fumadocs.dev/docs/mdx/collections
 export const docs = defineDocs({
-  dir: '../docs/content',
+  dir: '../docs/site/handbook',
   docs: {
     schema: frontmatterSchema,
     postprocess: {
@@ -26,7 +26,7 @@ export const docs = defineDocs({
 
 export const blogPosts = defineCollections({
   type: 'doc',
-  dir: '../docs/content/blog',
+  dir: '../docs/site/blog/published',
   schema: frontmatterSchema.extend({
     author: z.string(),
     date: z.coerce.date().optional(),

@@ -1,5 +1,5 @@
 // Test: Filesystem Backend Persistence
-// Reference: docs/content/get-started/get-started.mdx lines 316-335 (Pattern 1)
+// Reference: docs/site/handbook/get-started/get-started.mdx lines 316-335 (Pattern 1)
 // Description: Tests FilesystemBackend for storing files on disk
 
 import { createDeepAgent, FilesystemBackend } from 'ai-sdk-deep-agent';

@@ -1,5 +1,5 @@
 // Test: PersistentBackend with Key-Value Store
-// Reference: docs/content/guides/backends.mdx lines 265-320
+// Reference: docs/site/handbook/guides/backends.mdx lines 265-320
 // Description: Tests PersistentBackend for cross-conversation persistence
 
 import { createDeepAgent, PersistentBackend, InMemoryStore } from 'ai-sdk-deep-agent';

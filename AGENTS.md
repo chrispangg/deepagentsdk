@@ -16,9 +16,10 @@ This file provides guidance to AI Agents (Claude Code, Cursor, etc.) when workin
 **Documentation Structure**:
 
 - **AGENTS.md** (this file) - Quick reference for AI agents
-- **docs/architecture.md** - Detailed architecture and components
-- **docs/patterns.md** - Common usage patterns and code examples
-- **docs/checkpointers.md** - Session persistence patterns
+- **docs/site/handbook/** - Website documentation (get-started, guides, reference)
+- **docs/site/blog/** - Blog posts (drafts and published)
+- **docs/research/** - Internal research documents
+- **docs/tickets/** - Feature tickets and implementation plans
 - **.github/PUBLISHING.md** - Publishing and release guide
 
 ## Feature Parity Tracking
@@ -212,11 +213,11 @@ Workflow **SKIPS** publishing for:
 
 ## Quick Reference
 
-**Need architecture details?** → See `docs/architecture.md`
+**Need architecture details?** → See `docs/site/handbook/reference/architecture.mdx`
 
-**Need code examples?** → See `docs/patterns.md`
+**Need code examples?** → See `docs/site/handbook/reference/patterns.mdx`
 
-**Need checkpointer info?** → See `docs/checkpointers.md`
+**Need checkpointer info?** → See `docs/site/handbook/guides/checkpointers.mdx`
 
 **Need publishing help?** → See `.github/PUBLISHING.md`
 

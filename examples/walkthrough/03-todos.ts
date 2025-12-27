@@ -1,5 +1,5 @@
 // Test: Todos and Planning
-// Reference: docs/content/get-started/get-started.mdx lines 227-253
+// Reference: docs/site/handbook/get-started/get-started.mdx lines 227-253
 // Description: Tests write_todos tool for task planning and tracking
 
 import { createDeepAgent } from 'ai-sdk-deep-agent';

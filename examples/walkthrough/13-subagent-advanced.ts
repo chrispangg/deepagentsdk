@@ -1,5 +1,5 @@
 // Test: Advanced Subagent Features
-// Reference: docs/content/guides/subagents.mdx lines 60-100
+// Reference: docs/site/handbook/guides/subagents.mdx lines 60-100
 // Description: Tests multiple specialized subagents with custom configurations
 
 import { createDeepAgent } from 'ai-sdk-deep-agent';

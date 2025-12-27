@@ -1,5 +1,5 @@
 // Test: Structured Output with Zod Schema
-// Reference: docs/content/get-started/get-started.mdx lines 797-812
+// Reference: docs/site/handbook/get-started/get-started.mdx lines 797-812
 // Description: Tests structured output with type-safe responses
 
 import { createDeepAgent } from 'ai-sdk-deep-agent';

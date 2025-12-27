@@ -1,5 +1,5 @@
 // Test: Basic Agent Creation
-// Reference: docs/content/get-started/get-started.mdx lines 154-187
+// Reference: docs/site/handbook/get-started/get-started.mdx lines 154-187
 // Description: Tests basic agent creation with createDeepAgent and simple generate() call
 
 import { createDeepAgent } from 'ai-sdk-deep-agent';

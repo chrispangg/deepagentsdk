@@ -1,5 +1,5 @@
 // Test: Streaming with Events
-// Reference: docs/content/get-started/get-started.mdx lines 189-223
+// Reference: docs/site/handbook/get-started/get-started.mdx lines 189-223
 // Description: Tests real-time streaming with streamWithEvents() and event handling
 
 import { createDeepAgent } from 'ai-sdk-deep-agent';

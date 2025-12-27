@@ -1,5 +1,5 @@
 // Test: MemorySaver Checkpointer
-// Reference: docs/content/guides/checkpointers.mdx lines 52-75
+// Reference: docs/site/handbook/guides/checkpointers.mdx lines 52-75
 // Description: Tests MemorySaver for in-memory checkpointing
 
 import { createDeepAgent, MemorySaver } from 'ai-sdk-deep-agent';

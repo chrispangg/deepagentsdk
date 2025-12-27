@@ -1,5 +1,5 @@
 // Test: KeyValueStoreSaver
-// Reference: docs/content/guides/checkpointers.mdx lines 95-117
+// Reference: docs/site/handbook/guides/checkpointers.mdx lines 95-117
 // Description: Tests KeyValueStoreSaver with InMemoryStore for custom backend
 
 import { createDeepAgent, KeyValueStoreSaver, InMemoryStore } from 'ai-sdk-deep-agent';

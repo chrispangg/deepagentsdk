@@ -1,5 +1,5 @@
 // Test: Tool Result Eviction
-// Reference: docs/content/guides/harness.mdx lines 61-83
+// Reference: docs/site/handbook/guides/harness.mdx lines 61-83
 // Description: Tests tool result eviction for large tool outputs
 
 import { createDeepAgent } from 'ai-sdk-deep-agent';
