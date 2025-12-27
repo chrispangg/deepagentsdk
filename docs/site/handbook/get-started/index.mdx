@@ -28,9 +28,7 @@ This combination enables agents to handle complex, multi-step tasks that would o
 
 ## Prerequisites
 
-<Callout title="Before You Begin" type="info">
-Ensure you have the following ready:
-</Callout>
+<Callout title="Before You Begin" type="info">Ensure you have the following ready:</Callout>
 
 - **Bun runtime** (>= 1.0.0) - This package requires Bun for TypeScript features and performance
 - **Node.js** compatible environment
@@ -107,9 +105,7 @@ TAVILY_API_KEY=tvly-your-key-here
 <Step>
 ### Choose a Model
 
-<Callout type="warn">
-The library requires AI SDK `LanguageModel` instances (not strings).
-</Callout>
+<Callout type="warn">The library requires AI SDK `LanguageModel` instances (not strings).</Callout>
 
 ```typescript
 import { anthropic } from '@ai-sdk/anthropic';
@@ -157,7 +153,9 @@ Ensure your `tsconfig.json` has these settings:
 
 Create a file `agent.ts`:
 
-```typescript title="agent.ts"
+```ts twoslash title="agent.ts"
+// @module: esnext
+// @moduleResolution: bundler
 import { createDeepAgent } from 'ai-sdk-deep-agent';
 import { anthropic } from '@ai-sdk/anthropic';
 
@@ -175,7 +173,9 @@ const result = await agent.generate({
 
 // Output the results
 console.log('Response:', result.text);
+//                              ^?
 console.log('Todos:', result.state.todos);
+//                                 ^?
 console.log('Files:', Object.keys(result.state.files));
 ```
 
@@ -284,7 +284,9 @@ for (const [path, file] of Object.entries(result.state.files)) {
 
 Spawn specialized agents for complex subtasks:
 
-```typescript
+```ts twoslash
+// @module: esnext
+// @moduleResolution: bundler
 import { createDeepAgent, type SubAgent } from 'ai-sdk-deep-agent';
 import { anthropic } from '@ai-sdk/anthropic';
 
@@ -294,6 +296,7 @@ const researchSubagent: SubAgent = {
   description: 'Expert in research and data gathering',
   systemPrompt: 'You are a research specialist. Gather comprehensive information.',
 };
+//    ^?
 
 const agent = createDeepAgent({
   model: anthropic('claude-sonnet-4-5-20250929'),
@@ -425,9 +428,7 @@ const result = await agent.generate({
 
 ### Pattern 5: With Web Search
 
-<Callout title="Tavily API Key Required" type="warn">
-Enable web research capabilities by setting your Tavily API key in `.env`
-</Callout>
+<Callout title="Tavily API Key Required" type="warn">Enable web research capabilities by setting your Tavily API key in `.env`</Callout>
 
 ```bash title=".env"
 TAVILY_API_KEY=tvly-your-key-here
@@ -768,9 +769,7 @@ bunx ai-sdk-deep-agent --model anthropic/claude-sonnet-4-5-20250929
 
 ### Performance Tips
 
-<Callout title="Optimize Your Agent" type="idea">
-Follow these tips to improve performance and reduce costs
-</Callout>
+<Callout title="Optimize Your Agent" type="idea">Follow these tips to improve performance and reduce costs</Callout>
 
 1. **Use Claude Haiku for faster responses:**
 ```typescript
@@ -794,7 +793,11 @@ const agent = createDeepAgent({
 ```
 
 4. **Use structured output for type-safe responses:**
-```typescript
+```ts twoslash
+// @module: esnext
+// @moduleResolution: bundler
+import { createDeepAgent } from 'ai-sdk-deep-agent';
+import { anthropic } from '@ai-sdk/anthropic';
 import { z } from 'zod';
 
 const agent = createDeepAgent({
@@ -808,7 +811,8 @@ const agent = createDeepAgent({
 });
 
 const result = await agent.generate({ prompt: '...' });
-console.log(result.output?.summary); // Fully typed!
+console.log(result.output?.summary);
+//                         ^?
 ```
 
 ## Getting Help

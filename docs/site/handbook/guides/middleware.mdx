@@ -5,9 +5,7 @@ description: Understand the middleware architecture for extending deep agent beh
 
 Deep agents are built with a **modular middleware architecture**. The library uses AI SDK v6's `LanguageModelMiddleware` system to provide cross-cutting concerns like logging, caching, telemetry, and custom behavior modification.
 
-<Callout type="info">
-**Think of middleware as** interceptors - they sit between the agent and the model, allowing you to observe, modify, or enhance every interaction.
-</Callout>
+<Callout type="info">**Think of middleware as** interceptors - they sit between the agent and the model, allowing you to observe, modify, or enhance every interaction.</Callout>
 
 ## Overview
 
@@ -768,9 +766,7 @@ Middleware provides:
 | **Testing** | Mock model responses |
 | **Integration** | Connect to external services (LangSmith, Datadog, etc.) |
 
-<Callout type="success">
-**Key Insight**: Middleware is the extension point for cross-cutting concerns. Use it for anything that applies to ALL model interactions, not just specific tools or workflows.
-</Callout>
+<Callout type="success">**Key Insight**: Middleware is the extension point for cross-cutting concerns. Use it for anything that applies to ALL model interactions, not just specific tools or workflows.</Callout>
 
 ## Next Steps
 

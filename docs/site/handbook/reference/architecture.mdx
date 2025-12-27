@@ -46,7 +46,7 @@ Main agent class that wraps AI SDK v6's `ToolLoopAgent` with state management.
 
 ### 2. State Management (`src/types/`)
 
-```typescript
+```ts twoslash
 interface DeepAgentState {
   todos: TodoItem[];  // Task planning/tracking
   files: Record<string, FileData>;  // Virtual filesystem
@@ -63,6 +63,14 @@ interface FileData {
   created_at?: string;
   updated_at?: string;
 }
+
+// Example usage
+const state: DeepAgentState = {
+  todos: [{ id: '1', content: 'Build API', status: 'in_progress' }],
+  files: {}
+};
+state.todos[0].status
+//              ^?
 ```
 
 ### 3. Backends (`src/backends/`)
@@ -186,9 +194,7 @@ The `streamWithEvents()` method emits granular events during generation:
 
 ## Message Handling
 
-<Callout title="Important" type="warn">
-The agent uses AI SDK's `messages` array for conversation history. When streaming with events, always pass `event.messages` back to maintain context.
-</Callout>
+<Callout title="Important" type="warn">The agent uses AI SDK's `messages` array for conversation history. When streaming with events, always pass `event.messages` back to maintain context.</Callout>
 
 <Steps>
 <Step>
@@ -225,9 +231,7 @@ for await (const event of agent.streamWithEvents({ prompt: "Follow up", messages
 }
 ```
 
-<Callout type="warn">
-**Deprecation Notice**: The `prompt` parameter is deprecated in favor of explicit `messages` array. A warning is emitted in non-production environments.
-</Callout>
+<Callout type="warn">**Deprecation Notice**: The `prompt` parameter is deprecated in favor of explicit `messages` array. A warning is emitted in non-production environments.</Callout>
 
 ## Performance Features
 
@@ -263,9 +267,7 @@ summarization: {
 
 ### 4. Loop Control
 
-<Callout type="info">
-Advanced control over agent execution via `loopControl` parameter
-</Callout>
+<Callout type="info">Advanced control over agent execution via `loopControl` parameter</Callout>
 
 - `stopWhen`: Custom stop conditions (can combine with `maxSteps`)
 - `prepareStep`: Hook to modify parameters before each step
@@ -348,9 +350,7 @@ The CLI operates in two modes for tool execution:
 
 ## Model Specification
 
-<Callout title="Important" type="warn">
-The library requires AI SDK `LanguageModel` instances instead of string-based model IDs.
-</Callout>
+<Callout title="Important" type="warn">The library requires AI SDK `LanguageModel` instances instead of string-based model IDs.</Callout>
 
 ```typescript
 import { anthropic } from '@ai-sdk/anthropic';
@@ -387,9 +387,7 @@ const agent4 = createDeepAgent({
 
 **Supported Providers**: Any provider from the Vercel AI SDK ecosystem (Anthropic, OpenAI, Azure, Bedrock, Groq, Mistral, etc.)
 
-<Callout type="info">
-**CLI Backward Compatibility**: The CLI internally uses `parseModelString()` from `src/utils/model-parser.ts` to convert string formats like `"anthropic/claude-sonnet-4-5-20250929"` into `LanguageModel` instances. This is only for the CLI - when using the library programmatically, always pass provider instances.
-</Callout>
+<Callout type="info">**CLI Backward Compatibility**: The CLI internally uses `parseModelString()` from `src/utils/model-parser.ts` to convert string formats like `"anthropic/claude-sonnet-4-5-20250929"` into `LanguageModel` instances. This is only for the CLI - when using the library programmatically, always pass provider instances.</Callout>
 
 ## Structured Output
 

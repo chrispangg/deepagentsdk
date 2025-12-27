@@ -108,9 +108,7 @@ for await (const event of agent.streamWithEvents({
 
 ### Using Checkpointers for Session Persistence
 
-<Callout title="Production Ready" type="info">
-For production applications, use checkpointers to persist conversation state across sessions
-</Callout>
+<Callout title="Production Ready" type="info">For production applications, use checkpointers to persist conversation state across sessions</Callout>
 
 ```typescript
 import { FileSaver } from 'ai-sdk-deep-agent';
@@ -167,9 +165,7 @@ const agent = createDeepAgent({
 
 ### Subagent with Selective Tools
 
-<Callout type="warn">
-Restrict which tools a subagent can access for security and focused behavior
-</Callout>
+<Callout type="warn">Restrict which tools a subagent can access for security and focused behavior</Callout>
 
 ```typescript
 import { createLsTool, createReadFileTool, write_todos } from 'ai-sdk-deep-agent';

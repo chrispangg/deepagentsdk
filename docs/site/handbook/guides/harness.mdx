@@ -5,9 +5,7 @@ description: Complete guide to built-in tools and capabilities in the deep agent
 
 The **agent harness** is the core runtime that provides deep agents with their advanced capabilities. It wraps AI SDK's `ToolLoopAgent` with built-in tools and features that enable complex, multi-step reasoning.
 
-<Callout type="info">
-**Think of the harness as** an "agent operating system" - it provides the environment and tools agents need to tackle complex tasks.
-</Callout>
+<Callout type="info">**Think of the harness as** an "agent operating system" - it provides the environment and tools agents need to tackle complex tasks.</Callout>
 
 ## Overview
 
@@ -78,9 +76,7 @@ const agent = createDeepAgent({
 });
 ```
 
-<Callout type="warn">
-**Token Savings**: Without eviction, reading a 10,000-line file would consume ~50,000 tokens. With eviction, it uses ~500 tokens (file reference) + the specific lines the agent actually reads.
-</Callout>
+<Callout type="warn">**Token Savings**: Without eviction, reading a 10,000-line file would consume ~50,000 tokens. With eviction, it uses ~500 tokens (file reference) + the specific lines the agent actually reads.</Callout>
 
 ---
 
@@ -202,9 +198,7 @@ result.state.todos.forEach(todo => {
 // [pending] Write tests
 ```
 
-<Callout type="info">
-**Automatic Planning**: Agents are prompted to use `write_todos` before starting complex tasks. This happens automatically - you don't need to instruct them to do it.
-</Callout>
+<Callout type="info">**Automatic Planning**: Agents are prompted to use `write_todos` before starting complex tasks. This happens automatically - you don't need to instruct them to do it.</Callout>
 
 ---
 
@@ -272,9 +266,7 @@ const agent = createDeepAgent({
 4. Replaces old messages with a summary
 5. Transparent to agent (appears as special system message)
 
-<Callout type="success">
-**Benefit**: Enables very long conversations without hitting context limits while preserving recent context for continuity.
-</Callout>
+<Callout type="success">**Benefit**: Enables very long conversations without hitting context limits while preserving recent context for continuity.</Callout>
 
 ---
 
@@ -293,9 +285,7 @@ The harness fixes message history when tool calls are interrupted or cancelled b
 
 The harness detects AIMessages with tool_calls that have no results and creates synthetic ToolMessage responses indicating the call was cancelled, then repairs the message history before agent execution.
 
-<Callout type="info">
-**Why This Matters**: Prevents agent confusion from incomplete message chains and gracefully handles interruptions and errors, maintaining conversation coherence.
-</Callout>
+<Callout type="info">**Why This Matters**: Prevents agent confusion from incomplete message chains and gracefully handles interruptions and errors, maintaining conversation coherence.</Callout>
 
 ---
 
@@ -318,9 +308,7 @@ const agent = createDeepAgent({
 });
 ```
 
-<Callout type="success">
-**Performance**: System prompts (especially with filesystem docs) can be 5k+ tokens. Caching provides ~10x speedup and cost reduction for cached portions.
-</Callout>
+<Callout type="success">**Performance**: System prompts (especially with filesystem docs) can be 5k+ tokens. Caching provides ~10x speedup and cost reduction for cached portions.</Callout>
 
 ---
 
@@ -457,9 +445,7 @@ const result = await agent.generate({
 });
 ```
 
-<Callout type="warn">
-**Safety**: The execute tool is powerful. Consider enabling `interruptOn` for approval workflows when using it.
-</Callout>
+<Callout type="warn">**Safety**: The execute tool is powerful. Consider enabling `interruptOn` for approval workflows when using it.</Callout>
 
 ---
 
@@ -561,9 +547,7 @@ The agent harness provides:
 | Web access | `web_search`, `http_request` | Live information |
 | Code execution | `execute` (with LocalSandbox) | Project automation |
 
-<Callout type="success">
-**Key Insight**: The harness transforms a basic tool-calling agent into a sophisticated system capable of planning, context management, delegation, and long-running tasks.
-</Callout>
+<Callout type="success">**Key Insight**: The harness transforms a basic tool-calling agent into a sophisticated system capable of planning, context management, delegation, and long-running tasks.</Callout>
 
 ## Next Steps
 

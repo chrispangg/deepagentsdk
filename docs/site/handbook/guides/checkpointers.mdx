@@ -112,9 +112,7 @@ const agent = createDeepAgent({
 });
 ```
 
-<Callout type="info">
-Checkpoints are stored under `[namespace]/checkpoints/[threadId]` in the key-value store.
-</Callout>
+<Callout type="info">Checkpoints are stored under `[namespace]/checkpoints/[threadId]` in the key-value store.</Callout>
 
 ## Basic Usage
 
@@ -233,9 +231,7 @@ for await (const event of agent.streamWithEvents({
 
 ## Tool Approval (HITL)
 
-<Callout title="Human-in-the-Loop" type="info">
-When using HITL tool approval, checkpoints save the interrupt state for seamless resumption
-</Callout>
+<Callout title="Human-in-the-Loop" type="info">When using HITL tool approval, checkpoints save the interrupt state for seamless resumption</Callout>
 
 ```typescript
 const agent = createDeepAgent({
@@ -262,9 +258,7 @@ for await (const event of agent.streamWithEvents({
 }
 ```
 
-<Callout title="Auto-Deny Behavior" type="warn">
-Tools configured with `interruptOn` but no `onApprovalRequest` callback will be automatically denied (not executed).
-</Callout>
+<Callout title="Auto-Deny Behavior" type="warn">Tools configured with `interruptOn` but no `onApprovalRequest` callback will be automatically denied (not executed).</Callout>
 
 ```typescript
 // Auto-deny behavior (no callback provided)
@@ -349,9 +343,7 @@ $ bun run cli --session my-project
 
 ## Known Limitations
 
-<Callout type="warn">
-**Auto-Deny Behavior**: Tools configured with `interruptOn` but no `onApprovalRequest` callback will be automatically denied (not executed).
-</Callout>
+<Callout type="warn">**Auto-Deny Behavior**: Tools configured with `interruptOn` but no `onApprovalRequest` callback will be automatically denied (not executed).</Callout>
 
 ## Examples
 
