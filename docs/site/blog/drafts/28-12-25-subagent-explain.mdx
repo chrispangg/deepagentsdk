@@ -1,8 +1,321 @@
 ---
-title: Testing
-description: Testing Draft
+title: How to use subagents the right way
+description: Subagents as Context Compression Functions
 author: Chris Pang
 date: 2025-12-28
 ---
 
-Testing 123
+When building deep agents, there's a persistent temptation to model subagents as domain specialists—a frontend agent, a backend agent, an orchestration agent. This feels intuitive because it maps to how we organize human teams. But this is wrong.
+
+The problem isn't the abstraction itself. It's that domain-based subagents create information silos that lead to conflicting assumptions. By the time information reaches a specialized subagent, context about previous decisions has been lost. [Cognition's analysis](https://cognition.ai/blog/dont-build-multi-agents) demonstrates this with a simple example: building a Flappy Bird clone with separate frontend and backend agents results in mismatched aesthetics and broken assumptions. [Research on 200+ multi-agent traces](https://www.mongodb.com/company/blog/technical/why-multi-agent-systems-need-memory-engineering) found 36.9% of failures stem from inter-agent misalignment.
+
+The correct mental model: **subagents are context compression functions**, not team members.
+
+## Claude Code and the Subagent Pattern
+
+[Claude Code](https://www.anthropic.com/engineering/building-agents-with-the-claude-agent-sdk) pioneered (or at least popularized) the practical use of subagents in production coding workflows. While building ai-sdk-deepagent, I spent considerable time experimenting with Claude Code's architecture and studying how they structure specialized agents.
+
+[HumanLayer's `.claude/agents` directory](https://github.com/humanlayer/humanlayer/tree/main/.claude/agents) provides excellent real-world examples of this pattern. They've built specialized agents like:
+
+- `codebase-locator` - Finds WHERE code lives (not what it does)
+- `codebase-analyzer` - Understands HOW code works
+- `codebase-pattern-finder` - Identifies existing patterns
+- `web-search-researcher` - Conducts web research with structured output
+
+Each agent has a tightly scoped mandate and explicit output format. Notice what they **don't** do:
+
+```markdown
+DO NOT suggest improvements or changes unless the user explicitly asks
+DO NOT perform root cause analysis unless explicitly asked
+DO NOT propose future enhancements unless explicitly asked
+DO NOT critique the implementation or identify problems
+```
+
+This constraint is deliberate. Each subagent is a **documentarian, not a critic**. It returns structured findings, not opinions. This keeps output predictable and compressible.
+
+Their `research_codebase` command demonstrates the pattern at scale:
+
+```markdown
+Spawn parallel sub-agent tasks for comprehensive research:
+- Use codebase-pattern-finder to find examples
+- Use codebase-analyzer for implementation details
+- Use web-research agents for external context
+
+Synthesize findings into a single research document
+```
+
+The parent agent delegates to specialized subagents, each exploring independently, then compresses their findings into a coherent report. This is the MapReduce pattern in practice.
+
+## The Problem: Context Pollution
+
+Consider what happens without proper context isolation:
+
+```typescript
+// ❌ Anti-pattern: Domain-specific agents sharing context
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-5-20250929'),
+  subagents: [
+    {
+      name: 'frontend-agent',
+      description: 'Handles all frontend tasks',
+      systemPrompt: 'You build React UIs...',
+      tools: [reactTools, cssTools],
+    },
+    {
+      name: 'backend-agent', 
+      description: 'Handles all backend tasks',
+      systemPrompt: 'You build APIs...',
+      tools: [apiTools, databaseTools],
+    },
+  ],
+});
+```
+
+What's wrong here?
+
+1. Backend agent doesn't see frontend decisions (data structure expectations, UI constraints)
+2. Frontend agent doesn't see backend capabilities (available endpoints, data formats)
+3. Both agents pollute main agent context with implementation details
+4. Coordination overhead grows quadratically with agent count
+
+## The Solution: MapReduce Pattern
+
+[Phil Schmid describes this](https://www.philschmid.de/context-engineering-part-2) as the MapReduce pattern: "treat agents as tools... the main agent invokes `call_planner(goal="...")`, the harness spins up a temporary sub-agent loop and returns a structured result."
+
+[Anthropic's context engineering guide](https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents) is more specific: subagents explore using tens of thousands of tokens but return condensed 1,000-2,000 token summaries. Context stays isolated. The parent receives distilled insight, not exploration traces.
+
+Here's the pattern in practice:
+
+```typescript
+import { createDeepAgent } from 'ai-sdk-deepagent';
+import { anthropic } from '@ai-sdk/anthropic';
+
+// Research subagent: compress exploration into structured findings
+const researchAgent = {
+  name: 'research-agent',
+  description: 'Deep research with condensed output',
+  systemPrompt: `Execute thorough research using available tools.
+    
+    Output format (required):
+    {
+      "findings": "2-3 sentence summary",
+      "key_points": ["point1", "point2", "point3"],
+      "sources": ["url1", "url2"]
+    }
+    
+    Do NOT include search queries, intermediate reasoning, or tool call history.`,
+  model: anthropic('claude-haiku-4-5-20251001'), // Cheaper model for focused work
+};
+
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-5-20250929'),
+  systemPrompt: `You coordinate complex tasks. Delegate research to research-agent.
+    It returns structured findings. Use those findings to complete your task.`,
+  subagents: [researchAgent],
+});
+```
+
+The key: **input specification and output schema are explicit**. The subagent is a pure function: `research(topic) → {findings, key_points, sources}`.
+
+## Measuring the Impact
+
+[Cursor's research](https://cursor.com/blog/semsearch) on semantic search demonstrates this quantitatively. Their agent performs extensive codebase exploration (semantic search + grep) in isolation, returning only relevant code segments. Result: 12.5% accuracy improvement. The main agent never sees the search process—just the compressed results.
+
+This is context engineering, not prompt engineering. The question isn't "how do I write a better prompt?" It's "what information needs compression and what's the transformation function?"
+
+## When to Use Subagents
+
+Use subagents when **detail doesn't matter, only outcome matters**:
+
+### 1. Research Tasks (Codebase or Web)
+
+```typescript
+// Parent agent doesn't need to see 50 web searches
+// It needs: "Here's what I found about X"
+
+const webResearchAgent = {
+  name: 'web-research',
+  description: 'Comprehensive web research',
+  tools: [webSearch, webFetch], // These generate thousands of tokens
+  systemPrompt: 'Research thoroughly. Return 3-paragraph summary with sources.',
+};
+```
+
+### 2. Data Analysis
+
+```typescript
+// Parent doesn't need to see pandas operations
+// It needs: "Mean: X, outliers: Y, correlation: Z"
+
+const analysisAgent = {
+  name: 'data-analysis',
+  description: 'Statistical analysis of datasets',
+  tools: [executeCode], // Runs analysis scripts
+  systemPrompt: 'Analyze data. Return: summary stats, key insights, visualizations.',
+};
+```
+
+### 3. Mundane Automation
+
+[LangChain notes](https://blog.langchain.com/deep-agents/) that Claude Code's todo tool is essentially a no-op—it's context engineering, not functionality. Similarly:
+
+```typescript
+// Git commit message generation
+const commitAgent = {
+  name: 'commit-message',
+  description: 'Generate commit messages from diffs',
+  systemPrompt: 'Analyze git diff. Output: conventional commit message, nothing else.',
+};
+```
+
+## Implementation Patterns
+
+### Pattern 1: Structured Output Enforcement
+
+```typescript
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-5-20250929'),
+  subagents: [{
+    name: 'analyzer',
+    description: 'Code quality analysis',
+    systemPrompt: `Analyze code quality. Return ONLY valid JSON:
+      {
+        "score": 0-100,
+        "issues": [{"type": "string", "severity": "high|medium|low", "line": number}],
+        "recommendations": ["string"]
+      }`,
+  }],
+});
+
+// Subagent output is immediately parseable
+for await (const event of agent.streamWithEvents({ 
+  prompt: 'Analyze the quality of auth.ts' 
+})) {
+  if (event.type === 'subagent-finish') {
+    const analysis = JSON.parse(event.result);
+    console.log(`Quality score: ${analysis.score}`);
+    // No context pollution from subagent's analysis process
+  }
+}
+```
+
+### Pattern 2: Model Mixing
+
+```typescript
+// Orchestrator uses Sonnet (reasoning)
+// Subagents use Haiku (speed + cost)
+
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-5-20250929'),
+  subagents: [
+    {
+      name: 'formatter',
+      model: anthropic('claude-haiku-4-5-20251001'), // Fast, cheap
+      description: 'Code formatting',
+    },
+    {
+      name: 'researcher', 
+      model: anthropic('claude-haiku-4-5-20251001'), // Fast, cheap
+      description: 'Quick fact lookup',
+    },
+  ],
+});
+```
+
+### Pattern 3: Context Isolation Monitoring
+
+```typescript
+// Track what actually gets returned to parent
+
+let contextSavings = { tokensBefore: 0, tokensAfter: 0 };
+
+for await (const event of agent.streamWithEvents({ prompt: 'task' })) {
+  if (event.type === 'subagent-start') {
+    console.log(`Subagent ${event.subagentName} starting...`);
+  }
+  if (event.type === 'subagent-finish') {
+    // Subagent used N tokens internally, returned M tokens to parent
+    // Compression ratio: N/M
+    console.log(`Compressed output: ${event.result.length} chars`);
+  }
+}
+```
+
+## Anti-Patterns to Avoid
+
+### ❌ Shared Mutable State
+
+```typescript
+// Don't do this
+const sharedState = { designDecisions: [] };
+
+const agent = createDeepAgent({
+  subagents: [
+    { name: 'designer', /* mutates sharedState */ },
+    { name: 'implementer', /* reads sharedState */ },
+  ],
+});
+```
+
+Why it fails: race conditions, order dependencies, implicit contracts.
+
+### ❌ Chatty Subagents
+
+```typescript
+// Don't do this
+systemPrompt: `Coordinate with other agents to align on the approach...`
+```
+
+Why it fails: exponential coordination overhead, context explosion.
+
+### ❌ Over-specialization
+
+```typescript
+// Don't do this
+subagents: [
+  { name: 'button-specialist' },
+  { name: 'form-specialist' },  
+  { name: 'navigation-specialist' },
+]
+```
+
+Why it fails: granularity creates integration hell. Subagents should compress complexity, not multiply it.
+
+## When NOT to Use Subagents
+
+[Cognition recommends](https://cognition.ai/blog/dont-build-multi-agents) starting single-threaded. One agent, continuous context, coherent decisions. Add subagents only when:
+
+1. Context window becomes the bottleneck
+2. Parallel exploration provides value (research, analysis)
+3. You can define clear input/output contracts
+
+[Google's ADK guide](https://developers.googleblog.com/architecting-efficient-context-aware-multi-agent-framework-for-production/) is explicit: "Every model call and sub-agent sees the minimum context required." If you can't define what context is minimum and necessary, you don't need a subagent yet.
+
+## Conclusion
+
+Subagents aren't organizational units. They're compression functions. The mental model shift:
+
+- ❌ "This subagent specializes in frontend work"
+- ✅ "This subagent compresses codebase exploration into structured findings"
+
+Design subagents around information transformation, not domain expertise. Define explicit contracts: input schemas, output formats, token budgets. Monitor compression ratios.
+
+As [Phil Schmid notes](https://www.philschmid.de/context-engineering-part-2): "Don't over-anthropomorphize your agents. You don't need an 'Org Chart' of agents (Manager, Designer, Coder) that chat with each other."
+
+Build context compression pipelines instead.
+
+**Note:** ai-sdk-deepagent was built by studying Claude Code's architecture and patterns from [HumanLayer's agent implementations](https://github.com/humanlayer/humanlayer/tree/main/.claude/agents). Their work on structured, purpose-driven agents informed many of the design decisions in this framework.
+
+---
+
+**References:**
+- [Cognition: Don't Build Multi-Agents](https://cognition.ai/blog/dont-build-multi-agents)
+- [Anthropic: Context Engineering for AI Agents](https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents)
+- [Anthropic: Building Agents with Claude Agent SDK](https://www.anthropic.com/engineering/building-agents-with-the-claude-agent-sdk)
+- [Phil Schmid: Context Engineering Part 2](https://www.philschmid.de/context-engineering-part-2)
+- [Cursor: Semantic Search Research](https://cursor.com/blog/semsearch)
+- [LangChain: Deep Agents](https://blog.langchain.com/deep-agents/)
+- [Google: Multi-Agent Framework for Production](https://developers.googleblog.com/architecting-efficient-context-aware-multi-agent-framework-for-production/)
+- [HumanLayer: Claude Code Agent Examples](https://github.com/humanlayer/humanlayer/tree/main/.claude/agents)
+
+**Framework:** [ai-sdk-deepagent on GitHub](https://github.com/chrispangg/ai-sdk-deepagent)

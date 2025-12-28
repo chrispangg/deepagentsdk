@@ -271,6 +271,7 @@
 .blog-content li {
   margin-bottom: 0.5rem;
   color: var(--home-text-secondary);
+  font-weight: 300;
 }
 
 .blog-content li::marker {
@@ -322,6 +323,7 @@
   border-left: 3px solid var(--home-accent);
   font-style: italic;
   color: var(--home-text-secondary);
+  font-weight: 300;
 }
 
 .blog-content hr {
