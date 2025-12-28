@@ -11,6 +11,16 @@ The problem isn't the abstraction itself. It's that domain-based subagents creat
 
 The correct mental model: **subagents are context compression functions**, not team members.
 
+## What NOT to Do: The Organizational Chart Anti-Pattern
+
+Here's a real example of the wrong approach:
+
+<img src="/blog/assets/tweet-2004597085467983965.png" alt="Tweet showing elaborate agent hierarchy" style={{ maxWidth: '500px', width: '100%' }} />
+
+This structure—with domain-specific agents like `frontend-developer`, `backend-architect`, `mobile-app-builder`, `tiktok-strategist`, etc.—is precisely what you should **NOT** build. It treats subagents as team members with job titles rather than as context compression functions. Each agent becomes a silo, coordination overhead explodes, and information gets lost between handoffs.
+
+The rest of this post explains why this fails and what to do instead.
+
 ## Claude Code and the Subagent Pattern
 
 [Claude Code](https://www.anthropic.com/engineering/building-agents-with-the-claude-agent-sdk) pioneered (or at least popularized) the practical use of subagents in production coding workflows. While building ai-sdk-deepagent, I spent considerable time experimenting with Claude Code's architecture and studying how they structure specialized agents.
