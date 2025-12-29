@@ -1,11 +1,11 @@
 ---
 title: Long-term Memory
-description: Learn how to extend deep agents with persistent memory across conversations
+description: Learn how to extend Deep Agent with persistent memory across conversations
 ---
 
 Deep agents come with a **local filesystem** to offload memory. By default, this filesystem is stored in agent state and is **transient to a single thread** - files are lost when the conversation ends.
 
-You can extend deep agents with **long-term memory** by using a **CompositeBackend** that routes specific paths to persistent storage. This enables hybrid storage where some files persist across threads while others remain ephemeral.
+You can extend Deep Agent with **long-term memory** by using a **CompositeBackend** that routes specific paths to persistent storage. This enables hybrid storage where some files persist across threads while others remain ephemeral.
 
 <Callout type="info">**Think of long-term memory as** the agent's "knowledge base" - information it learns in one conversation that it can access in future conversations.</Callout>
 
@@ -13,7 +13,7 @@ You can extend deep agents with **long-term memory** by using a **CompositeBacke
 
 ### Two Filesystem Types
 
-By default, deep agents maintain **two separate filesystems**:
+By default, Deep Agent maintains **two separate filesystems**:
 
 #### 1. Short-term (Transient) Filesystem
 

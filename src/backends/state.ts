@@ -29,7 +29,7 @@ import {
  * Backend that stores files in shared state (ephemeral).
  *
  * Files persist within a single agent invocation but not across invocations.
- * This is the default backend for deep agents when no backend is specified.
+ * This is the default backend for Deep Agent when no backend is specified.
  *
  * Files are stored in memory as part of the `DeepAgentState`, making this backend
  * fast but non-persistent. Use `FilesystemBackend` or `PersistentBackend` for

@@ -13,11 +13,11 @@
 
 A TypeScript library for building controllable AI agents using [Vercel AI SDK](https://ai-sdk.dev/). This is a reimplementation of [deepagentsjs](https://github.com/langchain-ai/deepagentsjs) without any LangChain/LangGraph dependencies.
 
-## What are Deep Agents?
+## What is Deep Agent?
 
 Using an LLM to call tools in a loop is the simplest form of an agent. This architecture, however, can yield agents that are "shallow" and fail to plan and act over longer, more complex tasks.
 
-Deep Agents address these limitations through four core architectural components:
+Deep Agent addresses these limitations through four core architectural components:
 
 | Component | Purpose | Implementation |
 |-----------|---------|----------------|

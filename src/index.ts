@@ -2,7 +2,7 @@
  * AI SDK Deep Agent
  *
  * A TypeScript library for building controllable AI agents using Vercel AI SDK v6.
- * Implements the four pillars of deep agents:
+ * Implements the four pillars of Deep Agent:
  * - Planning tools (write_todos)
  * - Filesystem access (ls, read_file, write_file, edit_file, glob, grep)
  * - Subagent spawning (task)

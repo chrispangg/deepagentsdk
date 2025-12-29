@@ -59,7 +59,7 @@ export default function BlogPage() {
               <div className="animate-fade-in-up [animation-delay:0.3s] h-px bg-gradient-to-r from-[var(--home-accent)] to-transparent max-w-[100px] mb-6" />
 
               <p className="animate-fade-in-up [animation-delay:0.4s] text-[clamp(1rem,2vw,1.125rem)] max-w-2xl leading-relaxed text-[var(--home-text-secondary)] font-light tracking-tight">
-                Insights, technical deep dives, and updates about building Deep Agents with Vercel AI SDK
+                Insights, technical deep dives, and updates about building Deep Agent with Vercel AI SDK
               </p>
             </section>
 
@@ -168,6 +168,6 @@ export default function BlogPage() {
 export function generateMetadata() {
   return {
     title: 'Blog | ai-sdk-deepagent',
-    description: 'Insights, technical deep dives, and updates about building Deep Agents with Vercel AI SDK',
+    description: 'Insights, technical deep dives, and updates about building Deep Agent with Vercel AI SDK',
   };
 }

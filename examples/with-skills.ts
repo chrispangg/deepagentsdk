@@ -1,5 +1,5 @@
 /**
- * Example: Using Skills with Deep Agents
+ * Example: Using Skills with Deep Agent
  *
  * This example demonstrates:
  * 1. Loading skills from a directory

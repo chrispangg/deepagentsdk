@@ -1,7 +1,7 @@
 /**
  * Example: Structured Output
  *
- * Demonstrates using structured output with deep agents.
+ * Demonstrates using structured output with Deep Agent.
  * The agent returns typed, validated objects alongside text responses.
  *
  * Run with: bun examples/with-structured-output.ts

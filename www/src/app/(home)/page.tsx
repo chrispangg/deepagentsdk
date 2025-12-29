@@ -128,7 +128,7 @@ export default async function HomePage() {
               </div>
 
               <h1 className="animate-fade-in-up [animation-delay:0.2s] mb-6 text-[clamp(2.5rem,7vw,5rem)] leading-none tracking-tighter font-light font-[family-name:var(--font-ibm-plex-mono)] text-[var(--home-text-primary)]">
-                Deep Agents
+                Deep Agent SDK
                 <span className="terminal-cursor text-[var(--home-accent)]">█</span>
               </h1>
 
