@@ -7,7 +7,7 @@
 [![npm version](https://badge.fury.io/js/ai-sdk-deep-agent.svg)](https://www.npmjs.com/package/ai-sdk-deep-agent)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/chrispangg/ai-sdk-deepagent)
-[![Documentation](https://img.shields.io/badge/docs-ai--sdk--deepagent-blue)](https://ai-sdk-deepagent.vercel.app/docs)
+[![Documentation](https://img.shields.io/badge/docs-ai--sdk--deepagent-blue)](https://deepagentsdk.vercel.app/docs)
 
 > **Note:** This package requires [Bun](https://bun.sh) runtime. It uses Bun-specific features and TypeScript imports.
 
@@ -123,18 +123,18 @@ for await (const event of agent.streamWithEvents({
 
 ## Documentation
 
-For comprehensive guides, API reference, and examples, visit **[ai-sdk-deepagent.vercel.app/docs](https://ai-sdk-deepagent.vercel.app/docs)**
+For comprehensive guides, API reference, and examples, visit **[deepagentsdk.vercel.app/docs](https://deepagentsdk.vercel.app/docs)**
 
 ### Key Documentation Sections
 
-- **[Get Started](https://ai-sdk-deepagent.vercel.app/docs/get-started)** - Installation and basic setup
-- **[Guides](https://ai-sdk-deepagent.vercel.app/docs/guides)** - In-depth tutorials on:
+- **[Get Started](https://deepagentsdk.vercel.app/docs/get-started)** - Installation and basic setup
+- **[Guides](https://deepagentsdk.vercel.app/docs/guides)** - In-depth tutorials on:
   - Configuration options (models, backends, middleware)
   - Custom tools and subagents
   - Agent memory and persistence
   - Prompt caching and conversation summarization
   - Web tools and API integration
-- **[Reference](https://ai-sdk-deepagent.vercel.app/docs/reference)** - Complete API documentation
+- **[Reference](https://deepagentsdk.vercel.app/docs/reference)** - Complete API documentation
 
 ## CLI
 
