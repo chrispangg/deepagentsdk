@@ -969,7 +969,7 @@ export {
 - [ ] Create agent with `TAVILY_API_KEY` env var → web tools registered
 - [ ] Create agent without `TAVILY_API_KEY` → web tools not registered, warning logged
 - [ ] CLI prompts for approval when using `web_search` in Safe Mode
-- [ ] Exports are available: `import { createWebTools } from "ai-sdk-deep-agent"`
+- [ ] Exports are available: `import { createWebTools } from "deepagentsdk"`
 
 ---
 

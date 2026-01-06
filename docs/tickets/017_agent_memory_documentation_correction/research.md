@@ -3,7 +3,7 @@ date: 2025-12-29 08:15:32 AEDT
 researcher: Claude (Sonnet 4.5)
 git_commit: b2809f9149e45690da8e3efa4843116af78caf6e
 branch: main
-repository: ai-sdk-deep-agent
+repository: deepagentsdk
 topic: "Agent Memory Middleware Compatibility with createDeepAgent"
 tags: [research, documentation, middleware, agent-memory, toolloopagent]
 status: complete
@@ -559,7 +559,7 @@ The middleware will automatically inject memory into the agent's system prompt o
 ### With DeepAgent (Recommended)
 
 \`\`\`typescript
-import { createDeepAgent, createAgentMemoryMiddleware } from 'ai-sdk-deep-agent';
+import { createDeepAgent, createAgentMemoryMiddleware } from 'deepagentsdk';
 import { anthropic } from '@ai-sdk/anthropic';
 
 // Create memory middleware
@@ -586,7 +586,7 @@ You can also use the middleware with direct AI SDK calls:
 \`\`\`typescript
 import { generateText, wrapLanguageModel } from 'ai';
 import { anthropic } from '@ai-sdk/anthropic';
-import { createAgentMemoryMiddleware } from 'ai-sdk-deep-agent';
+import { createAgentMemoryMiddleware } from 'deepagentsdk';
 
 const model = wrapLanguageModel({
   model: anthropic('claude-sonnet-4-20250514'),

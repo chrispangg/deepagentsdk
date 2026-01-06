@@ -5,7 +5,7 @@ description: Documentation
 
 ## Overview
 
-Add optional structured output parsing support to `ai-sdk-deep-agent` by leveraging AI SDK v6's ToolLoopAgent native `output` parameter. This enables agents to return type-safe, validated objects alongside text responses using Zod schemas.
+Add optional structured output parsing support to `deepagentsdk` by leveraging AI SDK v6's ToolLoopAgent native `output` parameter. This enables agents to return type-safe, validated objects alongside text responses using Zod schemas.
 
 **Ticket**: 007_structured_output
 **Research**: `docs/research/structured-output-implementation.md`
@@ -55,7 +55,7 @@ Add optional structured output parsing support to `ai-sdk-deep-agent` by leverag
 ### User API
 
 ```typescript
-import { createDeepAgent } from 'ai-sdk-deep-agent';
+import { createDeepAgent } from 'deepagentsdk';
 import { anthropic } from '@ai-sdk/anthropic';
 import { z } from 'zod';
 

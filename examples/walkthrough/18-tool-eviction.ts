@@ -2,7 +2,7 @@
 // Reference: docs/site/handbook/guides/harness.mdx lines 61-83
 // Description: Tests tool result eviction for large tool outputs
 
-import { createDeepAgent } from 'ai-sdk-deep-agent';
+import { createDeepAgent } from 'deepagentsdk';
 import { anthropic } from '@ai-sdk/anthropic';
 
 async function testToolEviction() {

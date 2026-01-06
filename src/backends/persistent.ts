@@ -216,8 +216,8 @@ export interface PersistentBackendOptions {
  *
  * @example Using InMemoryStore (for testing or single-session persistence)
  * ```typescript
- * import { createDeepAgent } from 'ai-sdk-deep-agent';
- * import { PersistentBackend, InMemoryStore } from 'ai-sdk-deep-agent';
+ * import { createDeepAgent } from 'deepagentsdk';
+ * import { PersistentBackend, InMemoryStore } from 'deepagentsdk';
  * import { anthropic } from '@ai-sdk/anthropic';
  *
  * const store = new InMemoryStore();
@@ -230,8 +230,8 @@ export interface PersistentBackendOptions {
  *
  * @example With custom namespace for project isolation
  * ```typescript
- * import { createDeepAgent } from 'ai-sdk-deep-agent';
- * import { PersistentBackend, InMemoryStore } from 'ai-sdk-deep-agent';
+ * import { createDeepAgent } from 'deepagentsdk';
+ * import { PersistentBackend, InMemoryStore } from 'deepagentsdk';
  * import { anthropic } from '@ai-sdk/anthropic';
  *
  * const store = new InMemoryStore();
@@ -247,8 +247,8 @@ export interface PersistentBackendOptions {
  *
  * @example Custom KeyValueStore implementation (Redis)
  * ```typescript
- * import { createDeepAgent } from 'ai-sdk-deep-agent';
- * import { PersistentBackend, type KeyValueStore } from 'ai-sdk-deep-agent';
+ * import { createDeepAgent } from 'deepagentsdk';
+ * import { PersistentBackend, type KeyValueStore } from 'deepagentsdk';
  * import { anthropic } from '@ai-sdk/anthropic';
  * import { createClient } from 'redis';
  *

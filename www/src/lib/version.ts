@@ -1,9 +1,9 @@
 /**
- * Fetches the latest published version of ai-sdk-deep-agent from npm registry
+ * Fetches the latest published version of deepagentsdk from npm registry
  * Falls back to reading from package.json if fetch fails
  */
 
-const NPM_PACKAGE_NAME = 'ai-sdk-deep-agent';
+const NPM_PACKAGE_NAME = 'deepagentsdk';
 const GITHUB_REPO = 'chrispangg/ai-sdk-deepagent';
 
 interface NpmPackageData {

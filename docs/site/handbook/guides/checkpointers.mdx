@@ -60,7 +60,7 @@ In-memory storage (ephemeral, lost on process exit).
 
 ```typescript
 import { anthropic } from '@ai-sdk/anthropic';
-import { createDeepAgent, MemorySaver } from 'ai-sdk-deep-agent';
+import { createDeepAgent, MemorySaver } from 'deepagentsdk';
 
 const agent = createDeepAgent({
   model: anthropic('claude-sonnet-4-20250514'),
@@ -84,7 +84,7 @@ JSON file storage (persists to disk).
 - `dir: string` - Directory to store checkpoint files (required)
 
 ```typescript
-import { FileSaver } from 'ai-sdk-deep-agent';
+import { FileSaver } from 'deepagentsdk';
 
 const agent = createDeepAgent({
   model: anthropic('claude-sonnet-4-20250514'),
@@ -103,7 +103,7 @@ Adapter for `KeyValueStore` interface.
 - `namespace?: string` - Optional namespace prefix for isolation (default: "default")
 
 ```typescript
-import { KeyValueStoreSaver, InMemoryStore } from 'ai-sdk-deep-agent';
+import { KeyValueStoreSaver, InMemoryStore } from 'deepagentsdk';
 
 const store = new InMemoryStore(); // Replace with RedisStore, DatabaseStore, etc.
 const agent = createDeepAgent({
@@ -120,7 +120,7 @@ const agent = createDeepAgent({
 
 ```typescript
 import { anthropic } from '@ai-sdk/anthropic';
-import { createDeepAgent, FileSaver } from 'ai-sdk-deep-agent';
+import { createDeepAgent, FileSaver } from 'deepagentsdk';
 
 const agent = createDeepAgent({
   model: anthropic('claude-sonnet-4-20250514'),
@@ -303,8 +303,8 @@ for await (const event of agent2.streamWithEvents({
 Implement `BaseCheckpointSaver` interface for custom storage:
 
 ```typescript
-import type { BaseCheckpointSaver, Checkpoint } from 'ai-sdk-deep-agent';
-import { createDeepAgent } from 'ai-sdk-deep-agent';
+import type { BaseCheckpointSaver, Checkpoint } from 'deepagentsdk';
+import { createDeepAgent } from 'deepagentsdk';
 import { anthropic } from '@ai-sdk/anthropic';
 
 class RedisCheckpointSaver implements BaseCheckpointSaver {

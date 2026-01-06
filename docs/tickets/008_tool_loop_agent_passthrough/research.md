@@ -4,7 +4,7 @@ date: 2025-12-20 17:10:00 AEDT
 researcher: AI Assistant
 git_commit: 3026f4b2935df92b7d71fadf9e1c0dafb2015a68
 branch: main
-repository: ai-sdk-deep-agent
+repository: deepagentsdk
 topic: "ToolLoopAgent Constructor Passthrough: Complete Technical Specification"
 tags: [research, codebase, ai-sdk-v6, tool-loop-agent, passthrough, configuration, callbacks, types]
 status: complete

@@ -4,7 +4,7 @@ date: 2025-12-13 15:12:00 AEDT
 researcher: Claude Code
 git_commit: 2664d1bf98bffc37301f2c0add4cc97877eae932
 branch: main
-repository: ai-sdk-deep-agent
+repository: deepagentsdk
 topic: "Web Tools Implementation (web_search, http_request, fetch_url)"
 tags: [research, web-tools, tavily, ai-sdk, implementation-guide]
 status: complete
@@ -14,7 +14,7 @@ last_updated_by: Claude Code
 
 ## Research Question
 
-How should we implement web tools (`web_search`, `http_request`, `fetch_url`) in ai-sdk-deep-agent using Vercel AI SDK v6, based on the LangChain DeepAgents reference implementations?
+How should we implement web tools (`web_search`, `http_request`, `fetch_url`) in deepagentsdk using Vercel AI SDK v6, based on the LangChain DeepAgents reference implementations?
 
 ## Summary
 

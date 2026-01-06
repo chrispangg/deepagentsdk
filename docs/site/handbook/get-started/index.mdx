@@ -59,7 +59,7 @@ bun --version
     bun init -y
 
     # Install the package
-    bun add ai-sdk-deep-agent
+    bun add deepagentsdk
 
     # Install AI SDK providers
     bun add @ai-sdk/anthropic @ai-sdk/openai
@@ -68,13 +68,13 @@ bun --version
   <Tab value="Existing Project">
     ```bash
     cd your-project
-    bun add ai-sdk-deep-agent
+    bun add deepagentsdk
     ```
   </Tab>
   <Tab value="CLI Global">
     ```bash
     # Install globally
-    bun add -g ai-sdk-deep-agent
+    bun add -g deepagentsdk
 
     # Now you can run from anywhere
     deep-agent
@@ -154,7 +154,7 @@ Ensure your `tsconfig.json` has these settings:
 Create a file `agent.ts`:
 
 ```typescript title="agent.ts"
-import { createDeepAgent } from 'ai-sdk-deep-agent';
+import { createDeepAgent } from 'deepagentsdk';
 import { anthropic } from '@ai-sdk/anthropic';
 
 // Create the agent
@@ -186,7 +186,7 @@ ANTHROPIC_API_KEY=your-key bun run agent.ts
 For real-time feedback, use streaming:
 
 ```typescript
-import { createDeepAgent } from 'ai-sdk-deep-agent';
+import { createDeepAgent } from 'deepagentsdk';
 import { anthropic } from '@ai-sdk/anthropic';
 
 const agent = createDeepAgent({
@@ -281,7 +281,7 @@ for (const [path, file] of Object.entries(result.state.files)) {
 Spawn specialized agents for complex subtasks:
 
 ```typescript
-import { createDeepAgent, type SubAgent } from 'ai-sdk-deep-agent';
+import { createDeepAgent, type SubAgent } from 'deepagentsdk';
 import { anthropic } from '@ai-sdk/anthropic';
 
 // Define a specialized research subagent
@@ -315,7 +315,7 @@ const result = await agent.generate({
 Store files on disk for persistence across sessions:
 
 ```typescript
-import { createDeepAgent, FilesystemBackend } from 'ai-sdk-deep-agent';
+import { createDeepAgent, FilesystemBackend } from 'deepagentsdk';
 import { anthropic } from '@ai-sdk/anthropic';
 
 const agent = createDeepAgent({
@@ -335,7 +335,7 @@ const result = await agent.generate({
 Resume conversations across sessions:
 
 ```typescript
-import { createDeepAgent, FileSaver } from 'ai-sdk-deep-agent';
+import { createDeepAgent, FileSaver } from 'deepagentsdk';
 import { anthropic } from '@ai-sdk/anthropic';
 
 const agent = createDeepAgent({
@@ -368,7 +368,7 @@ for await (const event of agent.streamWithEvents({
 Add your own tools alongside built-in ones:
 
 ```typescript
-import { createDeepAgent } from 'ai-sdk-deep-agent';
+import { createDeepAgent } from 'deepagentsdk';
 import { anthropic } from '@ai-sdk/anthropic';
 import { tool } from 'ai';
 import { z } from 'zod';
@@ -402,7 +402,7 @@ const result = await agent.generate({
 Enable shell command execution:
 
 ```typescript
-import { createDeepAgent, LocalSandbox } from 'ai-sdk-deep-agent';
+import { createDeepAgent, LocalSandbox } from 'deepagentsdk';
 import { anthropic } from '@ai-sdk/anthropic';
 
 const agent = createDeepAgent({
@@ -428,7 +428,7 @@ TAVILY_API_KEY=tvly-your-key-here
 ```
 
 ```typescript
-import { createDeepAgent } from 'ai-sdk-deep-agent';
+import { createDeepAgent } from 'deepagentsdk';
 import { anthropic } from '@ai-sdk/anthropic';
 
 // Web tools automatically enabled when TAVILY_API_KEY is set
@@ -446,7 +446,7 @@ const result = await agent.generate({
 Give your agent persistent memory across conversations:
 
 ```typescript
-import { createDeepAgent } from 'ai-sdk-deep-agent';
+import { createDeepAgent } from 'deepagentsdk';
 import { anthropic } from '@ai-sdk/anthropic';
 
 const agent = createDeepAgent({
@@ -482,7 +482,7 @@ const result = await agent.generate({
 Maintain conversation history across turns:
 
 ```typescript
-import { createDeepAgent, type ModelMessage } from 'ai-sdk-deep-agent';
+import { createDeepAgent, type ModelMessage } from 'deepagentsdk';
 import { anthropic } from '@ai-sdk/anthropic';
 
 const agent = createDeepAgent({
@@ -516,7 +516,7 @@ for await (const event of agent.streamWithEvents({
 ## Troubleshooting
 
 <Accordions type="single">
-  <Accordion title="Cannot find module 'ai-sdk-deep-agent'">
+  <Accordion title="Cannot find module 'deepagentsdk'">
     **Problem:** TypeScript cannot resolve the module.
 
     **Solution:** Ensure you're using Bun runtime:
@@ -745,10 +745,10 @@ Interactive CLI for quick prototyping:
 
 ```bash
 # Start CLI
-bunx ai-sdk-deep-agent
+bunx deepagentsdk
 
 # Or with specific model
-bunx ai-sdk-deep-agent --model anthropic/claude-sonnet-4-5-20250929
+bunx deepagentsdk --model anthropic/claude-sonnet-4-5-20250929
 
 # CLI Commands
 /help          # Show all commands
@@ -787,7 +787,7 @@ const agent = createDeepAgent({
 
 4. **Use structured output for type-safe responses:**
 ```typescript
-import { createDeepAgent } from 'ai-sdk-deep-agent';
+import { createDeepAgent } from 'deepagentsdk';
 import { anthropic } from '@ai-sdk/anthropic';
 import { z } from 'zod';
 
@@ -807,7 +807,7 @@ console.log(result.output?.summary); // Fully typed!
 
 ## Getting Help
 
-- **GitHub Issues**: [Report bugs or request features](https://github.com/chrispangg/ai-sdk-deep-agent/issues)
+- **GitHub Issues**: [Report bugs or request features](https://github.com/chrispangg/deepagentsdk/issues)
 - **Examples**: Check `/examples` directory for working code
 - **Documentation**: See `/docs` folder for detailed guides
 - **DeepWiki**: [Ask DeepWiki](https://deepwiki.com/chrispangg/ai-sdk-deepagent)

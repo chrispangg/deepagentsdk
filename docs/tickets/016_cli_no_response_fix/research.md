@@ -4,7 +4,7 @@ date: 2024-12-24 06:45:00 AEDT
 researcher: Claude (Sonnet 4.5)
 git_commit: e7398eff8adb8b64d1bca9d7ea5273b9b9d5d011
 branch: main
-repository: ai-sdk-deep-agent
+repository: deepagentsdk
 topic: "CLI tool not returning anything when prompted"
 tags: [research, codebase, cli, bug, streamWithEvents]
 status: complete

@@ -17,7 +17,7 @@ Memory content is injected into the model's system prompt on every call, and the
 ## Quick Start
 
 ```typescript
-import { createDeepAgent, createAgentMemoryMiddleware } from 'ai-sdk-deep-agent';
+import { createDeepAgent, createAgentMemoryMiddleware } from 'deepagentsdk';
 import { anthropic } from '@ai-sdk/anthropic';
 
 // Create memory middleware
@@ -257,7 +257,7 @@ The system prompt teaches the agent:
 ### Basic Usage
 
 ```typescript
-import { createDeepAgent, createAgentMemoryMiddleware } from 'ai-sdk-deep-agent';
+import { createDeepAgent, createAgentMemoryMiddleware } from 'deepagentsdk';
 import { anthropic } from '@ai-sdk/anthropic';
 
 const memoryMiddleware = createAgentMemoryMiddleware({
@@ -279,7 +279,7 @@ const result = await agent.generate({
 You can combine memory middleware with other middleware:
 
 ```typescript
-import { createDeepAgent, createAgentMemoryMiddleware } from 'ai-sdk-deep-agent';
+import { createDeepAgent, createAgentMemoryMiddleware } from 'deepagentsdk';
 import { anthropic } from '@ai-sdk/anthropic';
 
 const loggingMiddleware = {
@@ -465,7 +465,7 @@ const agent = createDeepAgent({
 **Debug**:
 
 ```typescript
-import { findGitRoot } from 'ai-sdk-deep-agent';
+import { findGitRoot } from 'deepagentsdk';
 
 const gitRoot = await findGitRoot();
 console.log('Git root:', gitRoot);
@@ -528,7 +528,7 @@ Finds the git repository root by walking up the directory tree.
 **Example**:
 
 ```typescript
-import { findGitRoot } from 'ai-sdk-deep-agent';
+import { findGitRoot } from 'deepagentsdk';
 
 const gitRoot = await findGitRoot();
 if (gitRoot) {
@@ -542,8 +542,8 @@ if (gitRoot) {
 
 - [Middleware Architecture](./middleware.md) - How middleware works in DeepAgent
 - [Skills System](./skills.md) - Loading and using skills
-- [Examples](https://github.com/chrispangg/ai-sdk-deep-agent/tree/main/examples) - Working code examples
-- [API Reference](https://github.com/chrispangg/ai-sdk-deep-agent) - Full API documentation
+- [Examples](https://github.com/chrispangg/deepagentsdk/tree/main/examples) - Working code examples
+- [API Reference](https://github.com/chrispangg/deepagentsdk) - Full API documentation
 
 ## FAQ
 
@@ -552,7 +552,7 @@ if (gitRoot) {
 A: Yes! Simply pass the middleware to the `middleware` parameter:
 
 ```typescript
-import { createDeepAgent, createAgentMemoryMiddleware } from 'ai-sdk-deep-agent';
+import { createDeepAgent, createAgentMemoryMiddleware } from 'deepagentsdk';
 import { anthropic } from '@ai-sdk/anthropic';
 
 const memoryMiddleware = createAgentMemoryMiddleware({ agentId: 'my-agent' });
@@ -570,7 +570,7 @@ The middleware automatically injects memory into the agent's system prompt on ev
 A: Yes! You can create multiple agents with different memory configurations:
 
 ```typescript
-import { createDeepAgent, createAgentMemoryMiddleware } from 'ai-sdk-deep-agent';
+import { createDeepAgent, createAgentMemoryMiddleware } from 'deepagentsdk';
 import { anthropic } from '@ai-sdk/anthropic';
 
 const researchAgent = createDeepAgent({
@@ -599,7 +599,7 @@ A: Yes! Memory files are stored on disk and persist across restarts, unlike chec
 A: Yes! Memory and skills are independent features. The `agentId` parameter controls skills loading, while middleware controls memory:
 
 ```typescript
-import { createDeepAgent, createAgentMemoryMiddleware } from 'ai-sdk-deep-agent';
+import { createDeepAgent, createAgentMemoryMiddleware } from 'deepagentsdk';
 import { anthropic } from '@ai-sdk/anthropic';
 
 // Memory only (no agentId, so no skills loaded)

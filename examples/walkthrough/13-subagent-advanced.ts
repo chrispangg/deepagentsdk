@@ -2,7 +2,7 @@
 // Reference: docs/site/handbook/guides/subagents.mdx lines 60-100
 // Description: Tests multiple specialized subagents with custom configurations
 
-import { createDeepAgent } from 'ai-sdk-deep-agent';
+import { createDeepAgent } from 'deepagentsdk';
 import { anthropic } from '@ai-sdk/anthropic';
 
 async function testAdvancedSubagents() {

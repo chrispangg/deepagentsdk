@@ -1137,8 +1137,8 @@ EOF
 ### 3. Use Agent with Memory
 
 \`\`\`typescript
-import { createDeepAgent } from 'ai-sdk-deep-agent';
-import { createAgentMemoryMiddleware } from 'ai-sdk-deep-agent/middleware';
+import { createDeepAgent } from 'deepagentsdk';
+import { createAgentMemoryMiddleware } from 'deepagentsdk/middleware';
 import { anthropic } from '@ai-sdk/anthropic';
 
 const agent = createDeepAgent({
@@ -1281,7 +1281,7 @@ Add section after "Middleware Architecture":
 Enable persistent memory for agents using `agent.md` files:
 
 \`\`\`typescript
-import { createAgentMemoryMiddleware } from 'ai-sdk-deep-agent/middleware';
+import { createAgentMemoryMiddleware } from 'deepagentsdk/middleware';
 
 const agent = createDeepAgent({
   model: anthropic('claude-sonnet-4-5-20250514'),

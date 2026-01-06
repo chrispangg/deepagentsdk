@@ -2,7 +2,7 @@
 // Reference: docs/site/handbook/get-started/get-started.mdx lines 227-253
 // Description: Tests write_todos tool for task planning and tracking
 
-import { createDeepAgent } from 'ai-sdk-deep-agent';
+import { createDeepAgent } from 'deepagentsdk';
 import { anthropic } from '@ai-sdk/anthropic';
 
 async function testTodos() {

@@ -3,7 +3,7 @@ title: Customization Guide
 description: Comprehensive guide to customizing agent behavior, tools, backends, and configuration
 ---
 
-This guide covers all customization options for ai-sdk-deep-agent, from basic prompts to advanced middleware and control hooks.
+This guide covers all customization options for deepagentsdk, from basic prompts to advanced middleware and control hooks.
 
 ## Table of Contents
 
@@ -31,7 +31,7 @@ This guide covers all customization options for ai-sdk-deep-agent, from basic pr
 Provide custom instructions to shape agent behavior:
 
 ```typescript
-import { createDeepAgent } from 'ai-sdk-deep-agent';
+import { createDeepAgent } from 'deepagentsdk';
 import { anthropic } from '@ai-sdk/anthropic';
 
 const agent = createDeepAgent({
@@ -197,7 +197,7 @@ const agent = createDeepAgent({
 Emit custom events during tool execution:
 
 ```typescript
-import type { EventCallback } from 'ai-sdk-deep-agent';
+import type { EventCallback } from 'deepagentsdk';
 
 function createCustomTool(onEvent?: EventCallback) {
   return tool({
@@ -291,7 +291,7 @@ const dbQueryTool = tool({
 In-memory storage for ephemeral sessions:
 
 ```typescript
-import { StateBackend } from 'ai-sdk-deep-agent';
+import { StateBackend } from 'deepagentsdk';
 
 const state = { todos: [], files: {} };
 const agent = createDeepAgent({
@@ -312,7 +312,7 @@ console.log(result.state.files); // Files created during generation
 Persist files to disk:
 
 ```typescript
-import { FilesystemBackend } from 'ai-sdk-deep-agent';
+import { FilesystemBackend } from 'deepagentsdk';
 
 const agent = createDeepAgent({
   model: anthropic('claude-sonnet-4-20250514'),
@@ -327,7 +327,7 @@ const agent = createDeepAgent({
 Cross-session persistence with key-value store:
 
 ```typescript
-import { PersistentBackend, InMemoryStore } from 'ai-sdk-deep-agent';
+import { PersistentBackend, InMemoryStore } from 'deepagentsdk';
 
 const store = new InMemoryStore();
 // Or use Redis, SQLite, etc.
@@ -356,7 +356,7 @@ const agent2 = createDeepAgent({
 Route files to different backends by path prefix:
 
 ```typescript
-import { CompositeBackend, FilesystemBackend, StateBackend } from 'ai-sdk-deep-agent';
+import { CompositeBackend, FilesystemBackend, StateBackend } from 'deepagentsdk';
 
 const state = { todos: [], files: {} };
 
@@ -384,7 +384,7 @@ const agent = createDeepAgent({
 Enable code execution:
 
 ```typescript
-import { LocalSandbox } from 'ai-sdk-deep-agent';
+import { LocalSandbox } from 'deepagentsdk';
 
 const agent = createDeepAgent({
   model: anthropic('claude-sonnet-4-20250514'),
@@ -408,7 +408,7 @@ import type {
   WriteResult,
   EditResult,
   GrepMatch,
-} from 'ai-sdk-deep-agent';
+} from 'deepagentsdk';
 
 class CloudStorageBackend implements BackendProtocol {
   async lsInfo(path: string): Promise<FileInfo[]> {
@@ -496,7 +496,7 @@ const agent = createDeepAgent({
 Load persistent agent memory from filesystem:
 
 ```typescript
-import { createAgentMemoryMiddleware } from 'ai-sdk-deep-agent/middleware';
+import { createAgentMemoryMiddleware } from 'deepagentsdk/middleware';
 
 const memoryMiddleware = createAgentMemoryMiddleware({
   agentId: 'code-architect',
@@ -807,7 +807,7 @@ const agent = createDeepAgent({
 Create specialized subagents:
 
 ```typescript
-import { type SubAgent } from 'ai-sdk-deep-agent';
+import { type SubAgent } from 'deepagentsdk';
 
 const researchAgent: SubAgent = {
   name: 'researcher',
@@ -1157,7 +1157,7 @@ When reviewing code:
 ### Custom Memory with Middleware
 
 ```typescript
-import { createAgentMemoryMiddleware } from 'ai-sdk-deep-agent/middleware';
+import { createAgentMemoryMiddleware } from 'deepagentsdk/middleware';
 
 const memoryMiddleware = createAgentMemoryMiddleware({
   agentId: 'my-agent',
@@ -1482,7 +1482,7 @@ import {
   FilesystemBackend,
   StateBackend,
   createAgentMemoryMiddleware,
-} from 'ai-sdk-deep-agent';
+} from 'deepagentsdk';
 import { anthropic } from '@ai-sdk/anthropic';
 import { Redis } from 'ioredis';
 

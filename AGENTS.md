@@ -4,7 +4,7 @@ This file provides guidance to AI Agents (Claude Code, Cursor, etc.) when workin
 
 ## Project Overview
 
-**ai-sdk-deep-agent** is a TypeScript library implementing "Deep Agents" architecture using Vercel AI SDK v6. Deep Agents extend basic LLM tool-calling with four core pillars:
+**deepagentsdk** is a TypeScript library implementing "Deep Agents" architecture using Vercel AI SDK v6. Deep Agents extend basic LLM tool-calling with four core pillars:
 
 1. **Planning tools** (`write_todos`) - Task planning and tracking
 2. **Virtual filesystem** - Stateful file operations across tool calls
@@ -95,7 +95,7 @@ bun examples/streaming.ts
 
 ```typescript
 import { test, expect } from "bun:test";
-import { createDeepAgent, StateBackend } from "ai-sdk-deep-agent";
+import { createDeepAgent, StateBackend } from "deepagentsdk";
 
 test("agent behavior", async () => {
   const backend = new StateBackend();

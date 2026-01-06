@@ -38,7 +38,7 @@ The harness provides six tools for file system operations, making files first-cl
 ### Tool Usage Examples
 
 ```typescript
-import { createDeepAgent } from 'ai-sdk-deep-agent';
+import { createDeepAgent } from 'deepagentsdk';
 import { anthropic } from '@ai-sdk/anthropic';
 
 const agent = createDeepAgent({
@@ -101,7 +101,7 @@ import {
   FilesystemBackend,
   PersistentBackend,
   CompositeBackend
-} from 'ai-sdk-deep-agent';
+} from 'deepagentsdk';
 
 // Example 1: Simple filesystem access
 const agent = createDeepAgent({
@@ -429,7 +429,7 @@ When using `LocalSandbox` backend, the harness adds an `execute` tool for runnin
 ### Configuration
 
 ```typescript
-import { LocalSandbox } from 'ai-sdk-deep-agent';
+import { LocalSandbox } from 'deepagentsdk';
 
 const agent = createDeepAgent({
   model: anthropic('claude-sonnet-4-5-20250929'),

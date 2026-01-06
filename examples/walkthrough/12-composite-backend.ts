@@ -2,7 +2,7 @@
 // Reference: docs/site/handbook/guides/backends.mdx lines 408-467
 // Description: Tests CompositeBackend for routing different paths to different backends
 
-import { createDeepAgent, CompositeBackend, StateBackend, PersistentBackend, InMemoryStore } from 'ai-sdk-deep-agent';
+import { createDeepAgent, CompositeBackend, StateBackend, PersistentBackend, InMemoryStore } from 'deepagentsdk';
 import { anthropic } from '@ai-sdk/anthropic';
 
 async function testCompositeBackend() {

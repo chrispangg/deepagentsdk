@@ -2,7 +2,7 @@
 // Reference: docs/site/handbook/guides/checkpointers.mdx lines 77-93, 119-150
 // Description: Tests FileSaver for file-based persistence and checkpoint events
 
-import { createDeepAgent, FileSaver } from 'ai-sdk-deep-agent';
+import { createDeepAgent, FileSaver } from 'deepagentsdk';
 import { anthropic } from '@ai-sdk/anthropic';
 import { existsSync } from 'fs';
 

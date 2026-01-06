@@ -5,7 +5,7 @@ description: Documentation
 
 ## Overview
 
-Implement Checkpointer Support for ai-sdk-deep-agent to enable persisting agent state (todos, files, conversation history) between invocations. This allows long-running agent workflows to be paused, resumed later, or moved between sessions—essential for production deployments and long-running tasks.
+Implement Checkpointer Support for deepagentsdk to enable persisting agent state (todos, files, conversation history) between invocations. This allows long-running agent workflows to be paused, resumed later, or moved between sessions—essential for production deployments and long-running tasks.
 
 ## Current State Analysis
 
@@ -39,7 +39,7 @@ Implement Checkpointer Support for ai-sdk-deep-agent to enable persisting agent 
 
 ```typescript
 import { anthropic } from '@ai-sdk/anthropic';
-import { createDeepAgent, MemorySaver, FileSaver } from 'ai-sdk-deep-agent';
+import { createDeepAgent, MemorySaver, FileSaver } from 'deepagentsdk';
 
 // Create agent with checkpointer
 const agent = createDeepAgent({
@@ -540,7 +540,7 @@ export interface KeyValueStoreSaverOptions extends CheckpointSaverOptions {
  * 
  * @example
  * ```typescript
- * import { InMemoryStore } from 'ai-sdk-deep-agent';
+ * import { InMemoryStore } from 'deepagentsdk';
  * 
  * const store = new InMemoryStore();
  * const saver = new KeyValueStoreSaver({ store });
@@ -651,7 +651,7 @@ import type { BaseCheckpointSaver } from "./checkpointer/types.ts";
    * 
    * @example
    * ```typescript
-   * import { MemorySaver } from 'ai-sdk-deep-agent';
+   * import { MemorySaver } from 'deepagentsdk';
    * 
    * const agent = createDeepAgent({
    *   model: anthropic('claude-sonnet-4-20250514'),
@@ -1384,7 +1384,7 @@ Enable conversation persistence and pause/resume functionality:
 
 ```typescript
 import { anthropic } from '@ai-sdk/anthropic';
-import { createDeepAgent, MemorySaver, FileSaver } from 'ai-sdk-deep-agent';
+import { createDeepAgent, MemorySaver, FileSaver } from 'deepagentsdk';
 
 // In-memory (for testing)
 const agent1 = createDeepAgent({

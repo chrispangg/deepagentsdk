@@ -14,7 +14,7 @@ last_updated_by: Claude Code
 
 ## Research Question
 
-User wants to review and remove all instances of `as any` type assertions from the ai-sdk-deep-agent codebase as part of a high-priority type safety improvement initiative.
+User wants to review and remove all instances of `as any` type assertions from the deepagentsdk codebase as part of a high-priority type safety improvement initiative.
 
 ## Summary
 

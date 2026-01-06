@@ -2,7 +2,7 @@
 // Reference: docs/site/handbook/get-started/get-started.mdx lines 316-335 (Pattern 1)
 // Description: Tests FilesystemBackend for storing files on disk
 
-import { createDeepAgent, FilesystemBackend } from 'ai-sdk-deep-agent';
+import { createDeepAgent, FilesystemBackend } from 'deepagentsdk';
 import { anthropic } from '@ai-sdk/anthropic';
 import { existsSync, readdirSync } from 'fs';
 

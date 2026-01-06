@@ -21,7 +21,7 @@ This repository uses **npm Trusted Publishing** with OIDC for secure, token-free
    ```
 
 2. **Log in to [npmjs.com](https://www.npmjs.com/) and navigate to your package**:
-   - Go to: `https://www.npmjs.com/package/ai-sdk-deep-agent`
+   - Go to: `https://www.npmjs.com/package/deepagentsdk`
    - Click **Settings** tab
 
 3. **Add GitHub as a Trusted Publisher**:
@@ -182,7 +182,7 @@ git commit -m "docs: update README [skip ci]"
   - Repository owner: `chrispangg`
   - Repository name: `ai-sdk-deepagent`
   - Workflow file: `publish.yaml`
-- ✅ Confirm your npm account has publish rights to `ai-sdk-deep-agent`
+- ✅ Confirm your npm account has publish rights to `deepagentsdk`
 - ✅ For first-time publish, publish manually once first (see step 1 above)
 - ✅ Ensure the workflow has `id-token: write` permission (already configured)
 

@@ -33,7 +33,7 @@ Updated the agent memory documentation to accurately reflect that `createAgentMe
 
 **Code Example Added**:
 ```typescript
-import { createDeepAgent, createAgentMemoryMiddleware } from 'ai-sdk-deep-agent';
+import { createDeepAgent, createAgentMemoryMiddleware } from 'deepagentsdk';
 import { anthropic } from '@ai-sdk/anthropic';
 
 const memoryMiddleware = createAgentMemoryMiddleware({
@@ -138,7 +138,7 @@ Use the manual memory loading workaround shown in the integration examples until
 A: Yes! The middleware works perfectly with `createDeepAgent`. Simply pass the middleware to the `middleware` parameter:
 
 ```typescript
-import { createDeepAgent, createAgentMemoryMiddleware } from 'ai-sdk-deep-agent';
+import { createDeepAgent, createAgentMemoryMiddleware } from 'deepagentsdk';
 import { anthropic } from '@ai-sdk/anthropic';
 
 const memoryMiddleware = createAgentMemoryMiddleware({ agentId: 'my-agent' });

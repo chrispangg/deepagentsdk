@@ -2,7 +2,7 @@
 // Reference: docs/site/handbook/get-started/get-started.mdx lines 154-187
 // Description: Tests basic agent creation with createDeepAgent and simple generate() call
 
-import { createDeepAgent } from 'ai-sdk-deep-agent';
+import { createDeepAgent } from 'deepagentsdk';
 import { anthropic } from '@ai-sdk/anthropic';
 
 async function testBasicAgent() {

@@ -4,7 +4,7 @@ date: 2025-12-15 08:18:07 AEDT
 researcher: Claude Code
 git_commit: ea8a5d7fdcf9a014298385c4fac47acb69d81155
 branch: main
-repository: ai-sdk-deep-agent
+repository: deepagentsdk
 topic: Middleware Architecture Implementation for Deep Agents
 tags: [research, middleware, architecture, ai-sdk-v6, langchain, deep-agents]
 status: complete
@@ -14,7 +14,7 @@ last_updated_by: Claude Code
 
 ## Research Question
 
-**How should middleware architecture be implemented in ai-sdk-deep-agent to enable composable hooks for model wrapping, tool call transformation, and message processing?**
+**How should middleware architecture be implemented in deepagentsdk to enable composable hooks for model wrapping, tool call transformation, and message processing?**
 
 This research investigates:
 
@@ -857,7 +857,7 @@ const guardrailsMiddleware = {
 
 ---
 
-### 4. Integration Strategy for ai-sdk-deep-agent
+### 4. Integration Strategy for deepagentsdk
 
 #### 4.1 Recommended Implementation Phases
 
@@ -1326,7 +1326,7 @@ const agent = createDeepAgent({
    - **Investigation**: Check if `prepareStep` can modify tool responses (unlikely)
    - **Workaround**: Tool wrapper factory that applies eviction logic
 
-2. **State Management**: Should ai-sdk-deep-agent introduce state management beyond backend?
+2. **State Management**: Should deepagentsdk introduce state management beyond backend?
    - **Trade-off**: Flexibility vs. complexity
    - **Recommendation**: Start with backend-only state, add state schemas if needed
 
@@ -1369,7 +1369,7 @@ const agent = createDeepAgent({
 
 ## Conclusion
 
-The middleware architecture is the **foundational piece** for production-ready ai-sdk-deep-agent. AI SDK v6's built-in middleware support via `wrapLanguageModel()` provides a robust starting point, complemented by Agent extension points for dynamic behavior.
+The middleware architecture is the **foundational piece** for production-ready deepagentsdk. AI SDK v6's built-in middleware support via `wrapLanguageModel()` provides a robust starting point, complemented by Agent extension points for dynamic behavior.
 
 **Next Steps**:
 

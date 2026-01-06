@@ -3,7 +3,7 @@ title: Deep Agent Overview
 description: Build agents that can plan, use subagents, and leverage file systems for complex tasks
 ---
 
-**ai-sdk-deep-agent** is a TypeScript library for building agents that can tackle complex, multi-step tasks. Built on Vercel AI SDK v6 and inspired by applications like Claude Code, Deep Research, and LangChain's DeepAgents, this library provides:
+**deepagentsdk** is a TypeScript library for building agents that can tackle complex, multi-step tasks. Built on Vercel AI SDK v6 and inspired by applications like Claude Code, Deep Research, and LangChain's DeepAgents, this library provides:
 
 - **Planning and task decomposition** via built-in `write_todos` tool
 - **Virtual filesystem** for context management across tool calls
@@ -31,7 +31,7 @@ For simpler use cases, consider using AI SDK's `generateText` or building a cust
 Deep agents include a built-in `write_todos` tool that enables agents to break down complex tasks into discrete steps, track progress, and adapt plans as new information emerges.
 
 ```typescript
-import { createDeepAgent } from 'ai-sdk-deep-agent';
+import { createDeepAgent } from 'deepagentsdk';
 import { anthropic } from '@ai-sdk/anthropic';
 
 const agent = createDeepAgent({
@@ -96,7 +96,7 @@ const result = await agent.generate({
 Extend agents with persistent memory across threads using pluggable backends. Agents can save and retrieve information from previous conversations.
 
 ```typescript
-import { CompositeBackend, StateBackend, PersistentBackend } from 'ai-sdk-deep-agent';
+import { CompositeBackend, StateBackend, PersistentBackend } from 'deepagentsdk';
 
 const backend = new CompositeBackend(
   new StateBackend(), // Ephemeral by default
@@ -140,7 +140,7 @@ for await (const event of agent.streamWithEvents({
 
 ## Relationship to the AI SDK Ecosystem
 
-**ai-sdk-deep-agent** is built on top of:
+**deepagentsdk** is built on top of:
 
 - **Vercel AI SDK v6** - Provides the underlying `ToolLoopAgent`, tools, and model integrations
 - **Language Model Providers** - Works with Anthropic, OpenAI, Azure, and more via `@ai-sdk/*` packages
@@ -218,7 +218,7 @@ const result = await agent.generate({
 
 <Callout type="info">**Design Philosophy:** Wrap, don't replace</Callout>
 
-**ai-sdk-deep-agent** wraps AI SDK's `ToolLoopAgent` with additional capabilities:
+**deepagentsdk** wraps AI SDK's `ToolLoopAgent` with additional capabilities:
 
 <Mermaid chart={`
 flowchart TB
@@ -253,7 +253,7 @@ This approach means:
 
 This library implements the same core features as LangChain's DeepAgents framework:
 
-| Feature | LangChain | ai-sdk-deep-agent |
+| Feature | LangChain | deepagentsdk |
 |---------|-----------|-------------------|
 | Planning tool | `write_todos` | `write_todos` ✅ |
 | Virtual filesystem | Yes | Yes ✅ |
@@ -261,7 +261,7 @@ This library implements the same core features as LangChain's DeepAgents framewo
 | Long-term memory | StoreBackend | PersistentBackend ✅ |
 | Human-in-the-loop | Interrupts | `interruptOn` ✅ |
 | Middleware | LangGraph middleware | AI SDK middleware ✅ |
-| CLI | `uvx deepagents-cli` | `bunx ai-sdk-deep-agent` ✅ |
+| CLI | `uvx deepagents-cli` | `bunx deepagentsdk` ✅ |
 
 **Key difference:** Built on AI SDK v6 instead of LangGraph, with TypeScript-first design and full type safety.
 

@@ -200,7 +200,7 @@ import type { LanguageModelV1Middleware } from 'ai';
 ```typescript
  * @example With middleware for logging and caching
  * ```typescript
- * import { createDeepAgent } from 'ai-sdk-deep-agent';
+ * import { createDeepAgent } from 'deepagentsdk';
  * import { anthropic } from '@ai-sdk/anthropic';
  *
  * const loggingMiddleware = {
@@ -220,7 +220,7 @@ import type { LanguageModelV1Middleware } from 'ai';
  *
  * @example With middleware factory for context access
  * ```typescript
- * import { FilesystemBackend } from 'ai-sdk-deep-agent';
+ * import { FilesystemBackend } from 'deepagentsdk';
  *
  * function createContextMiddleware(backend: BackendProtocol) {
  *   return {
@@ -798,7 +798,7 @@ export type { SkillMetadata, SkillLoadOptions } from "./skills/index.ts";
 ```typescript
  * @example With skills system
  * ```typescript
- * import { createDeepAgent } from 'ai-sdk-deep-agent';
+ * import { createDeepAgent } from 'deepagentsdk';
  * import { anthropic } from '@ai-sdk/anthropic';
  *
  * // Skills loaded from ./skills/ directory

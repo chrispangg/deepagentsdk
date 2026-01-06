@@ -60,7 +60,7 @@ Main Agent Context:
 ### Basic Subagent Definition
 
 ```typescript
-import { createDeepAgent } from 'ai-sdk-deep-agent';
+import { createDeepAgent } from 'deepagentsdk';
 import { anthropic } from '@ai-sdk/anthropic';
 
 const agent = createDeepAgent({
@@ -109,7 +109,7 @@ interface SubAgent {
 ### Example: Research + Code Generation
 
 ```typescript
-import { createDeepAgent } from 'ai-sdk-deep-agent';
+import { createDeepAgent } from 'deepagentsdk';
 import { anthropic, openai } from '@ai-sdk/anthropic';
 import { z } from 'zod';
 
@@ -380,7 +380,7 @@ console.log(result.output);
 
 ```typescript
 import { anthropic, openai } from '@ai-sdk/anthropic';
-import { createDeepAgent } from 'ai-sdk-deep-agent';
+import { createDeepAgent } from 'deepagentsdk';
 
 const agent = createDeepAgent({
   model: anthropic('claude-sonnet-4-5-20250929'), // Main agent uses Claude

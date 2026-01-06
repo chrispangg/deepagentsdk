@@ -4,7 +4,7 @@ date: 2025-12-17 09:30:00 AEDT
 researcher: Claude Code
 git_commit: 3a2f830e3b434aabd7b93e70e6e19ea7483c7000
 branch: main
-repository: ai-sdk-deep-agent
+repository: deepagentsdk
 topic: Agent Memory Middleware Implementation for Long-Term Persistent Context
 tags: [research, agent-memory, middleware, architecture, langchain, deepagents]
 status: complete
@@ -14,7 +14,7 @@ last_updated_by: Claude Code
 
 ## Research Question
 
-**How is Agent Memory Middleware implemented in LangChain's DeepAgents framework, and how can we adapt this pattern to ai-sdk-deep-agent using Vercel AI SDK v6's middleware architecture?**
+**How is Agent Memory Middleware implemented in LangChain's DeepAgents framework, and how can we adapt this pattern to deepagentsdk using Vercel AI SDK v6's middleware architecture?**
 
 This research investigates:
 
@@ -24,7 +24,7 @@ This research investigates:
 4. System prompt injection and progressive disclosure
 5. Integration with our existing middleware implementation
 6. Path management and directory structure
-7. Implementation pathway for ai-sdk-deep-agent
+7. Implementation pathway for deepagentsdk
 
 ## Executive Summary
 
@@ -37,7 +37,7 @@ This research investigates:
 - **Progressive Disclosure**: Memory files are loaded once at startup, agent can read/update them via filesystem tools
 - **Middleware Integration**: Uses `before_agent` hook to load files, `wrap_model_call` to inject into system prompt
 
-**Recommended Approach for ai-sdk-deep-agent**:
+**Recommended Approach for deepagentsdk**:
 
 - Implement as middleware factory similar to our Skills System
 - Use AI SDK v6's `wrapLanguageModel` with `transformParams` hook
@@ -1029,12 +1029,12 @@ write_file '${projectDirDisplay}/guide.md' ...   # Create project memory file
 }
 ```
 
-#### 6.3 Usage in ai-sdk-deep-agent
+#### 6.3 Usage in deepagentsdk
 
 ```typescript
-import { createDeepAgent } from 'ai-sdk-deep-agent';
+import { createDeepAgent } from 'deepagentsdk';
 import { anthropic } from '@ai-sdk/anthropic';
-import { createAgentMemoryMiddleware } from 'ai-sdk-deep-agent/middleware';
+import { createAgentMemoryMiddleware } from 'deepagentsdk/middleware';
 
 const agent = createDeepAgent({
   model: anthropic('claude-sonnet-4-20250514'),
@@ -1110,7 +1110,7 @@ export async function findGitRoot(startPath?: string): Promise<string | null> {
 
 ---
 
-### 8. Implementation Plan for ai-sdk-deep-agent
+### 8. Implementation Plan for deepagentsdk
 
 #### 8.1 Phase 1: Core Middleware (2-3 days)
 
@@ -1342,9 +1342,9 @@ test('integration: agent uses memory from agent.md', async () => {
 
 ---
 
-### 10. Comparison: LangChain vs ai-sdk-deep-agent
+### 10. Comparison: LangChain vs deepagentsdk
 
-| Aspect | LangChain DeepAgents | ai-sdk-deep-agent |
+| Aspect | LangChain DeepAgents | deepagentsdk |
 |--------|----------------------|-------------------|
 | **Memory Loading Hook** | `before_agent` (runs once per conversation) | `transformParams` (runs before each model call) |
 | **State Management** | AgentState with `user_memory`, `project_memory` fields | No state - memory loaded in closure |
@@ -1371,7 +1371,7 @@ test('integration: agent uses memory from agent.md', async () => {
 - `.refs/deepagents/libs/deepagents-cli/deepagents_cli/project_utils.py` - Project detection utilities
 - `.refs/deepagents/libs/deepagents-cli/tests/test_project_memory.py:1-141` - Test coverage
 
-### ai-sdk-deep-agent Current Implementation
+### deepagentsdk Current Implementation
 
 - `src/agent.ts:124-135` - Middleware wrapping in DeepAgent constructor
 - `src/agent.ts:146-150` - Skills loading pattern (similar to memory)
@@ -1457,7 +1457,7 @@ test('integration: agent uses memory from agent.md', async () => {
 └─────────────────────────────────────────────────────────┘
 ```
 
-### ai-sdk-deep-agent Proposed Implementation
+### deepagentsdk Proposed Implementation
 
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -1700,7 +1700,7 @@ LangChain's Agent Memory Middleware provides a robust pattern for persistent, cr
 3. **Middleware Hooks**: `before_agent` for loading, `wrap_model_call` for injection
 4. **Comprehensive Instructions**: 115-line system prompt teaching agent about memory
 
-**For ai-sdk-deep-agent**, we can adapt this pattern using:
+**For deepagentsdk**, we can adapt this pattern using:
 
 - `transformParams` hook for system prompt injection
 - Closure-based caching (load once in middleware factory)

@@ -4,7 +4,7 @@ date: 2025-12-13 09:35:00 AEDT
 researcher: Claude Code (Opus 4.5)
 git_commit: 6479239d7976e3ea62be9a3368ba5b9de607f1d3
 branch: main
-repository: ai-sdk-deep-agent
+repository: deepagentsdk
 topic: "Checkpointer Support - Persist agent state between invocations (pause/resume)"
 tags: [research, codebase, checkpointer, state-persistence, pause-resume, hitl]
 status: complete
@@ -14,7 +14,7 @@ last_updated_by: Claude Code
 
 ## Research Question
 
-How should Checkpointer Support be implemented in ai-sdk-deep-agent to enable persisting agent state (todos, files, conversation history) between invocations for pause/resume functionality, based on the reference LangChain DeepAgents implementations?
+How should Checkpointer Support be implemented in deepagentsdk to enable persisting agent state (todos, files, conversation history) between invocations for pause/resume functionality, based on the reference LangChain DeepAgents implementations?
 
 ## Summary
 
@@ -23,7 +23,7 @@ The reference LangChain DeepAgents implementations use LangGraph's `BaseCheckpoi
 This research documents:
 
 1. How LangChain DeepAgents implements checkpointing via LangGraph
-2. Current state management in ai-sdk-deep-agent
+2. Current state management in deepagentsdk
 3. AI SDK's state persistence capabilities and limitations
 4. Recommendations for implementation
 
@@ -128,7 +128,7 @@ export const agent = createDeepAgent({
 
 ---
 
-### 2. Current ai-sdk-deep-agent State Management
+### 2. Current deepagentsdk State Management
 
 #### State Structure (`src/types.ts:86-91`)
 
@@ -446,7 +446,7 @@ LangGraph checkpoints automatically after each graph node execution:
 2. Tool execution → **CHECKPOINT**
 3. Next model invocation → **CHECKPOINT**
 
-For ai-sdk-deep-agent, implement in `onStepFinish`:
+For deepagentsdk, implement in `onStepFinish`:
 ```typescript
 onStepFinish: async ({ stepNumber, toolCalls, toolResults }) => {
   if (this.checkpointer) {

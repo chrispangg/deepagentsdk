@@ -196,8 +196,8 @@ ${memoryContent}
  *
  * @example Basic usage
  * ```typescript
- * import { createDeepAgent } from 'ai-sdk-deep-agent';
- * import { createAgentMemoryMiddleware } from 'ai-sdk-deep-agent/middleware';
+ * import { createDeepAgent } from 'deepagentsdk';
+ * import { createAgentMemoryMiddleware } from 'deepagentsdk/middleware';
  * import { anthropic } from '@ai-sdk/anthropic';
  *
  * const memoryMiddleware = createAgentMemoryMiddleware({

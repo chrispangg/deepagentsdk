@@ -536,6 +536,6 @@ refactor: extract event creation helpers
 ## References
 
 - **Research Document**: [research.md](./research.md)
-- **PROJECT-STATE**: [docs/PROJECT-STATE.md](https://github.com/chrispangg/ai-sdk-deep-agent/blob/main/docs/PROJECT-STATE.md)
-- **AGENTS.md**: [AGENTS.md](https://github.com/chrispangg/ai-sdk-deep-agent/blob/main/AGENTS.md)
-- **Publishing Guide**: [.github/PUBLISHING.md](https://github.com/chrispangg/ai-sdk-deep-agent/blob/main/.github/PUBLISHING.md)
+- **PROJECT-STATE**: [docs/PROJECT-STATE.md](https://github.com/chrispangg/deepagentsdk/blob/main/docs/PROJECT-STATE.md)
+- **AGENTS.md**: [AGENTS.md](https://github.com/chrispangg/deepagentsdk/blob/main/AGENTS.md)
+- **Publishing Guide**: [.github/PUBLISHING.md](https://github.com/chrispangg/deepagentsdk/blob/main/.github/PUBLISHING.md)

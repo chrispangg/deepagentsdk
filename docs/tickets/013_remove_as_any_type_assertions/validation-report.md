@@ -4,7 +4,7 @@ date: 2025-12-21 16:00:00 AEDT
 validator: Claude Code
 git_commit: 3159edf99372af24e59b2d45c110d5115f0e62ae
 branch: main
-repository: ai-sdk-deep-agent
+repository: deepagentsdk
 ticket: 013_remove_as_any_type_assertions
 validation_type: post-implementation
 quality_assessment: comprehensive

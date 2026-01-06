@@ -4,7 +4,7 @@ date: 2025-12-21 17:30:00 AEDT
 researcher: Claude (Sonnet 4.5)
 git_commit: 3299adb7a6f9df9dc63a32ef4686252fcd22e1c8
 branch: main
-repository: ai-sdk-deep-agent
+repository: deepagentsdk
 topic: "Provider Options Passthrough Implementation Research"
 tags: [research, provider-options, ai-sdk, anthropic, openai, passthrough]
 status: complete
@@ -14,7 +14,7 @@ last_updated_by: Claude (Sonnet 4.5)
 
 ## Research Question
 
-How to implement provider-specific options passthrough in ai-sdk-deep-agent to enable Anthropic thinking mode, OpenAI reasoning effort, and other provider features. Investigation areas:
+How to implement provider-specific options passthrough in deepagentsdk to enable Anthropic thinking mode, OpenAI reasoning effort, and other provider features. Investigation areas:
 
 1. How AI SDK v6 LanguageModel instances accept provider options
 2. Current implementation of generationOptions and loopControl passthrough in our codebase
@@ -26,7 +26,7 @@ How to implement provider-specific options passthrough in ai-sdk-deep-agent to e
 
 AI SDK v6 implements provider-specific options through a **pass-through architecture** where options are accepted as `Record<string, JSONObject>` at the SDK level and routed to the appropriate provider. The codebase already has infrastructure for passing provider options via `advancedOptions.providerOptions`, which uses `Object.assign()` to merge options into ToolLoopAgent settings.
 
-**Key Finding**: The `providerOptions` parameter is **already implemented** in ai-sdk-deep-agent through `AdvancedAgentOptions.providerOptions` (src/types.ts:266-276). However, PROJECT-STATE.md lists "Provider Options Passthrough" as unimplemented, suggesting either:
+**Key Finding**: The `providerOptions` parameter is **already implemented** in deepagentsdk through `AdvancedAgentOptions.providerOptions` (src/types.ts:266-276). However, PROJECT-STATE.md lists "Provider Options Passthrough" as unimplemented, suggesting either:
 
 - The existing implementation needs better documentation/exposure
 - Additional work is needed beyond the current `advancedOptions` approach
@@ -36,7 +36,7 @@ AI SDK v6 implements provider-specific options through a **pass-through architec
 
 ### 1. AI SDK v6 Provider Options Architecture
 
-**Core Type Definition** ([@ai-sdk/provider/dist/index.d.ts:60](file:///Users/chris_pang/Developer/repositories/ai-sdk-deep-agent/node_modules/@ai-sdk/provider/dist/index.d.ts#L60)):
+**Core Type Definition** ([@ai-sdk/provider/dist/index.d.ts:60](file:///Users/chris_pang/Developer/repositories/deepagentsdk/node_modules/@ai-sdk/provider/dist/index.d.ts#L60)):
 
 ```typescript
 /**
@@ -46,7 +46,7 @@ AI SDK v6 implements provider-specific options through a **pass-through architec
 type SharedV3ProviderOptions = Record<string, JSONObject>;
 ```
 
-**Integration with ToolLoopAgent** ([ai/dist/index.d.ts](file:///Users/chris_pang/Developer/repositories/ai-sdk-deep-agent/node_modules/ai/dist/index.d.ts)):
+**Integration with ToolLoopAgent** ([ai/dist/index.d.ts](file:///Users/chris_pang/Developer/repositories/deepagentsdk/node_modules/ai/dist/index.d.ts)):
 
 ```typescript
 type ToolLoopAgentSettings<...> = {
@@ -68,11 +68,11 @@ providerOptions: {
 
 ---
 
-### 2. Current Implementation in ai-sdk-deep-agent
+### 2. Current Implementation in deepagentsdk
 
 #### Type Definitions
 
-**AdvancedAgentOptions Interface** ([src/types.ts:255-307](file:///Users/chris_pang/Developer/repositories/ai-sdk-deep-agent/src/types.ts#L255-L307)):
+**AdvancedAgentOptions Interface** ([src/types.ts:255-307](file:///Users/chris_pang/Developer/repositories/deepagentsdk/src/types.ts#L255-L307)):
 
 ```typescript
 export interface AdvancedAgentOptions {
@@ -110,7 +110,7 @@ export interface AdvancedAgentOptions {
 }
 ```
 
-**CreateDeepAgentParams Interface** ([src/types.ts:882-894](file:///Users/chris_pang/Developer/repositories/ai-sdk-deep-agent/src/types.ts#L882-L894)):
+**CreateDeepAgentParams Interface** ([src/types.ts:882-894](file:///Users/chris_pang/Developer/repositories/deepagentsdk/src/types.ts#L882-L894)):
 
 ```typescript
 export interface CreateDeepAgentParams {
@@ -124,7 +124,7 @@ export interface CreateDeepAgentParams {
 
 #### Implementation Flow
 
-**Constructor Storage** ([src/agent.ts:111-165](file:///Users/chris_pang/Developer/repositories/ai-sdk-deep-agent/src/agent.ts#L111-L165)):
+**Constructor Storage** ([src/agent.ts:111-165](file:///Users/chris_pang/Developer/repositories/deepagentsdk/src/agent.ts#L111-L165)):
 
 ```typescript
 // Private field declarations
@@ -146,7 +146,7 @@ constructor(params: CreateDeepAgentParams) {
 }
 ```
 
-**Settings Composition** ([src/agent.ts:300-336](file:///Users/chris_pang/Developer/repositories/ai-sdk-deep-agent/src/agent.ts#L300-L336)):
+**Settings Composition** ([src/agent.ts:300-336](file:///Users/chris_pang/Developer/repositories/deepagentsdk/src/agent.ts#L300-L336)):
 
 ```typescript
 private buildAgentSettings(onEvent?: EventCallback) {
@@ -178,7 +178,7 @@ private buildAgentSettings(onEvent?: EventCallback) {
 }
 ```
 
-**ToolLoopAgent Creation** ([src/agent.ts:344-354](file:///Users/chris_pang/Developer/repositories/ai-sdk-deep-agent/src/agent.ts#L344-L354)):
+**ToolLoopAgent Creation** ([src/agent.ts:344-354](file:///Users/chris_pang/Developer/repositories/deepagentsdk/src/agent.ts#L344-L354)):
 
 ```typescript
 private createAgent(state: DeepAgentState, maxSteps?: number, onEvent?: EventCallback) {
@@ -198,7 +198,7 @@ private createAgent(state: DeepAgentState, maxSteps?: number, onEvent?: EventCal
 
 ### 3. Anthropic Provider-Specific Options
 
-**Source**: [@ai-sdk/anthropic v3.0.0-beta.83](file:///Users/chris_pang/Developer/repositories/ai-sdk-deep-agent/node_modules/@ai-sdk/anthropic/dist/index.d.ts)
+**Source**: [@ai-sdk/anthropic v3.0.0-beta.83](file:///Users/chris_pang/Developer/repositories/deepagentsdk/node_modules/@ai-sdk/anthropic/dist/index.d.ts)
 
 **Available Options**:
 
@@ -242,7 +242,7 @@ const agent = createDeepAgent({
 
 ### 4. OpenAI Provider-Specific Options
 
-**Source**: [@ai-sdk/openai v3.0.0-beta.96](file:///Users/chris_pang/Developer/repositories/ai-sdk-deep-agent/node_modules/@ai-sdk/openai/dist/index.d.ts)
+**Source**: [@ai-sdk/openai v3.0.0-beta.96](file:///Users/chris_pang/Developer/repositories/deepagentsdk/node_modules/@ai-sdk/openai/dist/index.d.ts)
 
 **Available Options**:
 
@@ -291,7 +291,7 @@ const agent = createDeepAgent({
 
 ### 5. Existing Passthrough Pattern
 
-ai-sdk-deep-agent already implements a clean passthrough pattern for three option categories:
+deepagentsdk already implements a clean passthrough pattern for three option categories:
 
 #### Pattern Comparison
 
@@ -307,7 +307,7 @@ ai-sdk-deep-agent already implements a clean passthrough pattern for three optio
 2. **Advanced Options** (includes `providerOptions`) - Direct passthrough via Object.assign
 3. **Loop Control** - Callbacks are **composed** to preserve DeepAgent's internal logic
 
-**Code Reference** ([src/agent.ts:300-336](file:///Users/chris_pang/Developer/repositories/ai-sdk-deep-agent/src/agent.ts#L300-L336)):
+**Code Reference** ([src/agent.ts:300-336](file:///Users/chris_pang/Developer/repositories/deepagentsdk/src/agent.ts#L300-L336)):
 
 ```typescript
 private buildAgentSettings(onEvent?: EventCallback) {
@@ -350,7 +350,7 @@ private buildAgentSettings(onEvent?: EventCallback) {
 
 Subagents inherit parent's provider options with override capability:
 
-**Subagent Options Merging** ([src/tools/subagent.ts:312-321](file:///Users/chris_pang/Developer/repositories/ai-sdk-deep-agent/src/tools/subagent.ts#L312-L321)):
+**Subagent Options Merging** ([src/tools/subagent.ts:312-321](file:///Users/chris_pang/Developer/repositories/deepagentsdk/src/tools/subagent.ts#L312-L321)):
 
 ```typescript
 // Merge options: subagent-specific options override parent options
@@ -365,7 +365,7 @@ const mergedAdvancedOptions = {
 };
 ```
 
-**Subagent Settings Application** ([src/tools/subagent.ts:371-380](file:///Users/chris_pang/Developer/repositories/ai-sdk-deep-agent/src/tools/subagent.ts#L371-L380)):
+**Subagent Settings Application** ([src/tools/subagent.ts:371-380](file:///Users/chris_pang/Developer/repositories/deepagentsdk/src/tools/subagent.ts#L371-L380)):
 
 ```typescript
 // Add merged generation options
@@ -392,7 +392,7 @@ if (mergedAdvancedOptions) {
 
 Provider options can also be set on **individual messages**:
 
-**Type Definition** ([@ai-sdk/provider/dist/index.d.ts:970-976](file:///Users/chris_pang/Developer/repositories/ai-sdk-deep-agent/node_modules/@ai-sdk/provider/dist/index.d.ts#L970-L976)):
+**Type Definition** ([@ai-sdk/provider/dist/index.d.ts:970-976](file:///Users/chris_pang/Developer/repositories/deepagentsdk/node_modules/@ai-sdk/provider/dist/index.d.ts#L970-L976)):
 
 ```typescript
 type LanguageModelV3Message = ({
@@ -409,7 +409,7 @@ type LanguageModelV3Message = ({
 };
 ```
 
-**Usage in ai-sdk-deep-agent** ([src/agent.ts:764-768](file:///Users/chris_pang/Developer/repositories/ai-sdk-deep-agent/src/agent.ts#L764-L768)):
+**Usage in deepagentsdk** ([src/agent.ts:764-768](file:///Users/chris_pang/Developer/repositories/deepagentsdk/src/agent.ts#L764-L768)):
 
 ```typescript
 {
@@ -427,7 +427,7 @@ type LanguageModelV3Message = ({
 
 ### 8. Test Coverage
 
-**Existing Test** ([test/passthrough/passthrough.test.ts:72-92](file:///Users/chris_pang/Developer/repositories/ai-sdk-deep-agent/test/passthrough/passthrough.test.ts#L72-L92)):
+**Existing Test** ([test/passthrough/passthrough.test.ts:72-92](file:///Users/chris_pang/Developer/repositories/deepagentsdk/test/passthrough/passthrough.test.ts#L72-L92)):
 
 ```typescript
 test("should accept and store advanced options", () => {
@@ -460,18 +460,18 @@ test("should accept and store advanced options", () => {
 
 ### Key Implementation Files
 
-- [src/types.ts:255-307](file:///Users/chris_pang/Developer/repositories/ai-sdk-deep-agent/src/types.ts#L255-L307) - `AdvancedAgentOptions` interface definition
-- [src/types.ts:882-894](file:///Users/chris_pang/Developer/repositories/ai-sdk-deep-agent/src/types.ts#L882-L894) - `CreateDeepAgentParams` interface
-- [src/agent.ts:111-165](file:///Users/chris_pang/Developer/repositories/ai-sdk-deep-agent/src/agent.ts#L111-L165) - Constructor storage
-- [src/agent.ts:300-336](file:///Users/chris_pang/Developer/repositories/ai-sdk-deep-agent/src/agent.ts#L300-L336) - Settings composition (`buildAgentSettings`)
-- [src/agent.ts:344-354](file:///Users/chris_pang/Developer/repositories/ai-sdk-deep-agent/src/agent.ts#L344-L354) - ToolLoopAgent creation
-- [src/tools/subagent.ts:312-380](file:///Users/chris_pang/Developer/repositories/ai-sdk-deep-agent/src/tools/subagent.ts#L312-L380) - Subagent option merging
+- [src/types.ts:255-307](file:///Users/chris_pang/Developer/repositories/deepagentsdk/src/types.ts#L255-L307) - `AdvancedAgentOptions` interface definition
+- [src/types.ts:882-894](file:///Users/chris_pang/Developer/repositories/deepagentsdk/src/types.ts#L882-L894) - `CreateDeepAgentParams` interface
+- [src/agent.ts:111-165](file:///Users/chris_pang/Developer/repositories/deepagentsdk/src/agent.ts#L111-L165) - Constructor storage
+- [src/agent.ts:300-336](file:///Users/chris_pang/Developer/repositories/deepagentsdk/src/agent.ts#L300-L336) - Settings composition (`buildAgentSettings`)
+- [src/agent.ts:344-354](file:///Users/chris_pang/Developer/repositories/deepagentsdk/src/agent.ts#L344-L354) - ToolLoopAgent creation
+- [src/tools/subagent.ts:312-380](file:///Users/chris_pang/Developer/repositories/deepagentsdk/src/tools/subagent.ts#L312-L380) - Subagent option merging
 
 ### AI SDK Type Definitions
 
-- [@ai-sdk/provider/dist/index.d.ts:60](file:///Users/chris_pang/Developer/repositories/ai-sdk-deep-agent/node_modules/@ai-sdk/provider/dist/index.d.ts#L60) - `SharedV3ProviderOptions` type
-- [@ai-sdk/anthropic/dist/index.d.ts:98-166](file:///Users/chris_pang/Developer/repositories/ai-sdk-deep-agent/node_modules/@ai-sdk/anthropic/dist/index.d.ts#L98-L166) - Anthropic provider options schema
-- [@ai-sdk/openai/dist/index.d.ts:7-24](file:///Users/chris_pang/Developer/repositories/ai-sdk-deep-agent/node_modules/@ai-sdk/openai/dist/index.d.ts#L7-L24) - OpenAI chat options schema
+- [@ai-sdk/provider/dist/index.d.ts:60](file:///Users/chris_pang/Developer/repositories/deepagentsdk/node_modules/@ai-sdk/provider/dist/index.d.ts#L60) - `SharedV3ProviderOptions` type
+- [@ai-sdk/anthropic/dist/index.d.ts:98-166](file:///Users/chris_pang/Developer/repositories/deepagentsdk/node_modules/@ai-sdk/anthropic/dist/index.d.ts#L98-L166) - Anthropic provider options schema
+- [@ai-sdk/openai/dist/index.d.ts:7-24](file:///Users/chris_pang/Developer/repositories/deepagentsdk/node_modules/@ai-sdk/openai/dist/index.d.ts#L7-L24) - OpenAI chat options schema
 
 ---
 
@@ -535,8 +535,8 @@ AI SDK ToolLoopAgent
 
 ### Related Research Documents
 
-- [docs/tickets/008_tool_loop_agent_passthrough/research.md](file:///Users/chris_pang/Developer/repositories/ai-sdk-deep-agent/docs/tickets/008_tool_loop_agent_passthrough/research.md) - ToolLoopAgent passthrough implementation
-- [docs/tickets/007_structured_output/research.md](file:///Users/chris_pang/Developer/repositories/ai-sdk-deep-agent/docs/tickets/007_structured_output/research.md) - Structured output implementation
+- [docs/tickets/008_tool_loop_agent_passthrough/research.md](file:///Users/chris_pang/Developer/repositories/deepagentsdk/docs/tickets/008_tool_loop_agent_passthrough/research.md) - ToolLoopAgent passthrough implementation
+- [docs/tickets/007_structured_output/research.md](file:///Users/chris_pang/Developer/repositories/deepagentsdk/docs/tickets/007_structured_output/research.md) - Structured output implementation
 
 ### PROJECT-STATE.md Context
 

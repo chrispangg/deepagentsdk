@@ -5,7 +5,7 @@ description: Documentation
 
 ## Overview
 
-Comprehensive refactoring to improve maintainability, reduce cognitive load, and standardise patterns across the ai-sdk-deep-agent codebase. This plan addresses the key architectural debt identified in the health assessment while maintaining backward compatibility.
+Comprehensive refactoring to improve maintainability, reduce cognitive load, and standardise patterns across the deepagentsdk codebase. This plan addresses the key architectural debt identified in the health assessment while maintaining backward compatibility.
 
 ## Current State Analysis
 

@@ -1,11 +1,11 @@
 ---
-title: How should we implement Structured Output (responseFormat) support in ai-sdk-deep-agent?
+title: How should we implement Structured Output (responseFormat) support in deepagentsdk?
 date: 2025-12-19 08:15:00 AEDT
 researcher: Research Agent
 git_commit: 0a93689550e65e096523f25cba0c36c87e7a74a1
 branch: main
 repository: ai-sdk-deepagent
-topic: "How should we implement Structured Output (responseFormat) support in ai-sdk-deep-agent?"
+topic: "How should we implement Structured Output (responseFormat) support in deepagentsdk?"
 tags: [research, codebase, structured-output, ai-sdk, langchain, types, validation]
 status: complete
 last_updated: 2025-12-19
@@ -15,7 +15,7 @@ last_updated_note: "Corrected with ToolLoopAgent native output parsing support"
 
 ## Research Question
 
-How should we implement Structured Output (responseFormat) support in ai-sdk-deep-agent?
+How should we implement Structured Output (responseFormat) support in deepagentsdk?
 
 **Objectives:**
 
@@ -852,7 +852,7 @@ yield {
 **Example 1: Using `generate()` method**
 
 ```typescript
-import { createDeepAgent } from 'ai-sdk-deep-agent';
+import { createDeepAgent } from 'deepagentsdk';
 import { anthropic } from '@ai-sdk/anthropic';
 import { z } from 'zod';
 
@@ -1029,7 +1029,7 @@ Middleware intercepts final step and converts to structured format.
 
 ## Conclusion (CORRECTED)
 
-Structured output support can be effectively added to `ai-sdk-deep-agent` using **ToolLoopAgent's native output parsing**:
+Structured output support can be effectively added to `deepagentsdk` using **ToolLoopAgent's native output parsing**:
 
 ### Implementation Summary
 

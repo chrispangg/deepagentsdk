@@ -22,22 +22,22 @@ Complete guide to using the Deep Agent CLI, including all commands, flags, inter
 
 ```bash
 # Default model (claude-haiku-4-5-20251001) in current directory
-bunx ai-sdk-deep-agent
+bunx deepagentsdk
 
 # Specify a model
-bunx ai-sdk-deep-agent --model anthropic/claude-sonnet-4-20250514
+bunx deepagentsdk --model anthropic/claude-sonnet-4-20250514
 
 # Use a specific working directory
-bunx ai-sdk-deep-agent --dir ./my-project
+bunx deepagentsdk --dir ./my-project
 
 # Enable session persistence
-bunx ai-sdk-deep-agent --session my-session
+bunx deepagentsdk --session my-session
 ```
 
 ### Development
 
 ```bash
-# Run from source (in the ai-sdk-deep-agent repository)
+# Run from source (in the deepagentsdk repository)
 bun run cli
 
 # With options
@@ -115,8 +115,8 @@ bun run cli --model openai/gpt-4o --dir ./workspace
 --no-cache              # Disable prompt caching
 
 # Examples:
-bunx ai-sdk-deep-agent --cache
-bunx ai-sdk-deep-agent --model openai/gpt-4o --no-cache  # Not needed for OpenAI
+bunx deepagentsdk --cache
+bunx deepagentsdk --model openai/gpt-4o --no-cache  # Not needed for OpenAI
 ```
 
 **What it does:** Caches system prompts across API calls for faster responses and lower costs (Anthropic only).
@@ -619,7 +619,7 @@ TAVILY_API_KEY=tvly-...
 When using `--dir`, the CLI loads `.env` from that directory:
 
 ```bash
-bunx ai-sdk-deep-agent --dir ./my-project
+bunx deepagentsdk --dir ./my-project
 # Loads: ./my-project/.env
 ```
 
@@ -640,13 +640,13 @@ This allows project-specific API key configuration.
 
 ```bash
 # Start a session
-bunx ai-sdk-deep-agent --session refactor-auth
+bunx deepagentsdk --session refactor-auth
 
 # Work for a while...
 > "Refactor the authentication system"
 
 # Exit and come back later
-bunx ai-sdk-deep-agent --session refactor-auth
+bunx deepagentsdk --session refactor-auth
 # Conversation history is restored!
 ```
 
@@ -654,7 +654,7 @@ bunx ai-sdk-deep-agent --session refactor-auth
 
 ```bash
 # Start in safe mode
-bunx ai-sdk-deep-agent
+bunx deepagentsdk
 
 # After verifying the agent's behavior, enable auto-approve
 > /approve
@@ -666,10 +666,10 @@ bunx ai-sdk-deep-agent
 
 ```bash
 # Quick research (fast, cheap)
-bunx ai-sdk-deep-agent --model claude-haiku-4-5-20251001
+bunx deepagentsdk --model claude-haiku-4-5-20251001
 
 # Complex refactoring (smart, capable)
-bunx ai-sdk-deep-agent --model claude-sonnet-4-20250514
+bunx deepagentsdk --model claude-sonnet-4-20250514
 ```
 
 **4. Monitor token usage for long conversations**
@@ -734,7 +734,7 @@ Conversation cleared.
 
 ```bash
 # Full feature example
-bunx ai-sdk-deep-agent \
+bunx deepagentsdk \
   --model anthropic/claude-sonnet-4-20250514 \
   --dir ./my-project \
   --session my-session \
@@ -749,7 +749,7 @@ bunx ai-sdk-deep-agent \
 
 ```bash
 # Start a named session
-bunx ai-sdk-deep-agent --session feature-x-development
+bunx deepagentsdk --session feature-x-development
 
 # Work on the feature...
 
@@ -765,18 +765,18 @@ Saved sessions:
 > /session clear
 
 # Start a different session
-bunx ai-sdk-deep-agent --session bug-fix-session
+bunx deepagentsdk --session bug-fix-session
 ```
 
 ### Custom System Prompts
 
 ```bash
 # Set a custom prompt for specific tasks
-bunx ai-sdk-deep-agent \
+bunx deepagentsdk \
   --prompt "You are a TypeScript expert. Focus on type safety and best practices."
 
 # Use for code review
-bunx ai-sdk-deep-agent \
+bunx deepagentsdk \
   --prompt "You are a code reviewer. Focus on security, performance, and maintainability."
 ```
 
@@ -784,7 +784,7 @@ bunx ai-sdk-deep-agent \
 
 ```bash
 # Work in a specific directory
-bunx ai-sdk-deep-agent --dir ./frontend
+bunx deepagentsdk --dir ./frontend
 
 # All file operations are relative to ./frontend
 > "Read the package.json"
@@ -795,19 +795,19 @@ bunx ai-sdk-deep-agent --dir ./frontend
 
 ```bash
 # For fast, cheap responses (Haiku)
-bunx ai-sdk-deep-agent --model claude-haiku-4-5-20251001
+bunx deepagentsdk --model claude-haiku-4-5-20251001
 
 # For complex reasoning (Sonnet)
-bunx ai-sdk-deep-agent --model claude-sonnet-4-20250514
+bunx deepagentsdk --model claude-sonnet-4-20250514
 
 # Disable caching for non-Anthropic models
-bunx ai-sdk-deep-agent --model openai/gpt-4o --no-cache
+bunx deepagentsdk --model openai/gpt-4o --no-cache
 
 # Aggressive eviction for large file operations
-bunx ai-sdk-deep-agent --eviction-limit 10000
+bunx deepagentsdk --eviction-limit 10000
 
 # Custom summarization thresholds
-bunx ai-sdk-deep-agent \
+bunx deepagentsdk \
   --summarize-threshold 120000 \
   --summarize-keep 4
 ```
@@ -855,7 +855,7 @@ export TAVILY_API_KEY=tvly-...
 The session doesn't exist yet. Start a new session:
 
 ```bash
-bunx ai-sdk-deep-agent --session my-new-session
+bunx deepagentsdk --session my-new-session
 ```
 
 **"Permission denied" writing files**
@@ -864,7 +864,7 @@ Check file permissions and working directory:
 
 ```bash
 ls -la ./my-project
-bunx ai-sdk-deep-agent --dir ./my-project
+bunx deepagentsdk --dir ./my-project
 ```
 
 **High token usage**
@@ -872,7 +872,7 @@ bunx ai-sdk-deep-agent --dir ./my-project
 Enable summarization and eviction:
 
 ```bash
-bunx ai-sdk-deep-agent \
+bunx deepagentsdk \
   --summarize-threshold 150000 \
   --eviction-limit 15000
 ```

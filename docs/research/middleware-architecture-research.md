@@ -4,7 +4,7 @@ date: 2025-12-19 07:04:10 AEDT
 researcher: Claude (Sonnet 4.5)
 git_commit: 0a93689550e65e096523f25cba0c36c87e7a74a1
 branch: main
-repository: ai-sdk-deep-agent (chrispangg/ai-sdk-deepagent)
+repository: deepagentsdk (chrispangg/ai-sdk-deepagent)
 topic: "Middleware vs Non-Middleware Architecture: Comparative Analysis"
 tags: [research, architecture, middleware, ai-sdk-v6, langchain, deepagents]
 status: complete
@@ -16,7 +16,7 @@ last_updated_by: Claude (Sonnet 4.5)
 
 ## Research Question
 
-Should ai-sdk-deep-agent migrate from its current non-middleware "tool-centric" architecture to a middleware-based architecture similar to LangChain's DeepAgents reference implementations?
+Should deepagentsdk migrate from its current non-middleware "tool-centric" architecture to a middleware-based architecture similar to LangChain's DeepAgents reference implementations?
 
 **Context**: LangChain's DeepAgents (`.refs/deepagents/` and `.refs/deepagentsjs/`) implements filesystem, tool call patching, subagents, summarization, and todos as middleware. Our current implementation in `src/` handles these same concerns without middleware. This research analyzes the architectural, DX (Developer Experience), and UX (User Experience) tradeoffs between both approaches.
 
@@ -652,7 +652,7 @@ const agent = createDeepAgent({
 2. Consider optional middleware helpers for common patterns:
 
    ```typescript
-   import { createAgentMemoryMiddleware } from 'ai-sdk-deep-agent/middleware';
+   import { createAgentMemoryMiddleware } from 'deepagentsdk/middleware';
 
    const agent = createDeepAgent({
      model,

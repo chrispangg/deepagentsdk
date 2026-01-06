@@ -49,7 +49,7 @@ export interface CreateExecuteToolOptions {
  *
  * @example Basic usage
  * ```typescript
- * import { LocalSandbox, createExecuteTool } from 'ai-sdk-deep-agent';
+ * import { LocalSandbox, createExecuteTool } from 'deepagentsdk';
  *
  * const sandbox = new LocalSandbox({ cwd: './workspace' });
  * const executeTool = createExecuteTool({ backend: sandbox });

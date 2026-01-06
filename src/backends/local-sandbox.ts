@@ -49,7 +49,7 @@ export interface LocalSandboxOptions {
  *
  * @example Basic usage
  * ```typescript
- * import { LocalSandbox } from 'ai-sdk-deep-agent';
+ * import { LocalSandbox } from 'deepagentsdk';
  *
  * const sandbox = new LocalSandbox({ cwd: './workspace' });
  *

@@ -2,7 +2,7 @@
 // Reference: docs/site/handbook/guides/checkpointers.mdx lines 52-75
 // Description: Tests MemorySaver for in-memory checkpointing
 
-import { createDeepAgent, MemorySaver } from 'ai-sdk-deep-agent';
+import { createDeepAgent, MemorySaver } from 'deepagentsdk';
 import { anthropic } from '@ai-sdk/anthropic';
 
 async function testMemorySaver() {

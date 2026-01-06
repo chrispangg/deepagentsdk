@@ -2,7 +2,7 @@
 // Reference: docs/site/handbook/get-started/get-started.mdx lines 337-368 (Pattern 2)
 // Description: Tests FileSaver checkpointer for resuming conversations across sessions
 
-import { createDeepAgent, FileSaver } from 'ai-sdk-deep-agent';
+import { createDeepAgent, FileSaver } from 'deepagentsdk';
 import { anthropic } from '@ai-sdk/anthropic';
 
 async function testCheckpointing() {

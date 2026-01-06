@@ -2,7 +2,7 @@
 // Reference: docs/site/handbook/get-started/get-started.mdx lines 255-283
 // Description: Tests filesystem tools (ls, read_file, write_file, edit_file, glob, grep)
 
-import { createDeepAgent } from 'ai-sdk-deep-agent';
+import { createDeepAgent } from 'deepagentsdk';
 import { anthropic } from '@ai-sdk/anthropic';
 
 async function testFilesystem() {

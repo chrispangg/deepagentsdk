@@ -9,7 +9,7 @@ description: Documentation
 
 ## Overview
 
-Successfully implemented full checkpointer support for ai-sdk-deep-agent, enabling session persistence and pause/resume functionality. This brings feature parity with LangChain DeepAgents' checkpoint system.
+Successfully implemented full checkpointer support for deepagentsdk, enabling session persistence and pause/resume functionality. This brings feature parity with LangChain DeepAgents' checkpoint system.
 
 ## What Was Implemented
 
@@ -176,7 +176,7 @@ $ bun run examples/checkpointer-demo.ts
 ### Basic Usage
 
 ```typescript
-import { createDeepAgent, MemorySaver } from 'ai-sdk-deep-agent';
+import { createDeepAgent, MemorySaver } from 'deepagentsdk';
 import { anthropic } from '@ai-sdk/anthropic';
 
 const agent = createDeepAgent({

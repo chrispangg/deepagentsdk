@@ -55,7 +55,7 @@ const specs = [
   },
 ];
 
-const codeExample = `import { createDeepAgent } from 'ai-sdk-deep-agent';
+const codeExample = `import { createDeepAgent } from 'deepagentsdk';
 import { anthropic } from '@ai-sdk/anthropic';
 
 const agent = createDeepAgent({

@@ -18,7 +18,7 @@ last_updated_by: claude
 
 ## Summary
 
-This research documents the architecture and relationships between four key components in the ai-sdk-deep-agent codebase:
+This research documents the architecture and relationships between four key components in the deepagentsdk codebase:
 
 1. **Filesystem** - Virtual file storage backends (FilesystemBackend, StateBackend) that implement `BackendProtocol`
 2. **Sandbox** - Command-execution-capable backends (BaseSandbox, LocalSandbox) that implement `SandboxBackendProtocol` (which extends `BackendProtocol`)

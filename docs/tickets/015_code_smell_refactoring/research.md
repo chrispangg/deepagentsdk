@@ -29,7 +29,7 @@ last_updated_by: Claude (Sonnet 4.5)
 
 ## Summary
 
-The ai-sdk-deep-agent codebase demonstrates **mature software engineering practices** with recent architectural refactoring (completed 2025-12-21) that significantly improved maintainability. The codebase is well-structured, has comprehensive test coverage (227 tests), and follows TypeScript best practices.
+The deepagentsdk codebase demonstrates **mature software engineering practices** with recent architectural refactoring (completed 2025-12-21) that significantly improved maintainability. The codebase is well-structured, has comprehensive test coverage (227 tests), and follows TypeScript best practices.
 
 **Key Strengths**:
 

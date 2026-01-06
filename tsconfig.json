@@ -31,5 +31,7 @@
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "noPropertyAccessFromIndexSignature": false
-  }
+  },
+  "include": ["src/**/*", "test/**/*", "test-integration/**/*"],
+  "exclude": ["node_modules", "www", "examples", "docs", ".refs"]
 }

@@ -4,7 +4,7 @@ date: 2025-12-20
 researcher: Research Agent
 git_commit: 071941a2fcde7bcf803aa29632c5dec9bbda5630
 branch: main
-repository: ai-sdk-deep-agent
+repository: deepagentsdk
 topic: "Subagent Web Tools Access - Investigation and Analysis"
 tags: [research, subagent, web-tools, tool-inheritance, bug-analysis]
 status: complete
@@ -124,7 +124,7 @@ model: claude-haiku-4-5-20251001
 ---
 ```
 
-**Current ai-sdk-deep-agent Pattern**:
+**Current deepagentsdk Pattern**:
 
 - No YAML frontmatter in agent.md files
 - Tools specified programmatically, not in configuration files

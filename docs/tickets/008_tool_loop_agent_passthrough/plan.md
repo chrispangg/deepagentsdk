@@ -1322,7 +1322,7 @@ const agent = createDeepAgent({
  * through DeepAgent's passthrough options.
  */
 
-import { createDeepAgent } from "ai-sdk-deep-agent";
+import { createDeepAgent } from "deepagentsdk";
 import { anthropic } from "@ai-sdk/anthropic";
 import { hasToolCall } from "ai";
 
@@ -1461,7 +1461,7 @@ No changes required. All new options are optional and default to current behavio
 1. Import new types if using TypeScript:
 
    ```typescript
-   import type { LoopControlOptions, GenerationOptions, AdvancedAgentOptions } from 'ai-sdk-deep-agent';
+   import type { LoopControlOptions, GenerationOptions, AdvancedAgentOptions } from 'deepagentsdk';
    ```
 
 2. Group options by purpose:

@@ -5,7 +5,7 @@ description: Documentation
 
 ## Overview
 
-Implement Human-in-the-Loop tool approval for ai-sdk-deep-agent, leveraging AI SDK 6's native `needsApproval` feature. This allows users to approve or deny tool executions before they run, particularly useful for destructive operations like `write_file`, `edit_file`, and `execute`.
+Implement Human-in-the-Loop tool approval for deepagentsdk, leveraging AI SDK 6's native `needsApproval` feature. This allows users to approve or deny tool executions before they run, particularly useful for destructive operations like `write_file`, `edit_file`, and `execute`.
 
 ## Current State Analysis
 

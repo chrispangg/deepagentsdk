@@ -4,7 +4,7 @@ date: 2025-12-22 08:27:51 AEDT
 researcher: Claude Code
 git_commit: 706dba5bc7b0b985a52ac9e06d2f7a5e8a257d07
 branch: main
-repository: ai-sdk-deep-agent
+repository: deepagentsdk
 topic: Telemetry not sent to Langfuse when using streamWithEvents
 tags: [research, telemetry, streamWithEvents, langfuse, observability, validation]
 status: validated

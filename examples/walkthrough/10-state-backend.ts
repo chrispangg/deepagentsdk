@@ -2,7 +2,7 @@
 // Reference: docs/site/handbook/guides/backends.mdx lines 61-100
 // Description: Tests default StateBackend for ephemeral in-memory storage
 
-import { createDeepAgent, StateBackend } from 'ai-sdk-deep-agent';
+import { createDeepAgent, StateBackend } from 'deepagentsdk';
 import { anthropic } from '@ai-sdk/anthropic';
 
 async function testStateBackend() {

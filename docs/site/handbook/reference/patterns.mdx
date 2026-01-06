@@ -3,7 +3,7 @@ title: Common Patterns
 description: Common usage patterns and code examples
 ---
 
-This document contains common usage patterns and code examples for ai-sdk-deep-agent.
+This document contains common usage patterns and code examples for deepagentsdk.
 
 ## Creating an Agent with Custom Backend
 
@@ -13,7 +13,7 @@ This document contains common usage patterns and code examples for ai-sdk-deep-a
 
     ```typescript
     import { anthropic } from '@ai-sdk/anthropic';
-    import { createDeepAgent, FilesystemBackend } from 'ai-sdk-deep-agent';
+    import { createDeepAgent, FilesystemBackend } from 'deepagentsdk';
 
     const agent = createDeepAgent({
       model: anthropic('claude-sonnet-4-20250514'),
@@ -25,7 +25,7 @@ This document contains common usage patterns and code examples for ai-sdk-deep-a
     **In-memory storage (default, ephemeral)**
 
     ```typescript
-    import { createDeepAgent, StateBackend } from 'ai-sdk-deep-agent';
+    import { createDeepAgent, StateBackend } from 'deepagentsdk';
 
     const state = { todos: [], files: {} };
     const agent = createDeepAgent({
@@ -38,7 +38,7 @@ This document contains common usage patterns and code examples for ai-sdk-deep-a
     **Cross-session persistence with key-value store**
 
     ```typescript
-    import { PersistentBackend, InMemoryStore } from 'ai-sdk-deep-agent';
+    import { PersistentBackend, InMemoryStore } from 'deepagentsdk';
 
     const store = new InMemoryStore();
     const agent = createDeepAgent({
@@ -54,7 +54,7 @@ This document contains common usage patterns and code examples for ai-sdk-deep-a
 ```typescript
 import { openai } from '@ai-sdk/openai';
 import { azure } from '@ai-sdk/azure';
-import { createDeepAgent } from 'ai-sdk-deep-agent';
+import { createDeepAgent } from 'deepagentsdk';
 
 // OpenAI
 const openaiAgent = createDeepAgent({
@@ -111,7 +111,7 @@ for await (const event of agent.streamWithEvents({
 <Callout title="Production Ready" type="info">For production applications, use checkpointers to persist conversation state across sessions</Callout>
 
 ```typescript
-import { FileSaver } from 'ai-sdk-deep-agent';
+import { FileSaver } from 'deepagentsdk';
 
 const agent = createDeepAgent({
   model: anthropic('claude-sonnet-4-20250514'),
@@ -147,7 +147,7 @@ Create specialized agents for task delegation:
 
 ```typescript
 import { anthropic } from '@ai-sdk/anthropic';
-import { createDeepAgent, type SubAgent } from 'ai-sdk-deep-agent';
+import { createDeepAgent, type SubAgent } from 'deepagentsdk';
 
 const researchAgent: SubAgent = {
   name: 'research-agent',
@@ -168,7 +168,7 @@ const agent = createDeepAgent({
 <Callout type="warn">Restrict which tools a subagent can access for security and focused behavior</Callout>
 
 ```typescript
-import { createLsTool, createReadFileTool, write_todos } from 'ai-sdk-deep-agent';
+import { createLsTool, createReadFileTool, write_todos } from 'deepagentsdk';
 
 const readonlyAgent: SubAgent = {
   name: 'reader',
@@ -198,7 +198,7 @@ const agent = createDeepAgent({
 
 ```typescript
 import { anthropic } from '@ai-sdk/anthropic';
-import { createDeepAgent } from 'ai-sdk-deep-agent';
+import { createDeepAgent } from 'deepagentsdk';
 
 const agent = createDeepAgent({
   model: anthropic('claude-sonnet-4-20250514'),

@@ -1,13 +1,13 @@
-# AI SDK Deep Agent
+# Deep Agent SDK
 
 <p align="center">
-  <img src="assets/www-hero.png" alt="AI SDK Deep Agent" width="100%" />
+  <img src="assets/www-hero.png" alt="Deep Agent SDK" width="100%" />
 </p>
 
-[![npm version](https://badge.fury.io/js/ai-sdk-deep-agent.svg)](https://www.npmjs.com/package/ai-sdk-deep-agent)
+[![npm version](https://badge.fury.io/js/deepagentsdk.svg)](https://www.npmjs.com/package/deepagentsdk)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/chrispangg/ai-sdk-deepagent)
-[![Documentation](https://img.shields.io/badge/docs-ai--sdk--deepagent-blue)](https://deepagentsdk.vercel.app/docs)
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/chrispangg/deepagentsdk)
+[![Documentation](https://img.shields.io/badge/docs-ai--sdk--deepagent-blue)](https://deepagentsdk.dev/docs)
 
 > **Note:** This package requires [Bun](https://bun.sh) runtime. It uses Bun-specific features and TypeScript imports.
 
@@ -35,10 +35,10 @@ This package requires Bun runtime:
 curl -fsSL https://bun.sh/install | bash
 
 # Install the package
-bun add ai-sdk-deep-agent
+bun add deepagentsdk
 
 # Or install globally for CLI usage
-bun add -g ai-sdk-deep-agent
+bun add -g deepagentsdk
 ```
 
 **Why Bun?** This package publishes TypeScript source directly and uses Bun-specific optimizations for better performance.
@@ -46,7 +46,7 @@ bun add -g ai-sdk-deep-agent
 ## Quick Start
 
 ```typescript
-import { createDeepAgent } from 'ai-sdk-deep-agent';
+import { createDeepAgent } from 'deepagentsdk';
 import { anthropic } from '@ai-sdk/anthropic';
 
 const agent = createDeepAgent({
@@ -142,14 +142,14 @@ The interactive CLI is built with [Ink](https://github.com/vadimdemedes/ink):
 
 ```bash
 # Run without installing (recommended)
-bunx ai-sdk-deep-agent
+bunx deepagentsdk
 
 # Or install globally
-bun add -g ai-sdk-deep-agent
+bun add -g deepagentsdk
 deep-agent
 
 # With options
-bunx ai-sdk-deep-agent --model anthropic/claude-haiku-4-5-20251001
+bunx deepagentsdk --model anthropic/claude-haiku-4-5-20251001
 ```
 
 **API Keys**: Load from environment variables (`ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `TAVILY_API_KEY`) or `.env` file.

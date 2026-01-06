@@ -4,7 +4,7 @@ date: 2025-12-21 12:00:00 AEDT
 researcher: codebase-pattern-finder
 git_commit: 3299adb7a6f9df9dc63a32ef4686252fcd22e1c8
 branch: main
-repository: ai-sdk-deep-agent
+repository: deepagentsdk
 topic: "Comprehensive Architectural Health Assessment for Refactoring Planning"
 tags: [research, architecture, refactoring, codebase-analysis]
 status: complete
@@ -25,7 +25,7 @@ last_updated_by: codebase-pattern-finder
 
 ## Summary
 
-The ai-sdk-deep-agent codebase implements a "Deep Agents" architecture that wraps Vercel AI SDK v6's ToolLoopAgent with state management and specialized tools. While the core architecture is sound and follows good separation of concerns, there are several areas where architectural inconsistencies and complexity could be improved for better maintainability and developer experience.
+The deepagentsdk codebase implements a "Deep Agents" architecture that wraps Vercel AI SDK v6's ToolLoopAgent with state management and specialized tools. While the core architecture is sound and follows good separation of concerns, there are several areas where architectural inconsistencies and complexity could be improved for better maintainability and developer experience.
 
 Key findings include:
 

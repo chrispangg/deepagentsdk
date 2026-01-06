@@ -49,10 +49,10 @@ By default, Deep Agent maintains **two separate filesystems**:
 Use a `CompositeBackend` that routes the `/memories/` path to a `PersistentBackend`:
 
 ```typescript
-import { createDeepAgent } from 'ai-sdk-deep-agent';
+import { createDeepAgent } from 'deepagentsdk';
 import { anthropic } from '@ai-sdk/anthropic';
-import { CompositeBackend, StateBackend, PersistentBackend } from 'ai-sdk-deep-agent';
-import { InMemoryStore } from 'ai-sdk-deep-agent';
+import { CompositeBackend, StateBackend, PersistentBackend } from 'deepagentsdk';
+import { InMemoryStore } from 'deepagentsdk';
 
 const store = new InMemoryStore();
 
@@ -252,7 +252,7 @@ await researchAgent.generate({
 Good for testing and development, but data is lost on restart:
 
 ```typescript
-import { InMemoryStore, PersistentBackend } from 'ai-sdk-deep-agent';
+import { InMemoryStore, PersistentBackend } from 'deepagentsdk';
 
 const store = new InMemoryStore();
 
@@ -273,7 +273,7 @@ For production, use a persistent store:
 
 ```typescript
 import { Redis } from 'ioredis';
-import { PersistentBackend } from 'ai-sdk-deep-agent';
+import { PersistentBackend } from 'deepagentsdk';
 
 class RedisStore {
   constructor(private redis: Redis) {}
@@ -441,9 +441,9 @@ const multiUserBackend = new CompositeBackend(
 ### Example 1: Personal Assistant
 
 ```typescript
-import { createDeepAgent } from 'ai-sdk-deep-agent';
+import { createDeepAgent } from 'deepagentsdk';
 import { anthropic } from '@ai-sdk/anthropic';
-import { CompositeBackend, StateBackend, PersistentBackend, InMemoryStore } from 'ai-sdk-deep-agent';
+import { CompositeBackend, StateBackend, PersistentBackend, InMemoryStore } from 'deepagentsdk';
 
 const store = new InMemoryStore();
 

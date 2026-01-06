@@ -24,7 +24,7 @@ export interface KeyValueStoreSaverOptions extends CheckpointSaverOptions {
  * 
  * @example
  * ```typescript
- * import { InMemoryStore } from 'ai-sdk-deep-agent';
+ * import { InMemoryStore } from 'deepagentsdk';
  * 
  * const store = new InMemoryStore();
  * const saver = new KeyValueStoreSaver({ store });

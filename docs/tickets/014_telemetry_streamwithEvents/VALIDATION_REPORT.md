@@ -3,7 +3,7 @@ date: 2025-12-22
 validation_report: true
 git_commit: 706dba5bc7b0b985a52ac9e06d2f7a5e8a257d07
 branch: main
-repository: ai-sdk-deep-agent
+repository: deepagentsdk
 ticket: 014_telemetry_streamwithEvents
 title: Comprehensive Telemetry Passthrough - Validation Report
 status: completed

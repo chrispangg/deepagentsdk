@@ -2,7 +2,7 @@
 // Reference: docs/site/handbook/get-started/get-started.mdx lines 285-314
 // Description: Tests subagent spawning for specialized work and context isolation
 
-import { createDeepAgent, type SubAgent } from 'ai-sdk-deep-agent';
+import { createDeepAgent, type SubAgent } from 'deepagentsdk';
 import { anthropic } from '@ai-sdk/anthropic';
 
 async function testSubagents() {

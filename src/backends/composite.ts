@@ -20,7 +20,7 @@ import type {
  *
  * @example Hybrid storage strategy
  * ```typescript
- * import { CompositeBackend, FilesystemBackend, StateBackend } from 'ai-sdk-deep-agent';
+ * import { CompositeBackend, FilesystemBackend, StateBackend } from 'deepagentsdk';
  *
  * const state = { todos: [], files: {} };
  * const backend = new CompositeBackend(

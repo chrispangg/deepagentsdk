@@ -26,7 +26,7 @@ import {
   write_file,
   ls,
   write_todos
-} from 'ai-sdk-deep-agent';
+} from 'deepagentsdk';
 
 const agent = createDeepAgent({
   model: anthropic('claude-sonnet-4-20250514'),
@@ -218,7 +218,7 @@ export {
 
 #### Manual Verification
 
-- [x] Can import individual tools: `import { web_search } from 'ai-sdk-deep-agent'`
+- [x] Can import individual tools: `import { web_search } from 'deepagentsdk'`
 - [x] Existing factory functions still work
 - [x] IDE auto-completion shows available tools
 
@@ -443,7 +443,7 @@ import {
   ls,
   write_todos,
   execute
-} from 'ai-sdk-deep-agent';
+} from 'deepagentsdk';
 
 // Example: Subagents with selective tool access
 const agent = createDeepAgent({
@@ -513,7 +513,7 @@ import {
   http_request,
   read_file,
   write_file
-} from 'ai-sdk-deep-agent';
+} from 'deepagentsdk';
 
 const agent = createDeepAgent({
   model: anthropic('claude-sonnet-4-20250514'),

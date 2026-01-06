@@ -10,7 +10,7 @@ updated: 2025-12-12
 
 ## Research Question
 
-How should Human-in-the-Loop (HITL) functionality be implemented in ai-sdk-deep-agent to achieve feature parity with the LangChain DeepAgents reference implementation?
+How should Human-in-the-Loop (HITL) functionality be implemented in deepagentsdk to achieve feature parity with the LangChain DeepAgents reference implementation?
 
 ## Summary
 

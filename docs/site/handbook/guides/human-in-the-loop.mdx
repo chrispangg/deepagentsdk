@@ -55,7 +55,7 @@ const agent = createDeepAgent({
 The simplest form - enable or disable interrupts per tool:
 
 ```typescript
-import { createDeepAgent } from 'ai-sdk-deep-agent';
+import { createDeepAgent } from 'deepagentsdk';
 import { anthropic } from '@ai-sdk/anthropic';
 
 const agent = createDeepAgent({
@@ -172,7 +172,7 @@ type ApprovalCallback = (request: {
 Allow users to modify tool arguments before execution:
 
 ```typescript
-import { createDeepAgent } from 'ai-sdk-deep-agent';
+import { createDeepAgent } from 'deepagentsdk';
 
 const agent = createDeepAgent({
   model: anthropic('claude-sonnet-4-5-20250929'),

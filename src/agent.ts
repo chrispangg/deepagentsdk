@@ -1077,7 +1077,7 @@ export class DeepAgent {
  *
  * @example Basic usage
  * ```typescript
- * import { createDeepAgent } from 'ai-sdk-deep-agent';
+ * import { createDeepAgent } from 'deepagentsdk';
  * import { anthropic } from '@ai-sdk/anthropic';
  *
  * const agent = createDeepAgent({
@@ -1121,7 +1121,7 @@ export class DeepAgent {
  *
  * @example With StateBackend (default, explicit)
  * ```typescript
- * import { StateBackend } from 'ai-sdk-deep-agent';
+ * import { StateBackend } from 'deepagentsdk';
  *
  * const state = { todos: [], files: {} };
  * const agent = createDeepAgent({
@@ -1132,7 +1132,7 @@ export class DeepAgent {
  *
  * @example With FilesystemBackend
  * ```typescript
- * import { FilesystemBackend } from 'ai-sdk-deep-agent';
+ * import { FilesystemBackend } from 'deepagentsdk';
  *
  * const agent = createDeepAgent({
  *   model: anthropic('claude-sonnet-4-20250514'),
@@ -1142,7 +1142,7 @@ export class DeepAgent {
  *
  * @example With PersistentBackend
  * ```typescript
- * import { PersistentBackend, InMemoryStore } from 'ai-sdk-deep-agent';
+ * import { PersistentBackend, InMemoryStore } from 'deepagentsdk';
  *
  * const store = new InMemoryStore();
  * const agent = createDeepAgent({
@@ -1153,7 +1153,7 @@ export class DeepAgent {
  *
  * @example With CompositeBackend
  * ```typescript
- * import { CompositeBackend, FilesystemBackend, StateBackend } from 'ai-sdk-deep-agent';
+ * import { CompositeBackend, FilesystemBackend, StateBackend } from 'deepagentsdk';
  *
  * const state = { todos: [], files: {} };
  * const agent = createDeepAgent({
@@ -1167,7 +1167,7 @@ export class DeepAgent {
  *
  * @example With middleware for logging and caching
  * ```typescript
- * import { createDeepAgent } from 'ai-sdk-deep-agent';
+ * import { createDeepAgent } from 'deepagentsdk';
  * import { anthropic } from '@ai-sdk/anthropic';
  *
  * const loggingMiddleware = {
@@ -1187,7 +1187,7 @@ export class DeepAgent {
  *
  * @example With middleware factory for context access
  * ```typescript
- * import { FilesystemBackend } from 'ai-sdk-deep-agent';
+ * import { FilesystemBackend } from 'deepagentsdk';
  *
  * function createContextMiddleware(backend: BackendProtocol) {
  *   return {

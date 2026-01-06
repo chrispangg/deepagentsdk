@@ -2,7 +2,7 @@
 // Reference: docs/site/handbook/get-started/get-started.mdx lines 489-521 (Pattern 7)
 // Description: Tests maintaining conversation history across multiple turns
 
-import { createDeepAgent, type ModelMessage } from 'ai-sdk-deep-agent';
+import { createDeepAgent, type ModelMessage } from 'deepagentsdk';
 import { anthropic } from '@ai-sdk/anthropic';
 
 async function testMultiTurn() {

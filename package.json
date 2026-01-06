@@ -1,5 +1,5 @@
 {
-  "name": "ai-sdk-deep-agent",
+  "name": "deepagentsdk",
   "version": "0.9.2",
   "description": "Deep Agent implementation using Vercel AI SDK - build controllable AI agents with planning, filesystem, and subagent capabilities",
   "main": "./src/index.ts",
@@ -70,7 +70,8 @@
     "@types/turndown": "^5.0.5",
     "@vercel/otel": "^2.1.0",
     "install": "^0.13.0",
-    "langfuse-vercel": "^3.38.6"
+    "langfuse-vercel": "^3.38.6",
+    "typescript": "^5.7.3"
   },
   "peerDependencies": {
     "typescript": "^5"

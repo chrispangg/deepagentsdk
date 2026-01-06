@@ -2,7 +2,7 @@
 // Reference: docs/site/handbook/guides/checkpointers.mdx lines 95-117
 // Description: Tests KeyValueStoreSaver with InMemoryStore for custom backend
 
-import { createDeepAgent, KeyValueStoreSaver, InMemoryStore } from 'ai-sdk-deep-agent';
+import { createDeepAgent, KeyValueStoreSaver, InMemoryStore } from 'deepagentsdk';
 import { anthropic } from '@ai-sdk/anthropic';
 
 async function testKeyValueStoreSaver() {

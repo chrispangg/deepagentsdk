@@ -2,7 +2,7 @@
 // Reference: docs/site/handbook/guides/backends.mdx lines 265-320
 // Description: Tests PersistentBackend for cross-conversation persistence
 
-import { createDeepAgent, PersistentBackend, InMemoryStore } from 'ai-sdk-deep-agent';
+import { createDeepAgent, PersistentBackend, InMemoryStore } from 'deepagentsdk';
 import { anthropic } from '@ai-sdk/anthropic';
 
 async function testPersistentBackend() {
