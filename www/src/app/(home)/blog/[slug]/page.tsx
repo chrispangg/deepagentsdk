@@ -32,7 +32,7 @@ export default async function BlogPostPage({ params }: PageProps) {
                 href="/"
                 className="text-sm font-semibold tracking-tight font-[family-name:var(--font-ibm-plex-mono)] text-[var(--home-text-primary)] hover:text-[var(--home-accent)] transition-colors"
               >
-                ai-sdk-deepagent
+                deepagentsdk
               </Link>
               <div className="flex items-center gap-6">
                 <Link
@@ -157,7 +157,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   }
 
   return {
-    title: `${page.data.title} | ai-sdk-deepagent`,
+    title: `${page.data.title} | deepagentsdk`,
     description: page.data.description,
   };
 }

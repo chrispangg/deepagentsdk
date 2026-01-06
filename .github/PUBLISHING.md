@@ -30,7 +30,7 @@ This repository uses **npm Trusted Publishing** with OIDC for secure, token-free
    - Select **GitHub Actions** as the provider
    - Fill in the details exactly as shown (**case-sensitive**, must match exactly):
      - **Repository owner**: `chrispangg` (your GitHub username/org)
-     - **Repository name**: `ai-sdk-deepagent`
+     - **Repository name**: `deepagentsdk`
      - **Workflow file**: `publish.yaml` (include .yaml extension)
      - **Environment**: Leave blank (we're not using deployment environments)
    - Click **Add**
@@ -180,7 +180,7 @@ git commit -m "docs: update README [skip ci]"
 - ✅ Verify you've configured the trusted publisher on npmjs.com
 - ✅ Check that all fields match exactly (case-sensitive):
   - Repository owner: `chrispangg`
-  - Repository name: `ai-sdk-deepagent`
+  - Repository name: `deepagentsdk`
   - Workflow file: `publish.yaml`
 - ✅ Confirm your npm account has publish rights to `deepagentsdk`
 - ✅ For first-time publish, publish manually once first (see step 1 above)
@@ -202,4 +202,4 @@ If the version bump commit conflicts:
 
 ## Workflow Status
 
-Check workflow runs at: [GitHub Actions](https://github.com/chrispangg/ai-sdk-deepagent/actions)
+Check workflow runs at: [GitHub Actions](https://github.com/chrispangg/deepagentsdk/actions)

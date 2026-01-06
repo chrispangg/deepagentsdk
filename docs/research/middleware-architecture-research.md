@@ -4,7 +4,7 @@ date: 2025-12-19 07:04:10 AEDT
 researcher: Claude (Sonnet 4.5)
 git_commit: 0a93689550e65e096523f25cba0c36c87e7a74a1
 branch: main
-repository: deepagentsdk (chrispangg/ai-sdk-deepagent)
+repository: deepagentsdk (chrispangg/deepagentsdk)
 topic: "Middleware vs Non-Middleware Architecture: Comparative Analysis"
 tags: [research, architecture, middleware, ai-sdk-v6, langchain, deepagents]
 status: complete
@@ -12,7 +12,7 @@ last_updated: 2025-12-19
 last_updated_by: Claude (Sonnet 4.5)
 ---
 
-> **TL;DR**: ✅ The hybrid middleware approach is **already fully implemented** in the codebase ([`src/agent.ts:124-136`](https://github.com/chrispangg/ai-sdk-deepagent/blob/0a93689550e65e096523f25cba0c36c87e7a74a1/src/agent.ts#L124-L136), [`examples/with-middleware.ts`](https://github.com/chrispangg/ai-sdk-deepagent/blob/0a93689550e65e096523f25cba0c36c87e7a74a1/examples/with-middleware.ts)). This research **validates** that design decision and provides architectural rationale. No migration needed.
+> **TL;DR**: ✅ The hybrid middleware approach is **already fully implemented** in the codebase ([`src/agent.ts:124-136`](https://github.com/chrispangg/deepagentsdk/blob/0a93689550e65e096523f25cba0c36c87e7a74a1/src/agent.ts#L124-L136), [`examples/with-middleware.ts`](https://github.com/chrispangg/deepagentsdk/blob/0a93689550e65e096523f25cba0c36c87e7a74a1/examples/with-middleware.ts)). This research **validates** that design decision and provides architectural rationale. No migration needed.
 
 ## Research Question
 
@@ -52,7 +52,7 @@ After comprehensive analysis of LangChain's middleware architecture, AI SDK v6's
 
 ### 1. LangChain DeepAgents Middleware Architecture
 
-**File**: [`.refs/deepagents/libs/deepagents/deepagents/graph.py:113-148`](https://github.com/chrispangg/ai-sdk-deepagent/blob/0a93689550e65e096523f25cba0c36c87e7a74a1/.refs/deepagents/libs/deepagents/deepagents/graph.py#L113-L148)
+**File**: [`.refs/deepagents/libs/deepagents/deepagents/graph.py:113-148`](https://github.com/chrispangg/deepagentsdk/blob/0a93689550e65e096523f25cba0c36c87e7a74a1/.refs/deepagents/libs/deepagents/deepagents/graph.py#L113-L148)
 
 #### Middleware Stack Composition
 
@@ -100,7 +100,7 @@ LangChain's middleware provides these interception points:
 
 ##### FilesystemMiddleware
 
-**File**: [`.refs/deepagents/libs/deepagents/deepagents/middleware/filesystem.py`](https://github.com/chrispangg/ai-sdk-deepagent/blob/0a93689550e65e096523f25cba0c36c87e7a74a1/.refs/deepagents/libs/deepagents/deepagents/middleware/filesystem.py)
+**File**: [`.refs/deepagents/libs/deepagents/deepagents/middleware/filesystem.py`](https://github.com/chrispangg/deepagentsdk/blob/0a93689550e65e096523f25cba0c36c87e7a74a1/.refs/deepagents/libs/deepagents/deepagents/middleware/filesystem.py)
 
 **Responsibilities**:
 
@@ -122,7 +122,7 @@ wrap_model_call → inject system prompt + filter tools
 
 ##### PatchToolCallsMiddleware
 
-**File**: [`.refs/deepagents/libs/deepagents/deepagents/middleware/patch_tool_calls.py:11-44`](https://github.com/chrispangg/ai-sdk-deepagent/blob/0a93689550e65e096523f25cba0c36c87e7a74a1/.refs/deepagents/libs/deepagents/deepagents/middleware/patch_tool_calls.py#L11-L44)
+**File**: [`.refs/deepagents/libs/deepagents/deepagents/middleware/patch_tool_calls.py:11-44`](https://github.com/chrispangg/deepagentsdk/blob/0a93689550e65e096523f25cba0c36c87e7a74a1/.refs/deepagents/libs/deepagents/deepagents/middleware/patch_tool_calls.py#L11-L44)
 
 **Responsibilities**:
 
@@ -142,7 +142,7 @@ before_agent hook
 
 ##### SubAgentMiddleware
 
-**File**: [`.refs/deepagents/libs/deepagents/deepagents/middleware/subagents.py:377-484`](https://github.com/chrispangg/ai-sdk-deepagent/blob/0a93689550e65e096523f25cba0c36c87e7a74a1/.refs/deepagents/libs/deepagents/deepagents/middleware/subagents.py#L377-L484)
+**File**: [`.refs/deepagents/libs/deepagents/deepagents/middleware/subagents.py:377-484`](https://github.com/chrispangg/deepagentsdk/blob/0a93689550e65e096523f25cba0c36c87e7a74a1/.refs/deepagents/libs/deepagents/deepagents/middleware/subagents.py#L377-L484)
 
 **Responsibilities**:
 
@@ -256,7 +256,7 @@ new ToolLoopAgent({
 
 ### 3. Current Non-Middleware Implementation
 
-**File**: [`src/agent.ts`](https://github.com/chrispangg/ai-sdk-deepagent/blob/0a93689550e65e096523f25cba0c36c87e7a74a1/src/agent.ts)
+**File**: [`src/agent.ts`](https://github.com/chrispangg/deepagentsdk/blob/0a93689550e65e096523f25cba0c36c87e7a74a1/src/agent.ts)
 
 #### Architecture Pattern: Tool-Centric with Dependency Injection
 
@@ -302,15 +302,15 @@ private createTools(state: DeepAgentState, onEvent?: EventCallback): ToolSet {
 
 | Concern | Location | Approach |
 |---------|----------|----------|
-| **Tool creation** | [`agent.ts:193-250`](https://github.com/chrispangg/ai-sdk-deepagent/blob/0a93689550e65e096523f25cba0c36c87e7a74a1/src/agent.ts#L193-L250) | Method: `createTools()` |
+| **Tool creation** | [`agent.ts:193-250`](https://github.com/chrispangg/deepagentsdk/blob/0a93689550e65e096523f25cba0c36c87e7a74a1/src/agent.ts#L193-L250) | Method: `createTools()` |
 | **State injection** | Tool factories | Pass `state` as parameter |
 | **Event emission** | Tool factories | Pass `onEvent` callback |
-| **Result eviction** | [`tools/filesystem.ts:113-141`](https://github.com/chrispangg/ai-sdk-deepagent/blob/0a93689550e65e096523f25cba0c36c87e7a74a1/src/tools/filesystem.ts#L113-L141) | Inline in tool execute |
-| **Approval** | [`utils/approval.ts:116-183`](https://github.com/chrispangg/ai-sdk-deepagent/blob/0a93689550e65e096523f25cba0c36c87e7a74a1/src/utils/approval.ts#L116-L183) | Wrap tools before agent |
-| **Summarization** | [`agent.ts:461-468`](https://github.com/chrispangg/ai-sdk-deepagent/blob/0a93689550e65e096523f25cba0c36c87e7a74a1/src/agent.ts#L461-L468) | Direct call before streamText |
-| **Tool call patching** | [`agent.ts:458`](https://github.com/chrispangg/ai-sdk-deepagent/blob/0a93689550e65e096523f25cba0c36c87e7a74a1/src/agent.ts#L458) | Direct call before streamText |
-| **Checkpointing** | [`agent.ts:521-541`](https://github.com/chrispangg/ai-sdk-deepagent/blob/0a93689550e65e096523f25cba0c36c87e7a74a1/src/agent.ts#L521-L541) | AI SDK's onStepFinish |
-| **System prompt** | [`agent.ts:52-79`](https://github.com/chrispangg/ai-sdk-deepagent/blob/0a93689550e65e096523f25cba0c36c87e7a74a1/src/agent.ts#L52-L79) | Build in constructor |
+| **Result eviction** | [`tools/filesystem.ts:113-141`](https://github.com/chrispangg/deepagentsdk/blob/0a93689550e65e096523f25cba0c36c87e7a74a1/src/tools/filesystem.ts#L113-L141) | Inline in tool execute |
+| **Approval** | [`utils/approval.ts:116-183`](https://github.com/chrispangg/deepagentsdk/blob/0a93689550e65e096523f25cba0c36c87e7a74a1/src/utils/approval.ts#L116-L183) | Wrap tools before agent |
+| **Summarization** | [`agent.ts:461-468`](https://github.com/chrispangg/deepagentsdk/blob/0a93689550e65e096523f25cba0c36c87e7a74a1/src/agent.ts#L461-L468) | Direct call before streamText |
+| **Tool call patching** | [`agent.ts:458`](https://github.com/chrispangg/deepagentsdk/blob/0a93689550e65e096523f25cba0c36c87e7a74a1/src/agent.ts#L458) | Direct call before streamText |
+| **Checkpointing** | [`agent.ts:521-541`](https://github.com/chrispangg/deepagentsdk/blob/0a93689550e65e096523f25cba0c36c87e7a74a1/src/agent.ts#L521-L541) | AI SDK's onStepFinish |
+| **System prompt** | [`agent.ts:52-79`](https://github.com/chrispangg/deepagentsdk/blob/0a93689550e65e096523f25cba0c36c87e7a74a1/src/agent.ts#L52-L79) | Build in constructor |
 
 #### State Management
 
@@ -334,7 +334,7 @@ execute: async ({ todos, merge }) => {
 }
 ```
 
-**Subagent state sharing** ([`tools/subagent.ts:148-152`](https://github.com/chrispangg/ai-sdk-deepagent/blob/0a93689550e65e096523f25cba0c36c87e7a74a1/src/tools/subagent.ts#L148-L152)):
+**Subagent state sharing** ([`tools/subagent.ts:148-152`](https://github.com/chrispangg/deepagentsdk/blob/0a93689550e65e096523f25cba0c36c87e7a74a1/src/tools/subagent.ts#L148-L152)):
 
 ```typescript
 const subagentState: DeepAgentState = {
@@ -578,7 +578,7 @@ export class DeepAgent {
 
 ### ✅ Already Implemented: Hybrid Middleware Support
 
-**Implementation**: [`src/agent.ts:124-136`](https://github.com/chrispangg/ai-sdk-deepagent/blob/0a93689550e65e096523f25cba0c36c87e7a74a1/src/agent.ts#L124-L136)
+**Implementation**: [`src/agent.ts:124-136`](https://github.com/chrispangg/deepagentsdk/blob/0a93689550e65e096523f25cba0c36c87e7a74a1/src/agent.ts#L124-L136)
 
 The hybrid approach is already fully implemented:
 
@@ -610,7 +610,7 @@ constructor(params: CreateDeepAgentParams) {
 }
 ```
 
-**Example**: [`examples/with-middleware.ts`](https://github.com/chrispangg/ai-sdk-deepagent/blob/0a93689550e65e096523f25cba0c36c87e7a74a1/examples/with-middleware.ts)
+**Example**: [`examples/with-middleware.ts`](https://github.com/chrispangg/deepagentsdk/blob/0a93689550e65e096523f25cba0c36c87e7a74a1/examples/with-middleware.ts)
 
 ```typescript
 // Working example showing logging and caching middleware
@@ -707,37 +707,37 @@ The core middleware support is complete. Recommended follow-ups:
 
 **Python**:
 
-- Graph: [`.refs/deepagents/libs/deepagents/deepagents/graph.py`](https://github.com/chrispangg/ai-sdk-deepagent/blob/0a93689550e65e096523f25cba0c36c87e7a74a1/.refs/deepagents/libs/deepagents/deepagents/graph.py)
-- FilesystemMiddleware: [`.refs/deepagents/libs/deepagents/deepagents/middleware/filesystem.py`](https://github.com/chrispangg/ai-sdk-deepagent/blob/0a93689550e65e096523f25cba0c36c87e7a74a1/.refs/deepagents/libs/deepagents/deepagents/middleware/filesystem.py)
-- PatchToolCallsMiddleware: [`.refs/deepagents/libs/deepagents/deepagents/middleware/patch_tool_calls.py`](https://github.com/chrispangg/ai-sdk-deepagent/blob/0a93689550e65e096523f25cba0c36c87e7a74a1/.refs/deepagents/libs/deepagents/deepagents/middleware/patch_tool_calls.py)
-- SubAgentMiddleware: [`.refs/deepagents/libs/deepagents/deepagents/middleware/subagents.py`](https://github.com/chrispangg/ai-sdk-deepagent/blob/0a93689550e65e096523f25cba0c36c87e7a74a1/.refs/deepagents/libs/deepagents/deepagents/middleware/subagents.py)
+- Graph: [`.refs/deepagents/libs/deepagents/deepagents/graph.py`](https://github.com/chrispangg/deepagentsdk/blob/0a93689550e65e096523f25cba0c36c87e7a74a1/.refs/deepagents/libs/deepagents/deepagents/graph.py)
+- FilesystemMiddleware: [`.refs/deepagents/libs/deepagents/deepagents/middleware/filesystem.py`](https://github.com/chrispangg/deepagentsdk/blob/0a93689550e65e096523f25cba0c36c87e7a74a1/.refs/deepagents/libs/deepagents/deepagents/middleware/filesystem.py)
+- PatchToolCallsMiddleware: [`.refs/deepagents/libs/deepagents/deepagents/middleware/patch_tool_calls.py`](https://github.com/chrispangg/deepagentsdk/blob/0a93689550e65e096523f25cba0c36c87e7a74a1/.refs/deepagents/libs/deepagents/deepagents/middleware/patch_tool_calls.py)
+- SubAgentMiddleware: [`.refs/deepagents/libs/deepagents/deepagents/middleware/subagents.py`](https://github.com/chrispangg/deepagentsdk/blob/0a93689550e65e096523f25cba0c36c87e7a74a1/.refs/deepagents/libs/deepagents/deepagents/middleware/subagents.py)
 
 **JavaScript**:
 
-- FilesystemMiddleware: [`.refs/deepagentsjs/src/middleware/fs.ts`](https://github.com/chrispangg/ai-sdk-deepagent/blob/0a93689550e65e096523f25cba0c36c87e7a74a1/.refs/deepagentsjs/src/middleware/fs.ts)
-- PatchToolCallsMiddleware: [`.refs/deepagentsjs/src/middleware/patch_tool_calls.ts`](https://github.com/chrispangg/ai-sdk-deepagent/blob/0a93689550e65e096523f25cba0c36c87e7a74a1/.refs/deepagentsjs/src/middleware/patch_tool_calls.ts)
-- SubAgentMiddleware: [`.refs/deepagentsjs/src/middleware/subagents.ts`](https://github.com/chrispangg/ai-sdk-deepagent/blob/0a93689550e65e096523f25cba0c36c87e7a74a1/.refs/deepagentsjs/src/middleware/subagents.ts)
+- FilesystemMiddleware: [`.refs/deepagentsjs/src/middleware/fs.ts`](https://github.com/chrispangg/deepagentsdk/blob/0a93689550e65e096523f25cba0c36c87e7a74a1/.refs/deepagentsjs/src/middleware/fs.ts)
+- PatchToolCallsMiddleware: [`.refs/deepagentsjs/src/middleware/patch_tool_calls.ts`](https://github.com/chrispangg/deepagentsdk/blob/0a93689550e65e096523f25cba0c36c87e7a74a1/.refs/deepagentsjs/src/middleware/patch_tool_calls.ts)
+- SubAgentMiddleware: [`.refs/deepagentsjs/src/middleware/subagents.ts`](https://github.com/chrispangg/deepagentsdk/blob/0a93689550e65e096523f25cba0c36c87e7a74a1/.refs/deepagentsjs/src/middleware/subagents.ts)
 
 ### Current Implementation
 
 **Core**:
 
-- Agent: [`src/agent.ts`](https://github.com/chrispangg/ai-sdk-deepagent/blob/0a93689550e65e096523f25cba0c36c87e7a74a1/src/agent.ts)
+- Agent: [`src/agent.ts`](https://github.com/chrispangg/deepagentsdk/blob/0a93689550e65e096523f25cba0c36c87e7a74a1/src/agent.ts)
   - Line 193-250: `createTools()` method
   - Line 401-629: `streamWithEvents()` method
   - Line 52-79: `buildSystemPrompt()` function
 
 **Tools**:
 
-- Todos: [`src/tools/todos.ts`](https://github.com/chrispangg/ai-sdk-deepagent/blob/0a93689550e65e096523f25cba0c36c87e7a74a1/src/tools/todos.ts)
-- Filesystem: [`src/tools/filesystem.ts`](https://github.com/chrispangg/ai-sdk-deepagent/blob/0a93689550e65e096523f25cba0c36c87e7a74a1/src/tools/filesystem.ts)
-- Subagent: [`src/tools/subagent.ts`](https://github.com/chrispangg/ai-sdk-deepagent/blob/0a93689550e65e096523f25cba0c36c87e7a74a1/src/tools/subagent.ts)
+- Todos: [`src/tools/todos.ts`](https://github.com/chrispangg/deepagentsdk/blob/0a93689550e65e096523f25cba0c36c87e7a74a1/src/tools/todos.ts)
+- Filesystem: [`src/tools/filesystem.ts`](https://github.com/chrispangg/deepagentsdk/blob/0a93689550e65e096523f25cba0c36c87e7a74a1/src/tools/filesystem.ts)
+- Subagent: [`src/tools/subagent.ts`](https://github.com/chrispangg/deepagentsdk/blob/0a93689550e65e096523f25cba0c36c87e7a74a1/src/tools/subagent.ts)
 
 **Utils**:
 
-- Patch Tool Calls: [`src/utils/patch-tool-calls.ts`](https://github.com/chrispangg/ai-sdk-deepagent/blob/0a93689550e65e096523f25cba0c36c87e7a74a1/src/utils/patch-tool-calls.ts)
-- Summarization: [`src/utils/summarization.ts`](https://github.com/chrispangg/ai-sdk-deepagent/blob/0a93689550e65e096523f25cba0c36c87e7a74a1/src/utils/summarization.ts)
-- Approval: [`src/utils/approval.ts`](https://github.com/chrispangg/ai-sdk-deepagent/blob/0a93689550e65e096523f25cba0c36c87e7a74a1/src/utils/approval.ts)
+- Patch Tool Calls: [`src/utils/patch-tool-calls.ts`](https://github.com/chrispangg/deepagentsdk/blob/0a93689550e65e096523f25cba0c36c87e7a74a1/src/utils/patch-tool-calls.ts)
+- Summarization: [`src/utils/summarization.ts`](https://github.com/chrispangg/deepagentsdk/blob/0a93689550e65e096523f25cba0c36c87e7a74a1/src/utils/summarization.ts)
+- Approval: [`src/utils/approval.ts`](https://github.com/chrispangg/deepagentsdk/blob/0a93689550e65e096523f25cba0c36c87e7a74a1/src/utils/approval.ts)
 
 ---
 
@@ -809,7 +809,7 @@ The research conclusively shows that **middleware and tool-centric architectures
 
 **✅ Implementation Status**:
 
-1. ~~**Phase 1**: Add optional `middleware` parameter, wrap model if provided~~ **COMPLETE** ([`src/agent.ts:124-136`](https://github.com/chrispangg/ai-sdk-deepagent/blob/0a93689550e65e096523f25cba0c36c87e7a74a1/src/agent.ts#L124-L136))
+1. ~~**Phase 1**: Add optional `middleware` parameter, wrap model if provided~~ **COMPLETE** ([`src/agent.ts:124-136`](https://github.com/chrispangg/deepagentsdk/blob/0a93689550e65e096523f25cba0c36c87e7a74a1/src/agent.ts#L124-L136))
 2. **Phase 2** (Recommended): Document patterns, build more examples, create integration guides
 3. **Phase 3** (Future): Consider lifecycle hooks and helper middleware factories
 

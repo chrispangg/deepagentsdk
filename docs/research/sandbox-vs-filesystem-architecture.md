@@ -4,7 +4,7 @@ date: 2025-12-24 06:11:49 AEDT
 researcher: claude
 git_commit: 45f2b563d7e4fb2ebec766cc5571886ac496654a
 branch: main
-repository: chrispangg/ai-sdk-deepagent
+repository: chrispangg/deepagentsdk
 topic: "Sandbox vs Filesystem and LocalSandbox vs execute() - Architecture and Relationships"
 tags: [research, codebase, architecture, backends, tools]
 status: complete
@@ -41,7 +41,7 @@ This research documents the architecture and relationships between four key comp
 
 **Key Implementations:**
 
-#### FilesystemBackend ([`src/backends/filesystem.ts:57`](https://github.com/chrispangg/ai-sdk-deepagent/blob/45f2b56/src/backends/filesystem.ts#L57))
+#### FilesystemBackend ([`src/backends/filesystem.ts:57`](https://github.com/chrispangg/deepagentsdk/blob/45f2b56/src/backends/filesystem.ts#L57))
 
 - **Storage:** Disk-based file I/O
 - **Purpose:** Persistent file storage with security controls
@@ -52,7 +52,7 @@ This research documents the architecture and relationships between four key comp
   - Uses `fast-glob` for pattern matching
   - Tries `ripgrep` for search, falls back to regex
 
-#### StateBackend ([`src/backends/state.ts:56`](https://github.com/chrispangg/ai-sdk-deepagent/blob/45f2b56/src/backends/state.ts#L56))
+#### StateBackend ([`src/backends/state.ts:56`](https://github.com/chrispangg/deepagentsdk/blob/45f2b56/src/backends/state.ts#L56))
 
 - **Storage:** In-memory (`DeepAgentState.files`)
 - **Purpose:** Ephemeral file storage (default backend)
@@ -62,7 +62,7 @@ This research documents the architecture and relationships between four key comp
   - Fast, no disk I/O
   - Formats files with line numbers
 
-#### CompositeBackend ([`src/backends/composite.ts:51`](https://github.com/chrispangg/ai-sdk-deepagent/blob/45f2b56/src/backends/composite.ts#L51))
+#### CompositeBackend ([`src/backends/composite.ts:51`](https://github.com/chrispangg/deepagentsdk/blob/45f2b56/src/backends/composite.ts#L51))
 
 - **Storage:** Routing backend
 - **Purpose:** Routes operations to different backends based on path prefix
@@ -71,7 +71,7 @@ This research documents the architecture and relationships between four key comp
   - Routes sorted by length (longest first) for correct matching
   - Aggregates listings from multiple backends
 
-**Common Interface (BackendProtocol)** ([`src/types/backend.ts:85`](https://github.com/chrispangg/ai-sdk-deepagent/blob/45f2b56/src/types/backend.ts#L85))
+**Common Interface (BackendProtocol)** ([`src/types/backend.ts:85`](https://github.com/chrispangg/deepagentsdk/blob/45f2b56/src/types/backend.ts#L85))
 
 ```typescript
 interface BackendProtocol {
@@ -85,7 +85,7 @@ interface BackendProtocol {
 }
 ```
 
-**Tool Layer** ([`src/tools/filesystem.ts`](https://github.com/chrispangg/ai-sdk-deepagent/blob/45f2b56/src/tools/filesystem.ts))
+**Tool Layer** ([`src/tools/filesystem.ts`](https://github.com/chrispangg/deepagentsdk/blob/45f2b56/src/tools/filesystem.ts))
 
 - Wraps backend operations as AI SDK tools
 - Six tools: `ls`, `read_file`, `write_file`, `edit_file`, `glob`, `grep`
@@ -109,7 +109,7 @@ BaseSandbox (abstract class)
 LocalSandbox (concrete implementation)
 ```
 
-#### BaseSandbox ([`src/backends/sandbox.ts:71`](https://github.com/chrispangg/ai-sdk-deepagent/blob/45f2b56/src/backends/sandbox.ts#L71))
+#### BaseSandbox ([`src/backends/sandbox.ts:71`](https://github.com/chrispangg/deepagentsdk/blob/45f2b56/src/backends/sandbox.ts#L71))
 
 - **Type:** Abstract class
 - **Purpose:** Template method pattern - implements all filesystem operations using the abstract `execute()` method
@@ -130,7 +130,7 @@ LocalSandbox (concrete implementation)
 - Script is executed via `execute()` (implemented by subclass)
 - Output is parsed and returned
 
-**Example - BaseSandbox.read()** ([`src/backends/sandbox.ts:134-183`](https://github.com/chrispangg/ai-sdk-deepagent/blob/45f2b56/src/backends/sandbox.ts#L134-L183)):
+**Example - BaseSandbox.read()** ([`src/backends/sandbox.ts:134-183`](https://github.com/chrispangg/deepagentsdk/blob/45f2b56/src/backends/sandbox.ts#L134-L183)):
 
 ```typescript
 async read(filePath: string, offset: number = 0, limit: number = 2000): Promise<string> {
@@ -146,7 +146,7 @@ const content = fs.readFileSync(filePath, "utf-8");
 }
 ```
 
-#### LocalSandbox ([`src/backends/local-sandbox.ts:85`](https://github.com/chrispangg/ai-sdk-deepagent/blob/45f2b56/src/backends/local-sandbox.ts#L85))
+#### LocalSandbox ([`src/backends/local-sandbox.ts:85`](https://github.com/chrispangg/deepagentsdk/blob/45f2b56/src/backends/local-sandbox.ts#L85))
 
 - **Type:** Concrete class (extends BaseSandbox)
 - **Purpose:** Executes commands locally using Node.js `child_process.spawn()`
@@ -156,7 +156,7 @@ const content = fs.readFileSync(filePath, "utf-8");
   - `env: Record<string, string>` - Additional environment variables
   - `maxOutputSize: number` - Output size limit before truncation (default: 1MB)
 
-**Key Method - execute()** ([`src/backends/local-sandbox.ts:130-173`](https://github.com/chrispangg/ai-sdk-deepagent/blob/45f2b56/src/backends/local-sandbox.ts#L130-L173)):
+**Key Method - execute()** ([`src/backends/local-sandbox.ts:130-173`](https://github.com/chrispangg/deepagentsdk/blob/45f2b56/src/backends/local-sandbox.ts#L130-L173)):
 
 ```typescript
 async execute(command: string): Promise<ExecuteResponse> {
@@ -197,7 +197,7 @@ async execute(command: string): Promise<ExecuteResponse> {
 }
 ```
 
-#### SandboxBackendProtocol Interface ([`src/types/backend.ts:155`](https://github.com/chrispangg/ai-sdk-deepagent/blob/45f2b56/src/types/backend.ts#L155-L165))
+#### SandboxBackendProtocol Interface ([`src/types/backend.ts:155`](https://github.com/chrispangg/deepagentsdk/blob/45f2b56/src/types/backend.ts#L155-L165))
 
 ```typescript
 export interface SandboxBackendProtocol extends BackendProtocol {
@@ -206,7 +206,7 @@ export interface SandboxBackendProtocol extends BackendProtocol {
 }
 ```
 
-**Type Guard** ([`src/types/backend.ts:170`](https://github.com/chrispangg/ai-sdk-deepagent/blob/45f2b56/src/types/backend.ts#L170-L177)):
+**Type Guard** ([`src/types/backend.ts:170`](https://github.com/chrispangg/deepagentsdk/blob/45f2b56/src/types/backend.ts#L170-L177)):
 
 ```typescript
 export function isSandboxBackend(
@@ -225,9 +225,9 @@ export function isSandboxBackend(
 
 **Purpose:** Wraps the backend's `execute()` method as an AI SDK tool, making it callable by LLMs.
 
-**Location:** [`src/tools/execute.ts`](https://github.com/chrispangg/ai-sdk-deepagent/blob/45f2b56/src/tools/execute.ts)
+**Location:** [`src/tools/execute.ts`](https://github.com/chrispangg/deepagentsdk/blob/45f2b56/src/tools/execute.ts)
 
-#### createExecuteTool() Function ([`src/tools/execute.ts:79`](https://github.com/chrispangg/ai-sdk-deepagent/blob/45f2b56/src/tools/execute.ts#L79-L137))
+#### createExecuteTool() Function ([`src/tools/execute.ts:79`](https://github.com/chrispangg/deepagentsdk/blob/45f2b56/src/tools/execute.ts#L79-L137))
 
 ```typescript
 export function createExecuteTool(options: CreateExecuteToolOptions) {
@@ -277,7 +277,7 @@ export function createExecuteTool(options: CreateExecuteToolOptions) {
 }
 ```
 
-**ExecuteResponse Type** ([`src/types/backend.ts:143`](https://github.com/chrispangg/ai-sdk-deepagent/blob/45f2b56/src/types/backend.ts#L143-L150)):
+**ExecuteResponse Type** ([`src/types/backend.ts:143`](https://github.com/chrispangg/deepagentsdk/blob/45f2b56/src/types/backend.ts#L143-L150)):
 
 ```typescript
 export interface ExecuteResponse {
@@ -291,7 +291,7 @@ export interface ExecuteResponse {
 
 ### 4. Agent Integration
 
-**Automatic Tool Creation** ([`src/agent.ts:196`](https://github.com/chrispangg/ai-sdk-deepagent/blob/45f2b56/src/agent.ts#L196-L264))
+**Automatic Tool Creation** ([`src/agent.ts:196`](https://github.com/chrispangg/deepagentsdk/blob/45f2b56/src/agent.ts#L196-L264))
 
 When a DeepAgent is created with a sandbox backend, the `execute` tool is automatically added:
 
@@ -316,7 +316,7 @@ private createExecuteToolSet(onEvent?: EventCallback): ToolSet {
 }
 ```
 
-**System Prompt Addition** ([`src/agent.ts:77-78`](https://github.com/chrispangg/ai-sdk-deepagent/blob/45f2b56/src/agent.ts#L77-L78)):
+**System Prompt Addition** ([`src/agent.ts:77-78`](https://github.com/chrispangg/deepagentsdk/blob/45f2b56/src/agent.ts#L77-L78)):
 
 ```typescript
 if (hasSandbox) {
@@ -389,40 +389,40 @@ LLM can call execute tool → calls backend.execute() → runs bash command
 
 ### Core Backend Files
 
-- **BaseSandbox:** [`src/backends/sandbox.ts:71-510`](https://github.com/chrispangg/ai-sdk-deepagent/blob/45f2b56/src/backends/sandbox.ts#L71) - Abstract class implementing filesystem operations via `execute()`
-- **LocalSandbox:** [`src/backends/local-sandbox.ts:85-173`](https://github.com/chrispangg/ai-sdk-deepagent/blob/45f2b56/src/backends/local-sandbox.ts#L85) - Concrete implementation using `child_process.spawn()`
-- **FilesystemBackend:** [`src/backends/filesystem.ts:57-695`](https://github.com/chrispangg/ai-sdk-deepagent/blob/45f2b56/src/backends/filesystem.ts#L57) - Disk-based storage with security controls
-- **StateBackend:** [`src/backends/state.ts:56-204`](https://github.com/chrispangg/ai-sdk-deepagent/blob/45f2b56/src/backends/state.ts#L56) - In-memory storage
-- **CompositeBackend:** [`src/backends/composite.ts:51-254`](https://github.com/chrispangg/ai-sdk-deepagent/blob/45f2b56/src/backends/composite.ts#L51) - Routing backend
+- **BaseSandbox:** [`src/backends/sandbox.ts:71-510`](https://github.com/chrispangg/deepagentsdk/blob/45f2b56/src/backends/sandbox.ts#L71) - Abstract class implementing filesystem operations via `execute()`
+- **LocalSandbox:** [`src/backends/local-sandbox.ts:85-173`](https://github.com/chrispangg/deepagentsdk/blob/45f2b56/src/backends/local-sandbox.ts#L85) - Concrete implementation using `child_process.spawn()`
+- **FilesystemBackend:** [`src/backends/filesystem.ts:57-695`](https://github.com/chrispangg/deepagentsdk/blob/45f2b56/src/backends/filesystem.ts#L57) - Disk-based storage with security controls
+- **StateBackend:** [`src/backends/state.ts:56-204`](https://github.com/chrispangg/deepagentsdk/blob/45f2b56/src/backends/state.ts#L56) - In-memory storage
+- **CompositeBackend:** [`src/backends/composite.ts:51-254`](https://github.com/chrispangg/deepagentsdk/blob/45f2b56/src/backends/composite.ts#L51) - Routing backend
 
 ### Type Definitions
 
-- **BackendProtocol:** [`src/types/backend.ts:85-133`](https://github.com/chrispangg/ai-sdk-deepagent/blob/45f2b56/src/types/backend.ts#L85) - Filesystem operations interface
-- **SandboxBackendProtocol:** [`src/types/backend.ts:155-165`](https://github.com/chrispangg/ai-sdk-deepagent/blob/45f2b56/src/types/backend.ts#L155) - Extends BackendProtocol with `execute()` and `id`
-- **ExecuteResponse:** [`src/types/backend.ts:143-150`](https://github.com/chrispangg/ai-sdk-deepagent/blob/45f2b56/src/types/backend.ts#L143) - Response from `execute()` method
-- **Type Guard:** [`src/types/backend.ts:170-177`](https://github.com/chrispangg/ai-sdk-deepagent/blob/45f2b56/src/types/backend.ts#L170) - `isSandboxBackend()` function
+- **BackendProtocol:** [`src/types/backend.ts:85-133`](https://github.com/chrispangg/deepagentsdk/blob/45f2b56/src/types/backend.ts#L85) - Filesystem operations interface
+- **SandboxBackendProtocol:** [`src/types/backend.ts:155-165`](https://github.com/chrispangg/deepagentsdk/blob/45f2b56/src/types/backend.ts#L155) - Extends BackendProtocol with `execute()` and `id`
+- **ExecuteResponse:** [`src/types/backend.ts:143-150`](https://github.com/chrispangg/deepagentsdk/blob/45f2b56/src/types/backend.ts#L143) - Response from `execute()` method
+- **Type Guard:** [`src/types/backend.ts:170-177`](https://github.com/chrispangg/deepagentsdk/blob/45f2b56/src/types/backend.ts#L170) - `isSandboxBackend()` function
 
 ### Tool Creation
 
-- **Execute Tool:** [`src/tools/execute.ts:79-137`](https://github.com/chrispangg/ai-sdk-deepagent/blob/45f2b56/src/tools/execute.ts#L79) - `createExecuteTool()` function
-- **Filesystem Tools:** [`src/tools/filesystem.ts:370-410`](https://github.com/chrispangg/ai-sdk-deepagent/blob/45f2b56/src/tools/filesystem.ts#L370) - `createFilesystemTools()` function
+- **Execute Tool:** [`src/tools/execute.ts:79-137`](https://github.com/chrispangg/deepagentsdk/blob/45f2b56/src/tools/execute.ts#L79) - `createExecuteTool()` function
+- **Filesystem Tools:** [`src/tools/filesystem.ts:370-410`](https://github.com/chrispangg/deepagentsdk/blob/45f2b56/src/tools/filesystem.ts#L370) - `createFilesystemTools()` function
 
 ### Agent Integration
 
-- **Sandbox Detection:** [`src/agent.ts:196`](https://github.com/chrispangg/ai-sdk-deepagent/blob/45f2b56/src/agent.ts#L196) - `isSandboxBackend()` check
-- **Execute Tool Creation:** [`src/agent.ts:252-264`](https://github.com/chrispangg/ai-sdk-deepagent/blob/45f2b56/src/agent.ts#L252) - `createExecuteToolSet()` method
-- **System Prompt:** [`src/agent.ts:77-78`](https://github.com/chrispangg/ai-sdk-deepagent/blob/45f2b56/src/agent.ts#L77) - Adds `EXECUTE_SYSTEM_PROMPT`
+- **Sandbox Detection:** [`src/agent.ts:196`](https://github.com/chrispangg/deepagentsdk/blob/45f2b56/src/agent.ts#L196) - `isSandboxBackend()` check
+- **Execute Tool Creation:** [`src/agent.ts:252-264`](https://github.com/chrispangg/deepagentsdk/blob/45f2b56/src/agent.ts#L252) - `createExecuteToolSet()` method
+- **System Prompt:** [`src/agent.ts:77-78`](https://github.com/chrispangg/deepagentsdk/blob/45f2b56/src/agent.ts#L77) - Adds `EXECUTE_SYSTEM_PROMPT`
 
 ### Usage Examples
 
-- **LocalSandbox Example:** [`examples/with-local-sandbox.ts:34-169`](https://github.com/chrispangg/ai-sdk-deepagent/blob/45f2b56/examples/with-local-sandbox.ts#L34) - Full example with agent creation
-- **Direct execute() Calls:** [`examples/with-local-sandbox.ts:192-213`](https://github.com/chrispangg/ai-sdk-deepagent/blob/45f2b56/examples/with-local-sandbox.ts#L192) - Direct sandbox method usage
-- **FilesystemBackend Example:** [`examples/streaming.ts:9-17`](https://github.com/chrispangg/ai-sdk-deepagent/blob/45f2b56/examples/streaming.ts#L9) - Backend configuration
+- **LocalSandbox Example:** [`examples/with-local-sandbox.ts:34-169`](https://github.com/chrispangg/deepagentsdk/blob/45f2b56/examples/with-local-sandbox.ts#L34) - Full example with agent creation
+- **Direct execute() Calls:** [`examples/with-local-sandbox.ts:192-213`](https://github.com/chrispangg/deepagentsdk/blob/45f2b56/examples/with-local-sandbox.ts#L192) - Direct sandbox method usage
+- **FilesystemBackend Example:** [`examples/streaming.ts:9-17`](https://github.com/chrispangg/deepagentsdk/blob/45f2b56/examples/streaming.ts#L9) - Backend configuration
 
 ### Tests
 
-- **LocalSandbox Tests:** [`test/backends/local-sandbox.test.ts:16-212`](https://github.com/chrispangg/ai-sdk-deepagent/blob/45f2b56/test/backends/local-sandbox.test.ts#L16) - Comprehensive execute() tests
-- **Filesystem Integration Tests:** [`test-integration/architecture/architectural-refactoring.test.ts:147-168`](https://github.com/chrispangg/ai-sdk-deepagent/blob/45f2b56/test-integration/architecture/architectural-refactoring.test.ts#L147) - Backend integration tests
+- **LocalSandbox Tests:** [`test/backends/local-sandbox.test.ts:16-212`](https://github.com/chrispangg/deepagentsdk/blob/45f2b56/test/backends/local-sandbox.test.ts#L16) - Comprehensive execute() tests
+- **Filesystem Integration Tests:** [`test-integration/architecture/architectural-refactoring.test.ts:147-168`](https://github.com/chrispangg/deepagentsdk/blob/45f2b56/test-integration/architecture/architectural-refactoring.test.ts#L147) - Backend integration tests
 
 ---
 

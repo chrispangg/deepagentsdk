@@ -4,7 +4,7 @@ date: 2025-12-21 15:22:00 AEDT
 researcher: Claude Code
 git_commit: 3159edf99372af24e59b2d45c110d5115f0e62ae
 branch: main
-repository: ai-sdk-deepagent
+repository: deepagentsdk
 topic: "Remove all 'as any' type assertions from codebase"
 tags: [research, typescript, type-safety, code-quality, as-any]
 status: complete
@@ -32,7 +32,7 @@ The usage of `as any` is generally well-justified, with most occurrences serving
 
 #### Single Critical Instance
 
-**File:** [`src/utils/patch-tool-calls.ts:99`](https://github.com/chrispangg/ai-sdk-deepagent/blob/3159edf99372af24e59b2d45c110d5115f0e62ae/src/utils/patch-tool-calls.ts#L99)
+**File:** [`src/utils/patch-tool-calls.ts:99`](https://github.com/chrispangg/deepagentsdk/blob/3159edf99372af24e59b2d45c110d5115f0e62ae/src/utils/patch-tool-calls.ts#L99)
 
 ```typescript
 function createCancelledToolResult(
@@ -64,7 +64,7 @@ function createCancelledToolResult(
 
 #### All in Structured Output Example
 
-**File:** [`examples/with-structured-output.ts`](https://github.com/chrispangg/ai-sdk-deepagent/blob/3159edf99372af24e59b2d45c110d5115f0e62ae/examples/with-structured-output.ts)
+**File:** [`examples/with-structured-output.ts`](https://github.com/chrispangg/deepagentsdk/blob/3159edf99372af24e59b2d45c110d5115f0e62ae/examples/with-structured-output.ts)
 
 All 6 instances follow the same pattern of accessing structured output from agent results:
 
@@ -108,27 +108,27 @@ The 86 test instances follow well-established testing patterns and are generally
 
 #### Key Test Files with High Usage
 
-- **[`test/passthrough/passthrough.test.ts`](https://github.com/chrispangg/ai-sdk-deepagent/blob/3159edf99372af24e59b2d45c110d5115f0e62ae/test/passthrough/passthrough.test.ts)**: 13 occurrences
-- **[`test/structured-output.test.ts`](https://github.com/chrispangg/ai-sdk-deepagent/blob/3159edf99372af24e59b2d45c110d5115f0e62ae/test/structured-output.test.ts)**: 18 occurrences
-- **[`test/subagents/selective-tools.test.ts`](https://github.com/chrispangg/ai-sdk-deepagent/blob/3159edf99372af24e59b2d45c110d5115f0e62ae/test/subagents/selective-tools.test.ts)**: 16 occurrences
-- **[`test/tools/web.test.ts`](https://github.com/chrispangg/ai-sdk-deepagent/blob/3159edf99372af24e59b2d45c110d5115f0e62ae/test/tools/web.test.ts)**: 17 occurrences
+- **[`test/passthrough/passthrough.test.ts`](https://github.com/chrispangg/deepagentsdk/blob/3159edf99372af24e59b2d45c110d5115f0e62ae/test/passthrough/passthrough.test.ts)**: 13 occurrences
+- **[`test/structured-output.test.ts`](https://github.com/chrispangg/deepagentsdk/blob/3159edf99372af24e59b2d45c110d5115f0e62ae/test/structured-output.test.ts)**: 18 occurrences
+- **[`test/subagents/selective-tools.test.ts`](https://github.com/chrispangg/deepagentsdk/blob/3159edf99372af24e59b2d45c110d5115f0e62ae/test/subagents/selective-tools.test.ts)**: 16 occurrences
+- **[`test/tools/web.test.ts`](https://github.com/chrispangg/deepagentsdk/blob/3159edf99372af24e59b2d45c110d5115f0e62ae/test/tools/web.test.ts)**: 17 occurrences
 
 ## Code References
 
 ### Critical Production Code
 
-- [`src/utils/patch-tool-calls.ts:99`](https://github.com/chrispangg/ai-sdk-deepagent/blob/3159edf99372af24e59b2d45c110d5115f0e62ae/src/utils/patch-tool-calls.ts#L99) - AI SDK integration workaround
+- [`src/utils/patch-tool-calls.ts:99`](https://github.com/chrispangg/deepagentsdk/blob/3159edf99372af24e59b2d45c110d5115f0e62ae/src/utils/patch-tool-calls.ts#L99) - AI SDK integration workaround
 
 ### Example Code
 
-- [`examples/with-structured-output.ts:45`](https://github.com/chrispangg/ai-sdk-deepagent/blob/3159edf99372af24e59b2d45c110d5115f0e62ae/examples/with-structured-output.ts#L45) - Structured output access pattern
-- [`examples/with-structured-output.ts:88`](https://github.com/chrispangg/ai-sdk-deepagent/blob/3159edf99372af24e59b2d45c110d5115f0e62ae/examples/with-structured-output.ts#L88) - Streaming structured output
+- [`examples/with-structured-output.ts:45`](https://github.com/chrispangg/deepagentsdk/blob/3159edf99372af24e59b2d45c110d5115f0e62ae/examples/with-structured-output.ts#L45) - Structured output access pattern
+- [`examples/with-structured-output.ts:88`](https://github.com/chrispangg/deepagentsdk/blob/3159edf99372af24e59b2d45c110d5115f0e62ae/examples/with-structured-output.ts#L88) - Streaming structured output
 
 ### Test Code (Representative Examples)
 
-- [`test/structured-output.test.ts:212`](https://github.com/chrispangg/ai-sdk-deepagent/blob/3159edf99372af24e59b2d45c110d5115f0e62ae/test/structured-output.test.ts#L212) - Internal property access
-- [`test/tools/web.test.ts:39`](https://github.com/chrispangg/ai-sdk-deepagent/blob/3159edf99372af24e59b2d45c110d5115f0e62ae/test/tools/web.test.ts#L39) - Global fetch mocking
-- [`test/passthrough/passthrough.test.ts:40`](https://github.com/chrispangg/ai-sdk-deepagent/blob/3159edf99372af24e59b2d45c110d5115f0e62ae/test/passthrough/passthrough.test.ts#L40) - Mock model casting
+- [`test/structured-output.test.ts:212`](https://github.com/chrispangg/deepagentsdk/blob/3159edf99372af24e59b2d45c110d5115f0e62ae/test/structured-output.test.ts#L212) - Internal property access
+- [`test/tools/web.test.ts:39`](https://github.com/chrispangg/deepagentsdk/blob/3159edf99372af24e59b2d45c110d5115f0e62ae/test/tools/web.test.ts#L39) - Global fetch mocking
+- [`test/passthrough/passthrough.test.ts:40`](https://github.com/chrispangg/deepagentsdk/blob/3159edf99372af24e59b2d45c110d5115f0e62ae/test/passthrough/passthrough.test.ts#L40) - Mock model casting
 
 ## Architecture Documentation
 
@@ -159,8 +159,8 @@ The library uses complex type patterns including:
 
 ## Related Research
 
-- [`docs/tickets/012_architectural_health_assessment/research.md`](https://github.com/chrispangg/ai-sdk-deepagent/blob/main/docs/tickets/012_architectural_health_assessment/research.md) - Previous architectural analysis
-- [`docs/PROJECT-STATE.md`](https://github.com/chrispangg/ai-sdk-deepagent/blob/main/docs/PROJECT-STATE.md) - Tracks this as high-priority item
+- [`docs/tickets/012_architectural_health_assessment/research.md`](https://github.com/chrispangg/deepagentsdk/blob/main/docs/tickets/012_architectural_health_assessment/research.md) - Previous architectural analysis
+- [`docs/PROJECT-STATE.md`](https://github.com/chrispangg/deepagentsdk/blob/main/docs/PROJECT-STATE.md) - Tracks this as high-priority item
 
 ## Open Questions
 
@@ -174,7 +174,7 @@ The library uses complex type patterns including:
 
 1. **Fix the Single Production Instance**
    - Investigate AI SDK documentation for correct tool-result structure
-   - Replace `as any` with proper typing in [`src/utils/patch-tool-calls.ts:99`](https://github.com/chrispangg/ai-sdk-deepagent/blob/3159edf99372af24e59b2d45c110d5115f0e62ae/src/utils/patch-tool-calls.ts#L99)
+   - Replace `as any` with proper typing in [`src/utils/patch-tool-calls.ts:99`](https://github.com/chrispangg/deepagentsdk/blob/3159edf99372af24e59b2d45c110d5115f0e62ae/src/utils/patch-tool-calls.ts#L99)
 
 ### Medium Priority Improvements
 

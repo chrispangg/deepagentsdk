@@ -19,7 +19,7 @@ export default function BlogPage() {
                 href="/"
                 className="text-sm font-semibold tracking-tight font-[family-name:var(--font-ibm-plex-mono)] text-[var(--home-text-primary)] hover:text-[var(--home-accent)] transition-colors"
               >
-                ai-sdk-deepagent
+                deepagentsdk
               </Link>
               <div className="flex items-center gap-6">
                 <Link
@@ -149,7 +149,7 @@ export default function BlogPage() {
             {/* Footer */}
             <footer className="border-t border-[var(--home-border-secondary)] pt-8 pb-6">
               <div className="flex items-center justify-between text-xs text-[var(--home-text-muted)] font-[family-name:var(--font-ibm-plex-mono)]">
-                <div>© 2025 ai-sdk-deepagent</div>
+                <div>© 2025 deepagentsdk</div>
                 <Link
                   href="/"
                   className="hover:text-[var(--home-text-primary)] transition-colors"
@@ -167,7 +167,7 @@ export default function BlogPage() {
 
 export function generateMetadata() {
   return {
-    title: 'Blog | ai-sdk-deepagent',
+    title: 'Blog | deepagentsdk',
     description: 'Insights, technical deep dives, and updates about building Deep Agent with Vercel AI SDK',
   };
 }

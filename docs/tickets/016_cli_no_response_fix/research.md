@@ -18,7 +18,7 @@ The CLI tool in `src/cli/` is not working. When launched and prompted, nothing r
 
 ## Summary
 
-**ROOT CAUSE IDENTIFIED**: A critical bug exists in the `useAgent` hook ([`src/cli/hooks/useAgent.ts:667`](https://github.com/chrispangg/ai-sdk-deepagent/blob/e7398eff8adb8b64d1bca9d7ea5273b9b9d5d011/src/cli/hooks/useAgent.ts#L667)) where an empty `messages` array is passed to `streamWithEvents` along with the user's `prompt`. The `buildMessageArray` function in [`agent.ts:721-831`](https://github.com/chrispangg/ai-sdk-deepagent/blob/e7398eff8adb8b64d1bca9d7ea5273b9b9d5d011/src/agent.ts#L721-L831) interprets an empty messages array as "explicit empty messages" and **ignores the prompt parameter entirely**, resulting in no valid input and a "nothing returns" scenario.
+**ROOT CAUSE IDENTIFIED**: A critical bug exists in the `useAgent` hook ([`src/cli/hooks/useAgent.ts:667`](https://github.com/chrispangg/deepagentsdk/blob/e7398eff8adb8b64d1bca9d7ea5273b9b9d5d011/src/cli/hooks/useAgent.ts#L667)) where an empty `messages` array is passed to `streamWithEvents` along with the user's `prompt`. The `buildMessageArray` function in [`agent.ts:721-831`](https://github.com/chrispangg/deepagentsdk/blob/e7398eff8adb8b64d1bca9d7ea5273b9b9d5d011/src/agent.ts#L721-L831) interprets an empty messages array as "explicit empty messages" and **ignores the prompt parameter entirely**, resulting in no valid input and a "nothing returns" scenario.
 
 The CLI help command works correctly, indicating the CLI launches and renders properly. The issue occurs specifically when the user submits their first prompt.
 
@@ -33,7 +33,7 @@ The CLI help command works correctly, indicating the CLI launches and renders pr
 
 ### 1. CLI Entry Point Works Correctly
 
-**Location**: [`src/cli/index.tsx:1041-1066`](https://github.com/chrispangg/ai-sdk-deepagent/blob/e7398eff8adb8b64d1bca9d7ea5273b9b9d5d011/src/cli/index.tsx#L1041-L1066)
+**Location**: [`src/cli/index.tsx:1041-1066`](https://github.com/chrispangg/deepagentsdk/blob/e7398eff8adb8b64d1bca9d7ea5273b9b9d5d011/src/cli/index.tsx#L1041-L1066)
 
 The CLI successfully:
 
@@ -48,20 +48,20 @@ Testing with `--help` confirms the CLI executable and renders output correctly.
 
 ### 2. Input Submission Flow
 
-**Location**: [`src/cli/index.tsx:290-316`](https://github.com/chrispangg/ai-sdk-deepagent/blob/e7398eff8adb8b64d1bca9d7ea5273b9b9d5d011/src/cli/index.tsx#L290-L316)
+**Location**: [`src/cli/index.tsx:290-316`](https://github.com/chrispangg/deepagentsdk/blob/e7398eff8adb8b64d1bca9d7ea5273b9b9d5d011/src/cli/index.tsx#L290-L316)
 
 When user submits input:
 
-1. `Input` component calls `onSubmit(value)` ([`Input.tsx:71`](https://github.com/chrispangg/ai-sdk-deepagent/blob/e7398eff8adb8b64d1bca9d7ea5273b9b9d5d011/src/cli/components/Input.tsx#L71))
-2. `App.handleSubmit` is invoked ([`index.tsx:290`](https://github.com/chrispangg/ai-sdk-deepagent/blob/e7398eff8adb8b64d1bca9d7ea5273b9b9d5d011/src/cli/index.tsx#L290))
-3. After command parsing, `agent.sendPrompt(trimmed)` is called ([`index.tsx:313`](https://github.com/chrispangg/ai-sdk-deepagent/blob/e7398eff8adb8b64d1bca9d7ea5273b9b9d5d011/src/cli/index.tsx#L313))
+1. `Input` component calls `onSubmit(value)` ([`Input.tsx:71`](https://github.com/chrispangg/deepagentsdk/blob/e7398eff8adb8b64d1bca9d7ea5273b9b9d5d011/src/cli/components/Input.tsx#L71))
+2. `App.handleSubmit` is invoked ([`index.tsx:290`](https://github.com/chrispangg/deepagentsdk/blob/e7398eff8adb8b64d1bca9d7ea5273b9b9d5d011/src/cli/index.tsx#L290))
+3. After command parsing, `agent.sendPrompt(trimmed)` is called ([`index.tsx:313`](https://github.com/chrispangg/deepagentsdk/blob/e7398eff8adb8b64d1bca9d7ea5273b9b9d5d011/src/cli/index.tsx#L313))
 4. `useAgent.sendPrompt` executes the agent stream
 
 ---
 
 ### 3. The Bug: Empty Messages Array Priority Issue
 
-**Location**: [`src/cli/hooks/useAgent.ts:650-756`](https://github.com/chrispangg/ai-sdk-deepagent/blob/e7398eff8adb8b64d1bca9d7ea5273b9b9d5d011/src/cli/hooks/useAgent.ts#L650-L756)
+**Location**: [`src/cli/hooks/useAgent.ts:650-756`](https://github.com/chrispangg/deepagentsdk/blob/e7398eff8adb8b64d1bca9d7ea5273b9b9d5d011/src/cli/hooks/useAgent.ts#L650-L756)
 
 #### The Problematic Code Flow
 
@@ -108,7 +108,7 @@ const sendPrompt = useCallback(
 
 When `streamWithEvents` receives **both** `prompt` and `messages: []`:
 
-**In [`agent.ts:buildMessageArray`](https://github.com/chrispangg/ai-sdk-deepagent/blob/e7398eff8adb8b64d1bca9d7ea5273b9b9d5d011/src/agent.ts#L721-L831):**
+**In [`agent.ts:buildMessageArray`](https://github.com/chrispangg/deepagentsdk/blob/e7398eff8adb8b64d1bca9d7ea5273b9b9d5d011/src/agent.ts#L721-L831):**
 
 ```typescript
 // agent.ts:748-767
@@ -142,7 +142,7 @@ if (hasEmptyMessages && !hasValidInput && !resume) {
 }
 ```
 
-**In [`agent.ts:streamWithEvents`](https://github.com/chrispangg/ai-sdk-deepagent/blob/e7398eff8adb8b64d1bca9d7ea5273b9b9d5d011/src/agent.ts#L908-L917):**
+**In [`agent.ts:streamWithEvents`](https://github.com/chrispangg/deepagentsdk/blob/e7398eff8adb8b64d1bca9d7ea5273b9b9d5d011/src/agent.ts#L908-L917):**
 
 ```typescript
 // agent.ts:908-917
@@ -171,7 +171,7 @@ if (messageResult.shouldReturnEmpty) {
 
 ### 4. Alternative Failure Mode: Error Event
 
-**Location**: [`agent.ts:813-823`](https://github.com/chrispangg/ai-sdk-deepagent/blob/e7398eff8adb8b64d1bca9d7ea5273b9b9d5d011/src/agent.ts#L813-L823)
+**Location**: [`agent.ts:813-823`](https://github.com/chrispangg/deepagentsdk/blob/e7398eff8adb8b64d1bca9d7ea5273b9b9d5d011/src/agent.ts#L813-L823)
 
 If the special case at lines 804-810 is removed or modified, the code would reach validation:
 
@@ -189,7 +189,7 @@ if (!hasValidInput && !resume) {
 }
 ```
 
-This would yield an `error` event, which is handled in [`useAgent.ts:745-749`](https://github.com/chrispangg/ai-sdk-deepagent/blob/e7398eff8adb8b64d1bca9d7ea5273b9b9d5d011/src/cli/hooks/useAgent.ts#L745-L749):
+This would yield an `error` event, which is handled in [`useAgent.ts:745-749`](https://github.com/chrispangg/deepagentsdk/blob/e7398eff8adb8b64d1bca9d7ea5273b9b9d5d011/src/cli/hooks/useAgent.ts#L745-L749):
 
 ```typescript
 } else {
@@ -201,7 +201,7 @@ This would yield an `error` event, which is handled in [`useAgent.ts:745-749`](h
 }
 ```
 
-The error would be displayed via the `ErrorDisplay` component at [`index.tsx:606`](https://github.com/chrispangg/ai-sdk-deepagent/blob/e7398eff8adb8b64d1bca9d7ea5273b9b9d5d011/src/cli/index.tsx#L606).
+The error would be displayed via the `ErrorDisplay` component at [`index.tsx:606`](https://github.com/chrispangg/deepagentsdk/blob/e7398eff8adb8b64d1bca9d7ea5273b9b9d5d011/src/cli/index.tsx#L606).
 
 ---
 
@@ -211,7 +211,7 @@ While the empty messages bug is the primary cause, other issues could also contr
 
 #### 5.1 Missing API Keys
 
-**Location**: [`src/cli/index.tsx:1054-1056`](https://github.com/chrispangg/ai-sdk-deepagent/blob/e7398eff8adb8b64d1bca9d7ea5273b9b9d5d011/src/cli/index.tsx#L1054-L1056)
+**Location**: [`src/cli/index.tsx:1054-1056`](https://github.com/chrispangg/deepagentsdk/blob/e7398eff8adb8b64d1bca9d7ea5273b9b9d5d011/src/cli/index.tsx#L1054-L1056)
 
 The CLI only **warns** about missing API keys but continues execution:
 
@@ -225,7 +225,7 @@ If API keys are missing, the agent would fail during the first API call with an 
 
 #### 5.2 Model Parsing Issues
 
-**Location**: [`src/utils/model-parser.ts:27-38`](https://github.com/chrispangg/ai-sdk-deepagent/blob/e7398eff8adb8b64d1bca9d7ea5273b9b9d5d011/src/utils/model-parser.ts#L27-L38)
+**Location**: [`src/utils/model-parser.ts:27-38`](https://github.com/chrispangg/deepagentsdk/blob/e7398eff8adb8b64d1bca9d7ea5273b9b9d5d011/src/utils/model-parser.ts#L27-L38)
 
 The model parser has no validation:
 
@@ -235,7 +235,7 @@ The model parser has no validation:
 
 #### 5.3 streamText Hanging
 
-**Location**: [`agent.ts:959-981`](https://github.com/chrispangg/ai-sdk-deepagent/blob/e7398eff8adb8b64d1bca9d7ea5273b9b9d5d011/src/agent.ts#L959-L981)
+**Location**: [`agent.ts:959-981`](https://github.com/chrispangg/deepagentsdk/blob/e7398eff8adb8b64d1bca9d7ea5273b9b9d5d011/src/agent.ts#L959-L981)
 
 If `streamText()` from the AI SDK never resolves:
 
@@ -335,9 +335,9 @@ No relevant prior research found in the `docs/` directory regarding this specifi
 
 ## Related Research
 
-- **Model Parser Analysis**: [`src/utils/model-parser.ts`](https://github.com/chrispangg/ai-sdk-deepagent/blob/e7398eff8adb8b64d1bca9d7ea5273b9b9d5d011/src/utils/model-parser.ts) - CLI-only utility for string-to-model conversion
-- **Event System**: [`src/types/events.ts`](https://github.com/chrispangg/ai-sdk-deepagent/blob/e7398eff8adb8b64d1bca9d7ea5273b9b9d5d011/src/types/events.ts) - 31 event types for streaming
-- **streamWithEvents**: [`src/agent.ts:884-1031`](https://github.com/chrispangg/ai-sdk-deepagent/blob/e7398eff8adb8b64d1bca9d7ea5273b9b9d5d011/src/agent.ts#L884-L1031) - Core streaming method
+- **Model Parser Analysis**: [`src/utils/model-parser.ts`](https://github.com/chrispangg/deepagentsdk/blob/e7398eff8adb8b64d1bca9d7ea5273b9b9d5d011/src/utils/model-parser.ts) - CLI-only utility for string-to-model conversion
+- **Event System**: [`src/types/events.ts`](https://github.com/chrispangg/deepagentsdk/blob/e7398eff8adb8b64d1bca9d7ea5273b9b9d5d011/src/types/events.ts) - 31 event types for streaming
+- **streamWithEvents**: [`src/agent.ts:884-1031`](https://github.com/chrispangg/deepagentsdk/blob/e7398eff8adb8b64d1bca9d7ea5273b9b9d5d011/src/agent.ts#L884-L1031) - Core streaming method
 
 ---
 
@@ -345,16 +345,16 @@ No relevant prior research found in the `docs/` directory regarding this specifi
 
 1. **Why was `messages` parameter added to `streamWithEvents` call?**
    - The call includes both `prompt` and `messages` parameters
-   - According to [`agent.ts:754-756`](https://github.com/chrispangg/ai-sdk-deepagent/blob/e7398eff8adb8b64d1bca9d7ea5273b9b9d5d011/src/agent.ts#L754-L756), when both are provided, `messages` takes priority
+   - According to [`agent.ts:754-756`](https://github.com/chrispangg/deepagentsdk/blob/e7398eff8adb8b64d1bca9d7ea5273b9b9d5d011/src/agent.ts#L754-L756), when both are provided, `messages` takes priority
    - Suggests a design for multi-turn conversation, but first call has empty history
 
 2. **Should empty `messages` array clear history or be ignored?**
    - Current behavior: Empty array = "clear history and reset"
    - Alternative: Empty array = "no messages parameter, use prompt"
-   - The code at [`agent.ts:757-767`](https://github.com/chrispangg/ai-sdk-deepagent/blob/e7398eff8adb8b64d1bca9d7ea5273b9b9d5d011/src/agent.ts#L757-L767) explicitly handles empty array as a reset
+   - The code at [`agent.ts:757-767`](https://github.com/chrispangg/deepagentsdk/blob/e7398eff8adb8b64d1bca9d7ea5273b9b9d5d011/src/agent.ts#L757-L767) explicitly handles empty array as a reset
 
 3. **Why does the CLI pass empty messages instead of undefined?**
-   - At [`useAgent.ts:667`](https://github.com/chrispangg/ai-sdk-deepagent/blob/e7398eff8adb8b64d1bca9d7ea5273b9b9d5d011/src/cli/hooks/useAgent.ts#L667), `messagesRef.current = messages` syncs state
+   - At [`useAgent.ts:667`](https://github.com/chrispangg/deepagentsdk/blob/e7398eff8adb8b64d1bca9d7ea5273b9b9d5d011/src/cli/hooks/useAgent.ts#L667), `messagesRef.current = messages` syncs state
    - On first call, `messages` state is `[]` from initialization
    - Could be fixed by conditionally passing `messages` only when non-empty
 

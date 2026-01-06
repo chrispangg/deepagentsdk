@@ -4,7 +4,7 @@ date: 2025-12-20 10:45:00 AEDT
 researcher: claude-sonnet-4-5-20251001
 git_commit: d8cff28e51a84bf19436e47fedba27240673d0ac
 branch: main
-repository: chrispangg/ai-sdk-deepagent
+repository: chrispangg/deepagentsdk
 topic: "API Migration Analysis: Replacing prompt:string with messages:string[] in streamWithEvents"
 tags: [research, api-migration, prompt, messages, breaking-change]
 status: complete

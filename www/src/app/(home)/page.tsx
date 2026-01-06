@@ -94,7 +94,7 @@ export default async function HomePage() {
           <div className="max-w-5xl mx-auto px-6">
             <div className="flex items-center justify-between">
               <div className="text-sm font-semibold tracking-tight font-[family-name:var(--font-ibm-plex-mono)]">
-                <span className="text-[var(--home-text-primary)]">ai-sdk-deepagent</span>
+                <span className="text-[var(--home-text-primary)]">deepagentsdk</span>
                 <span className="text-[var(--home-text-muted)] ml-2">// v{version}</span>
               </div>
               <div className="flex items-center gap-6">
@@ -155,7 +155,7 @@ export default async function HomePage() {
                 Read Blog
               </Link>
               <a
-                href="https://github.com/chrispangg/ai-sdk-deepagent"
+                href="https://github.com/chrispangg/deepagentsdk"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="relative inline-flex items-center justify-center gap-2 px-7 py-3.5 border border-[var(--home-border-primary)] text-[var(--home-text-secondary)] bg-[var(--home-bg-card)] font-medium text-sm font-[family-name:var(--font-ibm-plex-mono)] transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] hover:border-[var(--home-text-primary)] hover:text-[var(--home-text-primary)] hover:bg-[var(--home-bg-elevated)] hover:shadow-[0_2px_8px_rgba(0,0,0,0.4)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--home-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--home-bg-primary)]"
@@ -279,7 +279,7 @@ export default async function HomePage() {
                   Built with Vercel AI SDK v6, Next.js, and Fumadocs
                 </div>
                 <div className="text-xs text-[var(--home-text-muted)] font-[family-name:var(--font-ibm-plex-mono)]">
-                  © 2025 ai-sdk-deepagent
+                  © 2025 deepagentsdk
                 </div>
               </div>
             </footer>

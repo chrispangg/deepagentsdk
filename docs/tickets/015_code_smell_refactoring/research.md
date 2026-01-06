@@ -4,7 +4,7 @@ date: 2025-12-23 06:33:58 AEDT
 researcher: Claude (Sonnet 4.5)
 git_commit: 4fac6660ed59556574d8443dc0026e121f6bb0ed
 branch: main
-repository: chrispangg/ai-sdk-deepagent
+repository: chrispangg/deepagentsdk
 topic: "Comprehensive codebase code smell analysis and refactoring opportunities"
 tags: [research, codebase, code-quality, technical-debt, refactoring]
 status: complete

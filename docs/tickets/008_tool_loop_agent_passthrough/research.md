@@ -99,7 +99,7 @@ The `ToolLoopAgentSettings` type includes options inherited from `CallSettings` 
 
 #### 2.1 Instantiation Sites
 
-**Site 1: Main Agent** ([src/agent.ts:266-273](https://github.com/chrispangg/ai-sdk-deepagent/blob/3026f4b2935df92b7d71fadf9e1c0dafb2015a68/src/agent.ts#L266-L273))
+**Site 1: Main Agent** ([src/agent.ts:266-273](https://github.com/chrispangg/deepagentsdk/blob/3026f4b2935df92b7d71fadf9e1c0dafb2015a68/src/agent.ts#L266-L273))
 
 ```typescript
 private createAgent(state: DeepAgentState, maxSteps?: number, onEvent?: EventCallback) {
@@ -115,7 +115,7 @@ private createAgent(state: DeepAgentState, maxSteps?: number, onEvent?: EventCal
 }
 ```
 
-**Site 2: Subagent** ([src/tools/subagent.ts:175-182](https://github.com/chrispangg/ai-sdk-deepagent/blob/3026f4b2935df92b7d71fadf9e1c0dafb2015a68/src/tools/subagent.ts#L175-L182))
+**Site 2: Subagent** ([src/tools/subagent.ts:175-182](https://github.com/chrispangg/deepagentsdk/blob/3026f4b2935df92b7d71fadf9e1c0dafb2015a68/src/tools/subagent.ts#L175-L182))
 
 ```typescript
 const subagentAgent = new ToolLoopAgent({
@@ -287,7 +287,7 @@ export interface CreateDeepAgentParams {
 
 #### 5.1 onStepFinish Merging
 
-**Current internal usage** ([src/agent.ts:512-549](https://github.com/chrispangg/ai-sdk-deepagent/blob/3026f4b2935df92b7d71fadf9e1c0dafb2015a68/src/agent.ts#L512-L549)):
+**Current internal usage** ([src/agent.ts:512-549](https://github.com/chrispangg/deepagentsdk/blob/3026f4b2935df92b7d71fadf9e1c0dafb2015a68/src/agent.ts#L512-L549)):
 
 ```typescript
 onStepFinish: async ({ toolCalls, toolResults }) => {
@@ -594,14 +594,14 @@ const agent = createDeepAgent({
 
 ### Core Implementation Files
 
-- [`src/agent.ts:266-273`](https://github.com/chrispangg/ai-sdk-deepagent/blob/3026f4b2935df92b7d71fadf9e1c0dafb2015a68/src/agent.ts#L266-L273) - Main `createAgent` method
-- [`src/agent.ts:198-255`](https://github.com/chrispangg/ai-sdk-deepagent/blob/3026f4b2935df92b7d71fadf9e1c0dafb2015a68/src/agent.ts#L198-L255) - `createTools` dynamic tool building
-- [`src/agent.ts:512-549`](https://github.com/chrispangg/ai-sdk-deepagent/blob/3026f4b2935df92b7d71fadf9e1c0dafb2015a68/src/agent.ts#L512-L549) - Internal `onStepFinish` usage
-- [`src/types.ts:317-567`](https://github.com/chrispangg/ai-sdk-deepagent/blob/3026f4b2935df92b7d71fadf9e1c0dafb2015a68/src/types.ts#L317-L567) - `CreateDeepAgentParams` interface
+- [`src/agent.ts:266-273`](https://github.com/chrispangg/deepagentsdk/blob/3026f4b2935df92b7d71fadf9e1c0dafb2015a68/src/agent.ts#L266-L273) - Main `createAgent` method
+- [`src/agent.ts:198-255`](https://github.com/chrispangg/deepagentsdk/blob/3026f4b2935df92b7d71fadf9e1c0dafb2015a68/src/agent.ts#L198-L255) - `createTools` dynamic tool building
+- [`src/agent.ts:512-549`](https://github.com/chrispangg/deepagentsdk/blob/3026f4b2935df92b7d71fadf9e1c0dafb2015a68/src/agent.ts#L512-L549) - Internal `onStepFinish` usage
+- [`src/types.ts:317-567`](https://github.com/chrispangg/deepagentsdk/blob/3026f4b2935df92b7d71fadf9e1c0dafb2015a68/src/types.ts#L317-L567) - `CreateDeepAgentParams` interface
 
 ### Subagent Implementation
 
-- [`src/tools/subagent.ts:175-182`](https://github.com/chrispangg/ai-sdk-deepagent/blob/3026f4b2935df92b7d71fadf9e1c0dafb2015a68/src/tools/subagent.ts#L175-L182) - Subagent ToolLoopAgent instantiation
+- [`src/tools/subagent.ts:175-182`](https://github.com/chrispangg/deepagentsdk/blob/3026f4b2935df92b7d71fadf9e1c0dafb2015a68/src/tools/subagent.ts#L175-L182) - Subagent ToolLoopAgent instantiation
 
 ### AI SDK Type Definitions
 

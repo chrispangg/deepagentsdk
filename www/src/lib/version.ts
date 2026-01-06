@@ -4,7 +4,7 @@
  */
 
 const NPM_PACKAGE_NAME = 'deepagentsdk';
-const GITHUB_REPO = 'chrispangg/ai-sdk-deepagent';
+const GITHUB_REPO = 'chrispangg/deepagentsdk';
 
 interface NpmPackageData {
   'dist-tags': {
