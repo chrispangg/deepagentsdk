@@ -20,8 +20,14 @@ bun.lock
 # Testing and coverage
 coverage/
 *.lcov
+test/
+test-integration/
 
-# Build artifacts that shouldn't exist but just in case
+# TypeScript sources (we publish compiled dist/ instead)
+src/
+tsconfig.json
+tsdown.config.ts
+
+# Build artifacts (old/outdated)
 out/
-dist/
 *.tgz

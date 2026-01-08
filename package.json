@@ -2,37 +2,50 @@
   "name": "deepagentsdk",
   "version": "0.11.1",
   "description": "Deep Agent implementation using Vercel AI SDK - build controllable AI agents with planning, filesystem, and subagent capabilities",
-  "main": "./src/index.ts",
-  "module": "./src/index.ts",
-  "types": "./src/index.ts",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.mts",
   "type": "module",
   "bin": {
-    "deep-agent": "./src/cli/index.tsx"
+    "deep-agent": "./dist/cli/index.mjs"
   },
   "exports": {
     ".": {
-      "import": "./src/index.ts",
-      "types": "./src/index.ts"
+      "import": {
+        "types": "./dist/index.d.mts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
     },
     "./cli": {
-      "import": "./src/cli/index.ts"
+      "import": {
+        "types": "./dist/cli/index.d.mts",
+        "default": "./dist/cli/index.mjs"
+      }
     },
     "./elements": {
-      "import": "./src/adapters/elements/index.ts",
-      "types": "./src/adapters/elements/index.ts"
+      "import": {
+        "types": "./dist/adapters/elements/index.d.mts",
+        "default": "./dist/adapters/elements/index.mjs"
+      }
     }
   },
   "files": [
-    "src",
+    "dist",
     "README.md",
     "LICENSE"
   ],
   "scripts": {
+    "build": "tsdown",
+    "dev": "tsdown --watch",
     "test": "bun test test/",
     "test:integration": "bun test test-integration/",
     "test:all": "bun run test && bun run test:integration",
     "typecheck": "tsc --noEmit",
-    "prepublishOnly": "bun run typecheck",
+    "prepublishOnly": "bun run build",
     "cli": "bun src/cli/index.tsx"
   },
   "repository": {
@@ -77,6 +90,7 @@
     "install": "^0.13.0",
     "langfuse-vercel": "^3.38.6",
     "react-dom": "^18.2.0",
+    "tsdown": "^0.19.0-beta.5",
     "typescript": "^5.7.3"
   },
   "peerDependencies": {

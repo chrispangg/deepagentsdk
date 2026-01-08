@@ -63,4 +63,5 @@ Temporary Items
 .claude/.ralph/claude_output.jsonl
 .playwright-mcp
 
-**/.drafts
+**/.drafts# Build output
+dist/

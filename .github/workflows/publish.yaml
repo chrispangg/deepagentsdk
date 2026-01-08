@@ -45,6 +45,9 @@ jobs:
       - name: Run tests
         run: bun test test/  # Only unit tests
 
+      - name: Build library
+        run: bun run build
+
       - name: Configure Git
         run: |
           git config user.name "github-actions[bot]"
