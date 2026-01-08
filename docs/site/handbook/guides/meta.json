@@ -2,6 +2,7 @@
   "title": "Guides",
   "pages": [
     "harness",
+    "ai-elements",
     "backends",
     "subagents",
     "human-in-the-loop",

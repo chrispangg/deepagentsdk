@@ -1,0 +1,460 @@
+---
+title: AI SDK Elements Integration
+description: Build chat UIs with Vercel AI SDK Elements and DeepAgent
+---
+
+**AI SDK Elements** is Vercel's open-source library of customizable React components for building AI interfaces. This guide shows how to integrate DeepAgent with AI Elements to build production-ready chat applications.
+
+<Callout type="info">**Architecture**: DeepAgent runs on the server and streams responses to the client using AI SDK's UI Message Stream Protocol. The client uses the `useChat` hook and AI Elements components to render the conversation.</Callout>
+
+## Overview
+
+The integration follows AI SDK's recommended architecture:
+
+```
+┌──────────────────────────────┐     ┌─────────────────────────────┐
+│ Server                       │     │ Client                      │
+│  /api/chat route             │────>│  useChat() hook             │
+│    └─> DeepAgent             │ SSE │    └─> AI Elements UI       │
+│    └─> UI Message Stream     │     │                             │
+└──────────────────────────────┘     └─────────────────────────────┘
+```
+
+**Key benefits:**
+
+- **Server-side execution** - API keys stay secure on the server
+- **Real-time streaming** - Responses stream as they're generated
+- **Tool visibility** - Tool calls and results display in the UI
+- **Production-ready** - Built on Vercel's battle-tested streaming protocol
+
+---
+
+## Installation
+
+First, install the required packages:
+
+```bash
+# DeepAgent SDK
+bun install deepagentsdk
+
+# AI SDK React hooks and your model provider
+bun install @ai-sdk/react @ai-sdk/anthropic
+
+# AI Elements CLI (scaffolds components into your project)
+bunx ai-elements@latest
+```
+
+<Callout type="warn">**AI Elements** installs components directly into your project (typically `@/components/ai-elements/`), giving you full control to customize them.</Callout>
+
+---
+
+## Quick Start
+
+### 1. Create the API Route
+
+Create a Next.js API route that handles chat requests:
+
+```typescript title="app/api/chat/route.ts"
+import { createDeepAgent } from 'deepagentsdk';
+import { createElementsRouteHandler } from 'deepagentsdk/adapters/elements';
+import { anthropic } from '@ai-sdk/anthropic';
+
+// Create the DeepAgent with your desired configuration
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-20250514'),
+  systemPrompt: 'You are a helpful assistant.',
+  maxSteps: 10,
+});
+
+// Export the route handler
+export const POST = createElementsRouteHandler({ agent });
+
+// Optional: Increase timeout for longer agent runs
+export const maxDuration = 60;
+```
+
+### 2. Create the Chat UI
+
+Build your chat interface using `useChat` and AI Elements:
+
+```tsx title="app/page.tsx"
+'use client';
+
+import { useChat } from '@ai-sdk/react';
+import { Message, Conversation, PromptInput } from '@/components/ai-elements';
+
+export default function ChatPage() {
+  const { messages, input, setInput, handleSubmit, isLoading, stop } = useChat();
+
+  return (
+    <div className="flex flex-col h-screen max-w-3xl mx-auto p-4">
+      <Conversation className="flex-1 overflow-y-auto">
+        {messages.map((message) => (
+          <Message key={message.id} message={message} />
+        ))}
+      </Conversation>
+
+      <form onSubmit={handleSubmit} className="mt-4">
+        <PromptInput
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          placeholder="Ask anything..."
+          disabled={isLoading}
+        />
+        {isLoading && (
+          <button type="button" onClick={stop} className="mt-2">
+            Stop generating
+          </button>
+        )}
+      </form>
+    </div>
+  );
+}
+```
+
+That's it! You now have a working chat interface powered by DeepAgent.
+
+---
+
+## Configuration Options
+
+### Route Handler Options
+
+The `createElementsRouteHandler` accepts several options:
+
+```typescript title="app/api/chat/route.ts"
+import { createDeepAgent, StateBackend } from 'deepagentsdk';
+import { createElementsRouteHandler } from 'deepagentsdk/adapters/elements';
+import { anthropic } from '@ai-sdk/anthropic';
+
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-20250514'),
+});
+
+export const POST = createElementsRouteHandler({
+  // Required: The DeepAgent instance
+  agent,
+
+  // Optional: Hook for authentication, logging, rate limiting
+  onRequest: async (req) => {
+    const authHeader = req.headers.get('Authorization');
+    if (!isValidToken(authHeader)) {
+      throw new Error('Unauthorized');
+    }
+  },
+
+  // Optional: Initial state for the agent
+  initialState: {
+    todos: [],
+    files: {},
+  },
+
+  // Optional: Thread ID for conversation persistence
+  threadId: 'user-123-conversation-1',
+
+  // Optional: Override max steps per request
+  maxSteps: 20,
+
+  // Optional: Custom ID generator
+  generateId: () => crypto.randomUUID(),
+});
+```
+
+### Authentication Example
+
+Protect your chat endpoint with authentication:
+
+```typescript title="app/api/chat/route.ts"
+import { auth } from '@/lib/auth'; // Your auth library
+
+export const POST = createElementsRouteHandler({
+  agent,
+  onRequest: async (req) => {
+    const session = await auth();
+    if (!session?.user) {
+      throw new Error('Please sign in to use the chat');
+    }
+    // Optionally log or rate limit based on user
+    console.log(`Chat request from user: ${session.user.id}`);
+  },
+});
+```
+
+---
+
+## Advanced Usage
+
+### Adding Custom Tools
+
+DeepAgent supports custom tools that will show in the AI Elements UI:
+
+```typescript title="app/api/chat/route.ts"
+import { createDeepAgent } from 'deepagentsdk';
+import { createElementsRouteHandler } from 'deepagentsdk/adapters/elements';
+import { anthropic } from '@ai-sdk/anthropic';
+import { tool } from 'ai';
+import { z } from 'zod';
+
+const weatherTool = tool({
+  description: 'Get current weather for a location',
+  parameters: z.object({
+    location: z.string().describe('City name'),
+  }),
+  execute: async ({ location }) => {
+    // Your weather API call here
+    return { temperature: 72, condition: 'Sunny', location };
+  },
+});
+
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-20250514'),
+  tools: {
+    get_weather: weatherTool,
+  },
+});
+
+export const POST = createElementsRouteHandler({ agent });
+```
+
+The AI Elements `Message` component will automatically render tool calls and results.
+
+### Displaying Tool Calls
+
+AI Elements components handle tool rendering automatically. For custom styling, you can access tool invocations:
+
+```tsx title="components/CustomMessage.tsx"
+'use client';
+
+import type { UIMessage } from 'ai';
+
+export function CustomMessage({ message }: { message: UIMessage }) {
+  return (
+    <div className={message.role === 'user' ? 'bg-blue-50' : 'bg-gray-50'}>
+      {message.parts.map((part, i) => {
+        if (part.type === 'text') {
+          return <p key={i}>{part.text}</p>;
+        }
+        if (part.type.startsWith('tool-') || part.type === 'dynamic-tool') {
+          // Render tool invocation
+          return (
+            <div key={i} className="border rounded p-2 my-2 bg-yellow-50">
+              <span className="font-mono text-sm">Tool: {part.toolName}</span>
+              {part.state === 'output-available' && (
+                <pre className="text-xs mt-1">
+                  {JSON.stringify(part.output, null, 2)}
+                </pre>
+              )}
+            </div>
+          );
+        }
+        return null;
+      })}
+    </div>
+  );
+}
+```
+
+### Conversation Persistence
+
+Enable conversation persistence using DeepAgent's checkpointer:
+
+```typescript title="app/api/chat/route.ts"
+import { createDeepAgent, MemoryCheckpointSaver } from 'deepagentsdk';
+import { createElementsRouteHandler } from 'deepagentsdk/adapters/elements';
+import { anthropic } from '@ai-sdk/anthropic';
+
+// Create a checkpointer (use Redis/database in production)
+const checkpointer = new MemoryCheckpointSaver();
+
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-20250514'),
+  checkpointer,
+});
+
+export const POST = createElementsRouteHandler({
+  agent,
+  // Pass thread ID from request headers or body
+  threadId: 'conversation-123',
+});
+```
+
+### Using with Subagents
+
+DeepAgent's subagent capabilities work seamlessly with AI Elements:
+
+```typescript title="app/api/chat/route.ts"
+import { createDeepAgent } from 'deepagentsdk';
+import { createElementsRouteHandler } from 'deepagentsdk/adapters/elements';
+import { anthropic } from '@ai-sdk/anthropic';
+
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-20250514'),
+  subagents: [
+    {
+      name: 'researcher',
+      description: 'Specialized agent for research tasks',
+      systemPrompt: 'You are a research specialist...',
+    },
+    {
+      name: 'coder',
+      description: 'Specialized agent for coding tasks',
+      systemPrompt: 'You are a coding expert...',
+    },
+  ],
+});
+
+export const POST = createElementsRouteHandler({ agent });
+```
+
+---
+
+## Message Conversion Utilities
+
+The adapter provides utility functions for working with UI messages:
+
+```typescript
+import {
+  convertUIMessagesToModelMessages,
+  extractLastUserMessage,
+  hasToolParts,
+  countMessagesByRole,
+  extractTextFromMessage,
+} from 'deepagentsdk/adapters/elements';
+
+// Convert UI messages to model messages (async)
+const modelMessages = await convertUIMessagesToModelMessages(uiMessages);
+
+// Extract the last user message text
+const lastPrompt = extractLastUserMessage(messages);
+
+// Check if messages contain tool invocations
+const hasTool = hasToolParts(messages);
+
+// Count messages by role
+const counts = countMessagesByRole(messages);
+// { user: 3, assistant: 2, system: 0 }
+
+// Extract all text from a single message
+const text = extractTextFromMessage(message);
+```
+
+---
+
+## Streaming Protocol
+
+The adapter uses AI SDK's **UI Message Stream Protocol**, which streams events as Server-Sent Events (SSE):
+
+| Event Type | Description |
+|------------|-------------|
+| `text-start` | Beginning of a text response |
+| `text-delta` | Incremental text chunk |
+| `text-end` | End of text response |
+| `tool-input-available` | Tool was called with arguments |
+| `tool-output-available` | Tool returned a result |
+| `tool-output-error` | Tool execution failed |
+| `start-step` | Agent started a new reasoning step |
+| `finish-step` | Agent completed a reasoning step |
+| `error` | Error occurred during generation |
+
+This protocol ensures compatibility with all AI SDK UI hooks and components.
+
+---
+
+## Error Handling
+
+Handle errors gracefully in your UI:
+
+```tsx title="app/page.tsx"
+'use client';
+
+import { useChat } from '@ai-sdk/react';
+
+export default function ChatPage() {
+  const { messages, error, reload, isLoading } = useChat();
+
+  if (error) {
+    return (
+      <div className="p-4 bg-red-50 text-red-700 rounded">
+        <p>Something went wrong: {error.message}</p>
+        <button onClick={() => reload()} className="mt-2 underline">
+          Try again
+        </button>
+      </div>
+    );
+  }
+
+  // ... rest of your UI
+}
+```
+
+---
+
+## Best Practices
+
+### 1. Set Appropriate Timeouts
+
+DeepAgent with multiple tool calls can take time. Set appropriate timeouts:
+
+```typescript title="app/api/chat/route.ts"
+// Next.js App Router
+export const maxDuration = 60; // 60 seconds
+
+// Or in next.config.js for all routes
+// experimental: { serverActions: { bodySizeLimit: '2mb' } }
+```
+
+### 2. Use Streaming for Long Responses
+
+The adapter automatically streams responses, providing real-time feedback to users even during long operations.
+
+### 3. Implement Rate Limiting
+
+Protect your API with rate limiting:
+
+```typescript
+import { Ratelimit } from '@upstash/ratelimit';
+import { Redis } from '@upstash/redis';
+
+const ratelimit = new Ratelimit({
+  redis: Redis.fromEnv(),
+  limiter: Ratelimit.slidingWindow(10, '1 m'),
+});
+
+export const POST = createElementsRouteHandler({
+  agent,
+  onRequest: async (req) => {
+    const ip = req.headers.get('x-forwarded-for') ?? '127.0.0.1';
+    const { success } = await ratelimit.limit(ip);
+    if (!success) {
+      throw new Error('Rate limit exceeded');
+    }
+  },
+});
+```
+
+### 4. Log Requests for Debugging
+
+Add logging in the `onRequest` hook for debugging:
+
+```typescript
+export const POST = createElementsRouteHandler({
+  agent,
+  onRequest: async (req) => {
+    const body = await req.clone().json();
+    console.log('Chat request:', {
+      messageCount: body.messages?.length,
+      timestamp: new Date().toISOString(),
+    });
+  },
+});
+```
+
+---
+
+## Related Resources
+
+- [AI SDK Elements Documentation](https://ai-sdk.dev/elements)
+- [AI SDK UI Stream Protocol](https://ai-sdk.dev/docs/ai-sdk-ui/stream-protocol)
+- [useChat Hook Reference](https://ai-sdk.dev/docs/reference/ai-sdk-ui/use-chat)
+- [DeepAgent Customization Guide](/guides/customization)
+- [Subagents Guide](/guides/subagents)

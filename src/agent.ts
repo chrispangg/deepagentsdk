@@ -51,7 +51,6 @@ import { createTodosTool } from "./tools/todos";
 import { createFilesystemTools } from "./tools/filesystem";
 import { createSubagentTool } from "./tools/subagent";
 import { createExecuteTool } from "./tools/execute";
-import { createWebTools } from "./tools/web";
 import { StateBackend } from "./backends/state";
 import { patchToolCalls } from "./utils/patch-tool-calls";
 import { summarizeIfNeeded } from "./utils/summarization";
@@ -234,15 +233,30 @@ export class DeepAgent {
 
   /**
    * Create web tools if TAVILY_API_KEY is available.
+   * Uses dynamic import to avoid bundling Node.js dependencies in client builds.
    * @private
    */
   private createWebToolSet(state: DeepAgentState, onEvent?: EventCallback): ToolSet {
-    const webTools = createWebTools(state, {
-      backend: this.backend,
-      onEvent,
-      toolResultEvictionLimit: this.toolResultEvictionLimit,
-    });
-    return webTools;
+    // Check if TAVILY_API_KEY is present before attempting to load web tools
+    if (!process.env.TAVILY_API_KEY) {
+      return {};
+    }
+
+    try {
+      // Dynamic import to avoid bundling Node.js-only dependencies
+      // This will only load in Node.js environments (server-side)
+      const webToolsModule = require("./tools/web");
+      const webTools = webToolsModule.createWebTools(state, {
+        backend: this.backend,
+        onEvent,
+        toolResultEvictionLimit: this.toolResultEvictionLimit,
+      });
+      return webTools;
+    } catch (error) {
+      // If web tools fail to load (e.g., in browser), return empty tools
+      console.warn("Web tools not available in this environment:", error);
+      return {};
+    }
   }
 
   /**
