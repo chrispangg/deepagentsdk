@@ -1,0 +1,135 @@
+---
+title: Subagents Are Context Compression Functions, Not Team Members
+description: Why domain-based multi-agent architectures fail and what to do instead
+author: Chris Pang
+date: 2026-01-09
+---
+
+Most multi-agent architectures are org charts wearing code.
+
+You've seen them: `frontend-developer`, `backend-architect`, `mobile-app-builder`. Agents with job titles. This feels intuitive because it maps to human teams, and intuition is exactly why it fails.
+
+By the time context reaches a specialized subagent, previous decisions have been lost. [Cognition's analysis](https://cognition.ai/blog/dont-build-multi-agents) demonstrates this with Flappy Bird: separate frontend and backend agents produce mismatched aesthetics and broken assumptions. [Research on 200+ multi-agent traces](https://www.mongodb.com/company/blog/technical/why-multi-agent-systems-need-memory-engineering) found 36.9% of failures stem from inter-agent misalignment. Information silos kill coordination.
+
+**The correct mental model: subagents are context compression functions.**
+
+Not colleagues. Not specialists. Compression functions. They consume thousands of tokens exploring a problem space and return a condensed summary. That's it. That's the entire value proposition.
+
+## The Org Chart Anti-Pattern
+
+Here's a real example of what not to build:
+
+<img src="/blog/assets/tweet-2004597085467983965.png" alt="Tweet showing agent hierarchy with frontend-developer, backend-architect, mobile-app-builder, tiktok-strategist" style={{ maxWidth: '500px', width: '100%' }} />
+
+
+## HumanLayer Got This Right
+
+When building the deepagent sdk, I spent weeks studying how people structure specialized agents.
+
+HumanLayer has one of the best examples. They talked about it at AIE and open sourced it [here](https://github.com/humanlayer/humanlayer/tree/main/.claude/agents).
+
+- `codebase-locator`: Finds WHERE code lives (not what it does)
+- `codebase-analyzer`: Understands HOW code works
+- `codebase-pattern-finder`: Identifies existing patterns
+- `web-search-researcher`: Conducts web research with structured output
+
+Notice the scoping. Each agent has one job and explicit output format. Notice what they explicitly forbid:
+
+```markdown
+DO NOT suggest improvements or changes unless the user explicitly asks
+DO NOT perform root cause analysis unless explicitly asked
+DO NOT propose future enhancements unless explicitly asked
+DO NOT critique the implementation or identify problems
+```
+
+Each subagent is a documentarian, not a critic. It returns structured findings. No opinions. No speculation. Predictable, parseable output.
+
+Their `research_codebase` command demonstrates the pattern at scale: spawn parallel subagents for exploration, let each explore independently, synthesize findings into a single document. MapReduce for context.
+
+I've been testing these patterns exclusively to build the deepagent sdk. They work. [Source](https://github.com/chrispangg/ai-sdk-deepagent/tree/main/.claude/agents).
+
+## Subagents as MapReduce
+
+[Phil Schmid describes the pattern](https://www.philschmid.de/context-engineering-part-2): treat agents as tools. The main agent invokes `call_planner(goal="...")`, a harness spins up a temporary sub-agent loop, and returns a structured result.
+
+[Anthropic's context engineering guide](https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents) adds specificity: subagents explore using tens of thousands of tokens but return condensed 1,000-2,000 token summaries. Context stays isolated. The parent receives distilled insight, not exploration traces.
+
+Use subagents when detail doesn't matter, only outcome matters.
+
+Here's the pattern in deepagent sdk:
+
+```typescript
+import { createDeepAgent } from 'ai-sdk-deepagent';
+import { anthropic } from '@ai-sdk/anthropic';
+
+const researchAgent = {
+  name: 'research-agent',
+  description: 'Deep research with condensed output',
+  systemPrompt: `Execute thorough research using available tools.
+
+    Output format (required):
+    {
+      "findings": "2-3 sentence summary",
+      "key_points": ["point1", "point2", "point3"],
+      "sources": ["url1", "url2"]
+    }
+
+    Do NOT include search queries, intermediate reasoning, or tool call history.`,
+  model: anthropic('claude-haiku-4-5-20251001'),
+};
+
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-5-20250929'),
+  systemPrompt: `You coordinate complex tasks. Delegate research to research-agent.
+    It returns structured findings. Use those findings to complete your task.`,
+  subagents: [researchAgent],
+});
+```
+
+The key: explicit input and output contracts. The subagent is a pure function: `research(topic) → {findings, key_points, sources}`. No side effects. No context leakage. Predictable compression.
+
+## Don't Use Subagents for Repeatable Tasks
+
+Here's where most teams go wrong. They build a `typescript-expert` subagent or a `react-specialist` agent to handle domain-specific work. This wastes context and adds latency for tasks that should be repeatable.
+
+Repeatable tasks belong in [Skills](https://platform.claude.com/docs/en/agents-and-tools/agent-skills/overview). A Skill packages domain knowledge, workflows, scripts, and assets into a reusable module. Need to rotate a PDF? The skill includes `scripts/rotate_pdf.py`. Need to write unit tests? The skill includes your testing standards. The agent loads the skill, runs the bundled scripts, produces consistent output. Every time. No context isolation overhead.
+
+Use subagents when you need what skills can't provide:
+
+**Context isolation.** A `research-assistant` subagent can explore dozens of files without cluttering the main conversation. It returns only the relevant findings. [Anthropic's SDK documentation](https://platform.claude.com/docs/en/agent-sdk/subagents) calls this out: "preventing information overload and keeping interactions focused."
+
+**Parallelisation.** Multiple subagents run concurrently. During a code review, spawn `style-checker`, `security-scanner`, and `test-coverage` subagents simultaneously. Minutes become seconds.
+
+**Tool restrictions.** Subagents can be limited to specific tools. A `doc-reviewer` subagent might only have Read and Grep access, ensuring it can analyse but never modify.
+
+| Scenario | Skill | Subagent |
+|----------|-------|----------|
+| Rotate a PDF | ✅ Bundled script | ❌ Overkill |
+| Write unit tests | ✅ Standards loaded | ❌ Single-file task |
+| Security audit | ❌ Can't parallelise | ✅ Concurrent scanners |
+| Codebase exploration | ❌ Would pollute context | ✅ Isolated findings |
+| Multi-file refactor | ❌ Can't coordinate | ✅ Systematic analysis |
+
+## Stop Building Org Charts
+
+Stop thinking: *"This subagent specializes in frontend work"*
+
+Start thinking: *"This subagent compresses codebase exploration into structured summaries"*
+
+Design subagents around information transformation, not domain expertise. Define explicit contracts: input schemas, output formats, token budgets. Monitor compression ratios. If a subagent returns more than it summarizes, delete it.
+
+[Phil Schmid](https://www.philschmid.de/context-engineering-part-2) puts it simply: "Don't over-anthropomorphize your agents. You don't need an 'Org Chart' of agents (Manager, Designer, Coder) that chat with each other."
+
+Build compression pipelines. Not teams.
+
+---
+
+**References:**
+- [Cognition: Don't Build Multi-Agents](https://cognition.ai/blog/dont-build-multi-agents)
+- [Anthropic: Context Engineering for AI Agents](https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents)
+- [Anthropic: Subagents in the SDK](https://platform.claude.com/docs/en/agent-sdk/subagents)
+- [Anthropic: Agent Skills Overview](https://platform.claude.com/docs/en/agents-and-tools/agent-skills/overview)
+- [Phil Schmid: Context Engineering Part 2](https://www.philschmid.de/context-engineering-part-2)
+- [LangChain: Deep Agents](https://blog.langchain.com/deep-agents/)
+- [HumanLayer: Claude Code Agent Examples](https://github.com/humanlayer/humanlayer/tree/main/.claude/agents)
+- [PRPM: When to Use a Claude Skill vs a Claude Sub-Agent](https://prpm.dev/blog/when-to-use-claude-skill-vs-subagent)
