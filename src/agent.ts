@@ -961,22 +961,50 @@ export class DeepAgent {
       // Yield step start event
       yield { type: "step-start", stepNumber: 1 };
 
-      // Stream text chunks
-      for await (const chunk of result.textStream) {
+      // Stream all chunks (text, tool calls, etc.)
+      for await (const chunk of result.fullStream) {
         // First, yield any queued events from tool executions
         while (eventQueue.length > 0) {
           const event = eventQueue.shift()!;
           yield event;
-          
+
           // If a step finished, yield the next step start
           if (event.type === "step-finish") {
             yield { type: "step-start", stepNumber: event.stepNumber + 1 };
           }
         }
 
-        // Then yield the text chunk
-        if (chunk) {
-          yield { type: "text", text: chunk };
+        // Handle different chunk types from fullStream
+        if (chunk.type === "text-delta") {
+          yield { type: "text", text: chunk.text };
+        } else if (chunk.type === "tool-call") {
+          // Emit tool-call event for UI
+          // Note: chunk has input property (AI SDK v6), but we use args for our event type
+          yield {
+            type: "tool-call",
+            toolName: chunk.toolName,
+            toolCallId: chunk.toolCallId,
+            args: chunk.input,
+          } as DeepAgentEvent;
+        } else if (chunk.type === "tool-result") {
+          // Emit tool-result event for UI
+          // Note: chunk has output property (AI SDK v6), but we use result for our event type
+          yield {
+            type: "tool-result",
+            toolName: chunk.toolName,
+            toolCallId: chunk.toolCallId,
+            result: chunk.output,
+            isError: false,
+          } as DeepAgentEvent;
+        } else if (chunk.type === "tool-error") {
+          // Emit tool-result event with error flag for UI
+          yield {
+            type: "tool-result",
+            toolName: chunk.toolName,
+            toolCallId: chunk.toolCallId,
+            result: chunk.error,
+            isError: true,
+          } as DeepAgentEvent;
         }
       }
 

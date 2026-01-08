@@ -16,6 +16,10 @@
     },
     "./cli": {
       "import": "./src/cli/index.ts"
+    },
+    "./elements": {
+      "import": "./src/adapters/elements/index.ts",
+      "types": "./src/adapters/elements/index.ts"
     }
   },
   "files": [
@@ -40,13 +44,13 @@
     "url": "https://github.com/chrispangg/deepagentsdk/issues"
   },
   "dependencies": {
-    "@ai-sdk/anthropic": "^3.0.0-beta.83",
-    "@ai-sdk/openai": "^3.0.0-beta.96",
-    "@ai-sdk/react": "^3.0.0-beta.153",
+    "@ai-sdk/anthropic": "^3.0.9",
+    "@ai-sdk/openai": "^3.0.7",
+    "@ai-sdk/react": "^3.0.9",
     "@inkjs/ui": "^1.0.0",
     "@mozilla/readability": "^0.6.0",
     "@tavily/core": "^0.6.1",
-    "ai": "^6.0.0-beta.150",
+    "ai": "^6.0.19",
     "fast-glob": "^3.3.3",
     "ink": "^5.1.0",
     "jsdom": "^25.0.1",
@@ -63,6 +67,7 @@
     "@opentelemetry/instrumentation": "^0.208.0",
     "@opentelemetry/sdk-logs": "^0.208.0",
     "@opentelemetry/sdk-node": "^0.208.0",
+    "@testing-library/react": "^16.3.1",
     "@types/bun": "latest",
     "@types/jsdom": "^21.1.7",
     "@types/micromatch": "^4.0.9",
@@ -71,6 +76,7 @@
     "@vercel/otel": "^2.1.0",
     "install": "^0.13.0",
     "langfuse-vercel": "^3.38.6",
+    "react-dom": "^18.2.0",
     "typescript": "^5.7.3"
   },
   "peerDependencies": {

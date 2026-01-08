@@ -54,6 +54,7 @@ export interface ToolResultEvent {
   toolName: string;
   toolCallId: string;
   result: unknown;
+  isError?: boolean;
 }
 
 /**
