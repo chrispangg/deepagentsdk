@@ -10,9 +10,9 @@ import type {
   ToolLoopAgentSettings,
 } from "ai";
 import type { z } from "zod";
-import type { BaseCheckpointSaver } from "../checkpointer/types.js";
-import type { BackendProtocol, BackendFactory } from "./backend.js";
-import type { SubAgent, InterruptOnConfig } from "./subagent.js";
+import type { BaseCheckpointSaver } from "../checkpointer/types";
+import type { BackendProtocol, BackendFactory } from "./backend";
+import type { SubAgent, InterruptOnConfig } from "./subagent";
 
 // Re-export LanguageModel for convenience
 export type { LanguageModel };

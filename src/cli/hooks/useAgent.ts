@@ -9,12 +9,12 @@ import type {
   ModelMessage,
   SummarizationConfig,
   InterruptOnConfig,
-} from "../../types.js";
-import type { BaseCheckpointSaver } from "../../checkpointer/types.js";
-import { createDeepAgent } from "../../agent.js";
-import { parseModelString } from "../../utils/model-parser.js";
-import type { SandboxBackendProtocol } from "../../types.js";
-import type { ToolCallData } from "../components/Message.js";
+} from "../../types";
+import type { BaseCheckpointSaver } from "../../checkpointer/types";
+import { createDeepAgent } from "../../agent";
+import { parseModelString } from "../../utils/model-parser";
+import type { SandboxBackendProtocol } from "../../types";
+import type { ToolCallData } from "../components/Message";
 import { useEffect } from "react";
 
 export type AgentStatus =

@@ -5,7 +5,7 @@
 
 import React, { useState } from "react";
 import { Box, Text, useInput } from "ink";
-import { colors, emoji } from "../theme.js";
+import { colors, emoji } from "../theme";
 
 type Provider = "anthropic" | "openai";
 

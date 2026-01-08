@@ -4,7 +4,7 @@
 
 import type { ToolSet, LanguageModel } from "ai";
 import type { z } from "zod";
-import type { GenerationOptions, AdvancedAgentOptions } from "./core.js";
+import type { GenerationOptions, AdvancedAgentOptions } from "./core";
 
 /**
  * Configuration for dynamic tool approval.

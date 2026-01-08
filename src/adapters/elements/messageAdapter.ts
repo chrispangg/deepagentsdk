@@ -4,8 +4,8 @@
  * Converts deepagentsdk events to Elements UIMessage format
  */
 
-import type { AgentEventLog } from "../../cli/hooks/useAgent.js";
-import type { UIMessage, UIMessagePart, UIStatus } from "./types.js";
+import type { AgentEventLog } from "../../cli/hooks/useAgent";
+import type { UIMessage, UIMessagePart, UIStatus } from "./types";
 
 /**
  * Converts agent event log to UIMessage format expected by Elements

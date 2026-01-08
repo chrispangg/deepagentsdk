@@ -4,8 +4,8 @@
  */
 import React from "react";
 import { Box, Text } from "ink";
-import { colors } from "../theme.js";
-import { ToolCallSummary } from "./ToolCallSummary.js";
+import { colors } from "../theme";
+import { ToolCallSummary } from "./ToolCallSummary";
 
 export type MessageRole = "user" | "assistant";
 

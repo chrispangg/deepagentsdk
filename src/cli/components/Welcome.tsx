@@ -4,7 +4,7 @@
  */
 import React from "react";
 import { Box, Text } from "ink";
-import { colors } from "../theme.js";
+import { colors } from "../theme";
 
 interface WelcomeProps {
   /** Model name to display */

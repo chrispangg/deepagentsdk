@@ -4,8 +4,8 @@
  */
 import React, { useState, useRef } from "react";
 import { Box, Text, useInput } from "ink";
-import { colors } from "../theme.js";
-import { SlashMenu } from "./SlashMenu.js";
+import { colors } from "../theme";
+import { SlashMenu } from "./SlashMenu";
 
 interface InputProps {
   /** Called when user submits input */

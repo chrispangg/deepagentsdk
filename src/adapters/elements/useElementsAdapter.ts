@@ -5,20 +5,20 @@
  */
 
 import { useState, useCallback, useRef, useMemo } from "react";
-import { createDeepAgent } from "../../agent.js";
+import { createDeepAgent } from "../../agent";
 import type { LanguageModel, ToolSet } from "ai";
 import type {
   BackendProtocol,
   DeepAgentState,
   DeepAgentEvent,
-} from "../../types.js";
+} from "../../types";
 import {
   convertEventsToUIMessages,
   extractToolParts,
-} from "./messageAdapter.js";
-import { mapAgentStatusToUIStatus } from "./statusAdapter.js";
-import type { UseElementsAdapterReturn, PromptInputMessage } from "./types.js";
-import type { AgentStatus, AgentEventLog } from "../../cli/hooks/useAgent.js";
+} from "./messageAdapter";
+import { mapAgentStatusToUIStatus } from "./statusAdapter";
+import type { UseElementsAdapterReturn, PromptInputMessage } from "./types";
+import type { AgentStatus, AgentEventLog } from "../../cli/hooks/useAgent";
 
 /**
  * Options for useElementsAdapter hook

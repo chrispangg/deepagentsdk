@@ -1,7 +1,7 @@
-import type { TodoItem } from "./core.js";
-import type { DeepAgentState } from "./backend.js";
+import type { TodoItem } from "./core";
+import type { DeepAgentState } from "./backend";
 import type { ModelMessage } from "ai";
-import type { ResumeOptions } from "../checkpointer/types.js";
+import type { ResumeOptions } from "../checkpointer/types";
 
 // ============================================================================
 // Event Types for Streaming

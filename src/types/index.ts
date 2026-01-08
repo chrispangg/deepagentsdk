@@ -14,7 +14,7 @@ export type {
   AdvancedAgentOptions,
   SummarizationConfig,
   CreateDeepAgentParams,
-} from "./core.js";
+} from "./core";
 
 // Backend types
 export type {
@@ -28,9 +28,9 @@ export type {
   BackendFactory,
   ExecuteResponse,
   SandboxBackendProtocol,
-} from "./backend.js";
+} from "./backend";
 
-export { isSandboxBackend } from "./backend.js";
+export { isSandboxBackend } from "./backend";
 
 // Event types
 export type {
@@ -70,7 +70,7 @@ export type {
   EventCallback,
   ToolEventContext,
   StreamWithEventsOptions,
-} from "./events.js";
+} from "./events";
 
 // Subagent types
 export type {
@@ -79,16 +79,16 @@ export type {
   BuiltinToolCreator,
   SubagentToolConfig,
   SubAgent,
-} from "./subagent.js";
+} from "./subagent";
 
 // Structured output types
 export type {
   StructuredAgentResult,
-} from "./structured-output.js";
+} from "./structured-output";
 
 export {
   hasStructuredOutput,
   eventHasStructuredOutput,
   getStructuredOutput,
   getEventOutput,
-} from "./structured-output.js";
+} from "./structured-output";

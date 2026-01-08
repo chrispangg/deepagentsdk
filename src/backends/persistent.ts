@@ -13,7 +13,7 @@ import type {
   FileInfo,
   GrepMatch,
   WriteResult,
-} from "../types.js";
+} from "../types";
 import {
   createFileData,
   fileDataToString,
@@ -22,11 +22,11 @@ import {
   grepMatchesFromFiles,
   performStringReplacement,
   updateFileData,
-} from "./utils.js";
+} from "./utils";
 import {
   FILE_NOT_FOUND,
   FILE_ALREADY_EXISTS,
-} from "../constants/errors.js";
+} from "../constants/errors";
 
 /**
  * Generic key-value store interface for persistent storage.

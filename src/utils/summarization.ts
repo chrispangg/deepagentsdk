@@ -6,12 +6,12 @@
  */
 
 import { generateText, type LanguageModel } from "ai";
-import type { ModelMessage } from "../types.js";
-import { estimateTokens } from "./eviction.js";
+import type { ModelMessage } from "../types";
+import { estimateTokens } from "./eviction";
 import {
   DEFAULT_SUMMARIZATION_THRESHOLD as CENTRALIZED_THRESHOLD,
   DEFAULT_KEEP_MESSAGES as CENTRALIZED_KEEP,
-} from "../constants/limits.js";
+} from "../constants/limits";
 
 /**
  * Default token threshold before triggering summarization.

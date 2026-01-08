@@ -2,7 +2,7 @@ import * as fs from "node:fs/promises";
 import * as path from "node:path";
 import os from "node:os";
 import type { SkillMetadata, SkillLoadOptions } from "./types";
-import { findGitRoot } from "../utils/project-detection.js";
+import { findGitRoot } from "../utils/project-detection";
 
 /**
  * Parse YAML frontmatter from a SKILL.md file.

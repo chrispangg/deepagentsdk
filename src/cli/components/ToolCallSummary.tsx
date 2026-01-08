@@ -4,8 +4,8 @@
  */
 import React, { useState } from "react";
 import { Box, Text, useInput } from "ink";
-import { colors, emoji } from "../theme.js";
-import type { ToolCallData } from "./Message.js";
+import { colors, emoji } from "../theme";
+import type { ToolCallData } from "./Message";
 
 interface ToolCallSummaryProps {
   /** Array of tool calls to display */

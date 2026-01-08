@@ -2,7 +2,7 @@
  * Backend protocol and filesystem types.
  */
 
-import type { TodoItem } from "./core.js";
+import type { TodoItem } from "./core";
 
 /**
  * File data structure used by backends.

@@ -6,8 +6,8 @@
  * This prevents context overflow from large tool outputs.
  */
 
-import type { BackendProtocol, BackendFactory, DeepAgentState } from "../types.js";
-import { DEFAULT_EVICTION_TOKEN_LIMIT as CENTRALIZED_EVICTION_LIMIT } from "../constants/limits.js";
+import type { BackendProtocol, BackendFactory, DeepAgentState } from "../types";
+import { DEFAULT_EVICTION_TOKEN_LIMIT as CENTRALIZED_EVICTION_LIMIT } from "../constants/limits";
 
 /**
  * Default token limit before evicting a tool result.

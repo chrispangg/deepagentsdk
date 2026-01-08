@@ -4,8 +4,8 @@
  * Maps deepagentsdk AgentStatus to Elements UIStatus
  */
 
-import type { AgentStatus } from "../../cli/hooks/useAgent.js";
-import type { UIStatus } from "./types.js";
+import type { AgentStatus } from "../../cli/hooks/useAgent";
+import type { UIStatus } from "./types";
 
 /**
  * Maps deepagentsdk AgentStatus to Elements UIStatus

@@ -4,7 +4,7 @@
 import React from "react";
 import { Box, Text } from "ink";
 import { Spinner, StatusMessage } from "@inkjs/ui";
-import { emoji, colors } from "../theme.js";
+import { emoji, colors } from "../theme";
 
 interface SubagentStartProps {
   /** Subagent name */

@@ -8,14 +8,14 @@
  * @see https://ai-sdk.dev/elements
  */
 
-export { useElementsAdapter } from "./useElementsAdapter.js";
-export type { UseElementsAdapterOptions } from "./useElementsAdapter.js";
+export { useElementsAdapter } from "./useElementsAdapter";
+export type { UseElementsAdapterOptions } from "./useElementsAdapter";
 
-export { mapAgentStatusToUIStatus } from "./statusAdapter.js";
+export { mapAgentStatusToUIStatus } from "./statusAdapter";
 export {
   convertEventsToUIMessages,
   extractToolParts,
-} from "./messageAdapter.js";
+} from "./messageAdapter";
 
 export type {
   UIMessage,
@@ -24,4 +24,4 @@ export type {
   PromptInputMessage,
   ToolUIPart,
   UseElementsAdapterReturn,
-} from "./types.js";
+} from "./types";

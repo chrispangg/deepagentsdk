@@ -5,12 +5,12 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { Box, Text, useInput } from "ink";
 import { Spinner } from "@inkjs/ui";
-import { colors, emoji } from "../theme.js";
+import { colors, emoji } from "../theme";
 import {
   getModelsByProvider,
   detectAvailableProviders,
   type AvailableModel,
-} from "../utils/model-list.js";
+} from "../utils/model-list";
 
 interface ModelSelectionPanelProps {
   currentModel?: string;

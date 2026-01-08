@@ -7,6 +7,6 @@ export {
   type UseAgentReturn,
   type AgentStatus,
   type AgentEventLog,
-} from "./useAgent.js";
+} from "./useAgent";
 
 

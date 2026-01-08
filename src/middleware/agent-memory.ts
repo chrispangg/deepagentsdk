@@ -2,7 +2,7 @@ import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 import os from 'node:os';
 import type { LanguageModelMiddleware } from 'ai';
-import { findGitRoot } from '../utils/project-detection.js';
+import { findGitRoot } from '../utils/project-detection';
 
 /**
  * Configuration options for agent memory middleware.

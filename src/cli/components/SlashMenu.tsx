@@ -3,7 +3,7 @@
  */
 import React from "react";
 import { Box, Text } from "ink";
-import { colors, filterCommands, type SlashCommand } from "../theme.js";
+import { colors, filterCommands, type SlashCommand } from "../theme";
 
 interface SlashMenuProps {
   /** Current input value to filter commands */

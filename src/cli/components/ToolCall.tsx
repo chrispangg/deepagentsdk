@@ -5,7 +5,7 @@
 import React from "react";
 import { Box, Text } from "ink";
 import { Spinner, StatusMessage } from "@inkjs/ui";
-import { colors } from "../theme.js";
+import { colors } from "../theme";
 
 interface ToolCallProps {
   /** Tool name being called */

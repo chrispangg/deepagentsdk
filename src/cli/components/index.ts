@@ -1,12 +1,12 @@
 /**
  * Export all CLI components.
  */
-export { Welcome, WelcomeHint } from "./Welcome.js";
-export { Input } from "./Input.js";
-export { SlashMenu, SlashMenuPanel } from "./SlashMenu.js";
-export { Message, StreamingMessage, type MessageData, type MessageRole, type ToolCallData } from "./Message.js";
-export { TodoList, TodosChanged } from "./TodoList.js";
-export { FilePreview, FileWritten, FileEdited, FileRead, LsResult, GlobResult, GrepResult, FileList } from "./FilePreview.js";
+export { Welcome, WelcomeHint } from "./Welcome";
+export { Input } from "./Input";
+export { SlashMenu, SlashMenuPanel } from "./SlashMenu";
+export { Message, StreamingMessage, type MessageData, type MessageRole, type ToolCallData } from "./Message";
+export { TodoList, TodosChanged } from "./TodoList";
+export { FilePreview, FileWritten, FileEdited, FileRead, LsResult, GlobResult, GrepResult, FileList } from "./FilePreview";
 export {
   ToolCall,
   ToolResult,
@@ -14,11 +14,11 @@ export {
   ThinkingIndicator,
   DoneIndicator,
   ErrorDisplay,
-} from "./ToolCall.js";
-export { SubagentStart, SubagentFinish, SubagentRunning } from "./Subagent.js";
-export { StatusBar } from "./StatusBar.js";
-export { ToolCallSummary, InlineToolCall } from "./ToolCallSummary.js";
-export { ModelSelectionPanel } from "./ModelSelection.js";
-export { ApiKeyInputPanel, ApiKeyStatus } from "./ApiKeyInput.js";
-export { ToolApproval } from "./ToolApproval.js";
+} from "./ToolCall";
+export { SubagentStart, SubagentFinish, SubagentRunning } from "./Subagent";
+export { StatusBar } from "./StatusBar";
+export { ToolCallSummary, InlineToolCall } from "./ToolCallSummary";
+export { ModelSelectionPanel } from "./ModelSelection";
+export { ApiKeyInputPanel, ApiKeyStatus } from "./ApiKeyInput";
+export { ToolApproval } from "./ToolApproval";
 

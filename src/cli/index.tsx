@@ -12,15 +12,15 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { render, useApp, useInput, Box, Text, Static } from "ink";
-import { LocalSandbox } from "../backends/local-sandbox.js";
+import { LocalSandbox } from "../backends/local-sandbox";
 import {
   DEFAULT_EVICTION_TOKEN_LIMIT,
   DEFAULT_SUMMARIZATION_THRESHOLD,
   DEFAULT_KEEP_MESSAGES,
   CONTEXT_WINDOW,
 } from "../constants/limits";
-import { FileSaver } from "../checkpointer/file-saver.js";
-import { useAgent, type AgentEventLog } from "./hooks/useAgent.js";
+import { FileSaver } from "../checkpointer/file-saver";
+import { useAgent, type AgentEventLog } from "./hooks/useAgent";
 import {
   Welcome,
   WelcomeHint,
@@ -49,10 +49,10 @@ import {
   ApiKeyInputPanel,
   ToolApproval,
   type MessageData,
-} from "./components/index.js";
-import { parseCommand, colors, SLASH_COMMANDS } from "./theme.js";
-import type { FileInfo } from "../types.js";
-import { estimateMessagesTokens } from "../utils/summarization.js";
+} from "./components/index";
+import { parseCommand, colors, SLASH_COMMANDS } from "./theme";
+import type { FileInfo } from "../types";
+import { estimateMessagesTokens } from "../utils/summarization";
 
 // ============================================================================
 // CLI Arguments

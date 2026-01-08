@@ -3,8 +3,8 @@
  */
 import React from "react";
 import { Box, Text } from "ink";
-import { emoji, colors } from "../theme.js";
-import type { FileInfo } from "../../types.js";
+import { emoji, colors } from "../theme";
+import type { FileInfo } from "../../types";
 
 interface FilePreviewProps {
   /** File path */

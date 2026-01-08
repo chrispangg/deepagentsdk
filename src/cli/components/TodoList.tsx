@@ -4,8 +4,8 @@
 import React from "react";
 import { Box, Text } from "ink";
 import { Badge } from "@inkjs/ui";
-import { emoji, colors } from "../theme.js";
-import type { TodoItem } from "../../types.js";
+import { emoji, colors } from "../theme";
+import type { TodoItem } from "../../types";
 
 interface TodoListProps {
   todos: TodoItem[];
