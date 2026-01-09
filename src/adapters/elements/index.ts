@@ -46,7 +46,7 @@
  */
 
 // Server-side route handler
-export { createElementsRouteHandler } from "./createElementsRouteHandler";
+export { createElementsRouteHandler, mapEventToProtocol } from "./createElementsRouteHandler";
 export type {
   CreateElementsRouteHandlerOptions,
   ElementsRouteHandler,

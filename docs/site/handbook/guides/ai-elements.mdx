@@ -22,10 +22,11 @@ The integration follows AI SDK's recommended architecture:
 
 **Key benefits:**
 
-- **Server-side execution** - API keys stay secure on the server
-- **Real-time streaming** - Responses stream as they're generated
-- **Tool visibility** - Tool calls and results display in the UI
-- **Production-ready** - Built on Vercel's battle-tested streaming protocol
+- Server-side execution - API keys stay secure on the server
+- Real-time streaming - Responses stream as they're generated
+- Tool visibility - Tool calls and results display in the UI
+- Full event visibility - File operations, web requests, subagent lifecycle
+- Production-ready - Built on Vercel's battle-tested streaming protocol
 
 ---
 
@@ -116,6 +117,229 @@ That's it! You now have a working chat interface powered by DeepAgent.
 
 ---
 
+## Full Event Handling
+
+The Elements adapter streams **all 26+ DeepAgent event types** to the client, giving you complete visibility into agent behavior:
+
+- **File operations** - Reads, writes, edits, searches
+- **Command execution** - Shell commands and their output
+- **Web requests** - Searches, HTTP fetches, URL extraction
+- **Subagent lifecycle** - When subagents start, finish, and their steps
+- **Checkpoints** - State save/load operations
+- **Tools** - All tool calls and results
+
+### Standard vs. Custom Events
+
+**Standard Protocol Events** (work with off-the-shelf AI Elements):
+
+| Stream Part | Purpose |
+|-------------|---------|
+| `text-start/delta/end` | Streaming text responses |
+| `tool-input-available` | Tool called with arguments |
+| `tool-output-available` | Tool returned successfully |
+| `tool-output-error` | Tool execution failed |
+| `start-step/finish-step` | Agent progress tracking |
+| `error` | Error messages |
+| `finish` | Completion with usage stats |
+
+**Custom Data Events** (require custom UI handling):
+
+| Event Name | Data | Use Case |
+|------------|------|----------|
+| `file-write-start/written` | `{ path, content }` | Show file creation in real-time |
+| `file-edited` | `{ path, occurrences }` | Track file modifications |
+| `file-read` | `{ path, lines }` | Display file access |
+| `execute-start/finish` | `{ command, exitCode }` | Terminal UI for commands |
+| `web-search-finish` | `{ query, resultCount }` | Search result indicators |
+| `subagent-start/finish` | `{ name, task/result }` | Multi-agent visualization |
+
+### Custom Client-Side Hook
+
+To handle custom data events, you can extend `useChat` with custom event processing:
+
+```tsx title="hooks/useChatFullEvents.ts"
+'use client';
+
+import { useState, useCallback, useRef } from 'react';
+
+export interface FileEvent {
+  type: 'file-write-start' | 'file-written' | 'file-edited' | 'file-read';
+  path: string;
+  content?: string;
+  timestamp: number;
+}
+
+export function useChatFullEvents() {
+  const [fileEvents, setFileEvents] = useState<FileEvent[]>([]);
+  const [messages, setMessages] = useState<any[]>([]);
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  const sendMessage = useCallback(async (text: string) => {
+    abortControllerRef.current = new AbortController();
+
+    // Convert to UI Message format
+    const uiMessages = messages.map((msg) => ({
+      id: msg.id,
+      role: msg.role,
+      parts: msg.parts || [{ type: 'text', text: msg.content }],
+    }));
+
+    // Add user message
+    const userMessage = {
+      id: `msg-${Date.now()}-user`,
+      role: 'user',
+      parts: [{ type: 'text', text }],
+    };
+
+    // Create assistant message for streaming
+    const assistantMessage = {
+      id: `msg-${Date.now()}-assistant`,
+      role: 'assistant',
+      parts: [],
+    };
+
+    setMessages((prev) => [...prev, userMessage, assistantMessage]);
+
+    try {
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: [...uiMessages, userMessage] }),
+        signal: abortControllerRef.current.signal,
+      });
+
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+      let currentText = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value);
+        const lines = chunk.split('\n');
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            const data = line.slice(6);
+            if (data === '[DONE]') break;
+
+            try {
+              const event = JSON.parse(data);
+
+              // Handle text streaming
+              if (event.type === 'text-delta') {
+                currentText += event.delta || '';
+                setMessages((prev) => prev.map((msg) =>
+                  msg.id === assistantMessage.id
+                    ? {
+                        ...msg,
+                        parts: [{ type: 'text', text: currentText }],
+                      }
+                    : msg
+                ));
+              }
+
+              // Handle custom data events
+              else if (event.type === 'data') {
+                if (event.name.startsWith('file-')) {
+                  setFileEvents((prev) => [
+                    ...prev,
+                    { type: event.name, ...event.data, timestamp: Date.now() },
+                  ]);
+                }
+              }
+            } catch (e) {
+              console.error('Failed to parse event:', e);
+            }
+          }
+        }
+      }
+    } catch (error) {
+      if (error.name !== 'AbortError') {
+        console.error('Chat error:', error);
+      }
+    }
+  }, [messages]);
+
+  const abort = useCallback(() => {
+    abortControllerRef.current?.abort();
+  }, []);
+
+  return { messages, fileEvents, sendMessage, abort };
+}
+```
+
+### Rendering Custom Events
+
+Create a component to display file operations in your UI:
+
+```tsx title="components/FileEventList.tsx"
+'use client';
+
+import type { FileEvent } from '@/hooks/useChatFullEvents';
+
+export function FileEventList({ events }: { events: FileEvent[] }) {
+  return (
+    <div className="space-y-2">
+      {events.map((event, i) => (
+        <div key={i} className="flex items-center gap-2 text-sm">
+          <span className="font-mono bg-gray-100 px-2 py-1 rounded">
+            {event.type}
+          </span>
+          <span className="text-gray-600">{event.path}</span>
+          {event.content && (
+            <span className="text-gray-400">
+              ({event.content.length} bytes)
+            </span>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+```
+
+### Full Example with Custom Events
+
+```tsx title="app/page.tsx"
+'use client';
+
+import { useChatFullEvents } from '@/hooks/useChatFullEvents';
+import { FileEventList } from '@/components/FileEventList';
+
+export default function ChatPage() {
+  const { messages, fileEvents, sendMessage, abort } = useChatFullEvents();
+
+  return (
+    <div className="flex gap-4 h-screen">
+      {/* Main chat area */}
+      <div className="flex-1">
+        {messages.map((msg) => (
+          <div key={msg.id}>
+            <span className="font-bold">{msg.role}:</span>
+            {msg.parts?.map((part: any, i: number) => {
+              if (part.type === 'text') {
+                return <span key={i}>{part.text}</span>;
+              }
+              return null;
+            })}
+          </div>
+        ))}
+      </div>
+
+      {/* Event sidebar */}
+      <div className="w-80 border-l p-4">
+        <h3 className="font-bold mb-2">File Operations</h3>
+        <FileEventList events={fileEvents} />
+      </div>
+    </div>
+  );
+}
+```
+
+---
+
 ## Configuration Options
 
 ### Route Handler Options
@@ -174,8 +398,6 @@ export const POST = createElementsRouteHandler({
     if (!session?.user) {
       throw new Error('Please sign in to use the chat');
     }
-    // Optionally log or rate limit based on user
-    console.log(`Chat request from user: ${session.user.id}`);
   },
 });
 ```
@@ -218,40 +440,44 @@ export const POST = createElementsRouteHandler({ agent });
 
 The AI Elements `Message` component will automatically render tool calls and results.
 
-### Displaying Tool Calls
+### Custom Event Mapping
 
-AI Elements components handle tool rendering automatically. For custom styling, you can access tool invocations:
+The adapter exports `mapEventToProtocol` for customization:
 
-```tsx title="components/CustomMessage.tsx"
-'use client';
+```typescript title="lib/customHandler.ts"
+import {
+  createElementsRouteHandler,
+  mapEventToProtocol,
+  type DeepAgentEvent,
+} from 'deepagentsdk/adapters/elements';
 
-import type { UIMessage } from 'ai';
+function customMapper(
+  event: DeepAgentEvent,
+  writer: { write: (chunk: any) => void },
+  genId: () => string,
+  currentTextId: string | null
+): string | null {
+  // Handle specific events differently
+  if (event.type === 'file-written') {
+    // Emit as source-document instead of data
+    writer.write({
+      type: 'source-document',
+      sourceId: genId(),
+      mediaType: 'text/markdown',
+      title: event.path,
+    });
+    return currentTextId;
+  }
 
-export function CustomMessage({ message }: { message: UIMessage }) {
-  return (
-    <div className={message.role === 'user' ? 'bg-blue-50' : 'bg-gray-50'}>
-      {message.parts.map((part, i) => {
-        if (part.type === 'text') {
-          return <p key={i}>{part.text}</p>;
-        }
-        if (part.type.startsWith('tool-') || part.type === 'dynamic-tool') {
-          // Render tool invocation
-          return (
-            <div key={i} className="border rounded p-2 my-2 bg-yellow-50">
-              <span className="font-mono text-sm">Tool: {part.toolName}</span>
-              {part.state === 'output-available' && (
-                <pre className="text-xs mt-1">
-                  {JSON.stringify(part.output, null, 2)}
-                </pre>
-              )}
-            </div>
-          );
-        }
-        return null;
-      })}
-    </div>
-  );
+  // Default to standard mapping
+  return mapEventToProtocol(event, writer, genId, currentTextId);
 }
+
+// Create handler with custom mapper
+export const POST = createElementsRouteHandler({
+  agent,
+  // Note: You'd need to fork createElementsRouteHandler to use customMapper
+});
 ```
 
 ### Conversation Persistence
@@ -263,7 +489,6 @@ import { createDeepAgent, MemoryCheckpointSaver } from 'deepagentsdk';
 import { createElementsRouteHandler } from 'deepagentsdk/adapters/elements';
 import { anthropic } from '@ai-sdk/anthropic';
 
-// Create a checkpointer (use Redis/database in production)
 const checkpointer = new MemoryCheckpointSaver();
 
 const agent = createDeepAgent({
@@ -273,69 +498,8 @@ const agent = createDeepAgent({
 
 export const POST = createElementsRouteHandler({
   agent,
-  // Pass thread ID from request headers or body
   threadId: 'conversation-123',
 });
-```
-
-### Using with Subagents
-
-DeepAgent's subagent capabilities work seamlessly with AI Elements:
-
-```typescript title="app/api/chat/route.ts"
-import { createDeepAgent } from 'deepagentsdk';
-import { createElementsRouteHandler } from 'deepagentsdk/adapters/elements';
-import { anthropic } from '@ai-sdk/anthropic';
-
-const agent = createDeepAgent({
-  model: anthropic('claude-sonnet-4-20250514'),
-  subagents: [
-    {
-      name: 'researcher',
-      description: 'Specialized agent for research tasks',
-      systemPrompt: 'You are a research specialist...',
-    },
-    {
-      name: 'coder',
-      description: 'Specialized agent for coding tasks',
-      systemPrompt: 'You are a coding expert...',
-    },
-  ],
-});
-
-export const POST = createElementsRouteHandler({ agent });
-```
-
----
-
-## Message Conversion Utilities
-
-The adapter provides utility functions for working with UI messages:
-
-```typescript
-import {
-  convertUIMessagesToModelMessages,
-  extractLastUserMessage,
-  hasToolParts,
-  countMessagesByRole,
-  extractTextFromMessage,
-} from 'deepagentsdk/adapters/elements';
-
-// Convert UI messages to model messages (async)
-const modelMessages = await convertUIMessagesToModelMessages(uiMessages);
-
-// Extract the last user message text
-const lastPrompt = extractLastUserMessage(messages);
-
-// Check if messages contain tool invocations
-const hasTool = hasToolParts(messages);
-
-// Count messages by role
-const counts = countMessagesByRole(messages);
-// { user: 3, assistant: 2, system: 0 }
-
-// Extract all text from a single message
-const text = extractTextFromMessage(message);
 ```
 
 ---
@@ -343,6 +507,8 @@ const text = extractTextFromMessage(message);
 ## Streaming Protocol
 
 The adapter uses AI SDK's **UI Message Stream Protocol**, which streams events as Server-Sent Events (SSE):
+
+### Standard Events
 
 | Event Type | Description |
 |------------|-------------|
@@ -354,9 +520,26 @@ The adapter uses AI SDK's **UI Message Stream Protocol**, which streams events a
 | `tool-output-error` | Tool execution failed |
 | `start-step` | Agent started a new reasoning step |
 | `finish-step` | Agent completed a reasoning step |
+| `finish` | Message completion |
 | `error` | Error occurred during generation |
 
-This protocol ensures compatibility with all AI SDK UI hooks and components.
+### Custom Data Events
+
+| Event Name | Description |
+|------------|-------------|
+| `file-write-start/written` | File creation operations |
+| `file-edited` | File modifications |
+| `file-read` | File access |
+| `ls/glob/grep` | File system searches |
+| `execute-start/finish` | Command execution |
+| `web-search-start/finish` | Web searches |
+| `http-request-start/finish` | HTTP requests |
+| `fetch-url-start/finish` | URL fetching |
+| `subagent-start/finish/step` | Subagent lifecycle |
+| `checkpoint-saved/loaded` | State persistence |
+| `todos-changed` | Task list updates |
+
+This protocol ensures compatibility with all AI SDK UI hooks and components while providing full visibility into agent behavior.
 
 ---
 
@@ -398,9 +581,6 @@ DeepAgent with multiple tool calls can take time. Set appropriate timeouts:
 ```typescript title="app/api/chat/route.ts"
 // Next.js App Router
 export const maxDuration = 60; // 60 seconds
-
-// Or in next.config.js for all routes
-// experimental: { serverActions: { bodySizeLimit: '2mb' } }
 ```
 
 ### 2. Use Streaming for Long Responses
@@ -425,9 +605,7 @@ export const POST = createElementsRouteHandler({
   onRequest: async (req) => {
     const ip = req.headers.get('x-forwarded-for') ?? '127.0.0.1';
     const { success } = await ratelimit.limit(ip);
-    if (!success) {
-      throw new Error('Rate limit exceeded');
-    }
+    if (!success) throw new Error('Rate limit exceeded');
   },
 });
 ```
