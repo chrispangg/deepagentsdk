@@ -2,11 +2,11 @@
   "env": {
     "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1"
   },
+  "includeCoAuthoredBy": false,
   "permissions": {
     "defaultMode": "bypassPermissions"
   },
   "enableAllProjectMcpServers": true,
-  "includeCoAuthoredBy": false,
   "hooks": {
     "SessionStart": [
       {
@@ -19,5 +19,18 @@
         ]
       }
     ]
+  },
+  "enabledPlugins": {
+    "frontend-design@claude-plugins-official": true,
+    "context7@claude-plugins-official": true,
+    "feature-dev@claude-plugins-official": true,
+    "code-review@claude-plugins-official": true,
+    "typescript-lsp@claude-plugins-official": true,
+    "code-simplifier@claude-plugins-official": true,
+    "security-guidance@claude-plugins-official": false,
+    "pr-review-toolkit@claude-plugins-official": true,
+    "explanatory-output-style@claude-plugins-official": true,
+    "pyright-lsp@claude-plugins-official": true,
+    "ralph-loop@claude-plugins-official": true
   }
 }
