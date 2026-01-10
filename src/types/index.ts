@@ -28,6 +28,9 @@ export type {
   BackendFactory,
   ExecuteResponse,
   SandboxBackendProtocol,
+  FileOperationError,
+  FileUploadResponse,
+  FileDownloadResponse,
 } from "./backend";
 
 export { isSandboxBackend } from "./backend";

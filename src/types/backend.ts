@@ -69,6 +69,75 @@ export interface EditResult {
 }
 
 /**
+ * Standardized error codes for file upload/download operations.
+ *
+ * These represent common, recoverable errors that an LLM can understand and potentially fix:
+ * - "file_not_found": The requested file doesn't exist (download)
+ * - "permission_denied": Access denied
+ * - "is_directory": Attempted to download a directory as a file
+ * - "invalid_path": Path syntax is malformed
+ *
+ * @example
+ * ```typescript
+ * type FileError = FileOperationError;
+ * // Valid values: "file_not_found" | "permission_denied" | "is_directory" | "invalid_path"
+ * ```
+ */
+export type FileOperationError =
+  | "file_not_found"
+  | "permission_denied"
+  | "is_directory"
+  | "invalid_path";
+
+/**
+ * Result of a single file download operation.
+ *
+ * The response is designed to allow partial success in batch operations.
+ * The errors are standardized using FileOperationError literals.
+ *
+ * @example Success
+ * ```typescript
+ * { path: "/app/config.json", content: new Uint8Array(...), error: null }
+ * ```
+ *
+ * @example Failure
+ * ```typescript
+ * { path: "/wrong/path.txt", content: null, error: "file_not_found" }
+ * ```
+ */
+export interface FileDownloadResponse {
+  /** The file path that was requested */
+  path: string;
+  /** File contents as bytes on success, null on failure */
+  content: Uint8Array | null;
+  /** Standardized error code on failure, null on success */
+  error: FileOperationError | null;
+}
+
+/**
+ * Result of a single file upload operation.
+ *
+ * The response is designed to allow partial success in batch operations.
+ * The errors are standardized using FileOperationError literals.
+ *
+ * @example Success
+ * ```typescript
+ * { path: "/app/data.txt", error: null }
+ * ```
+ *
+ * @example Failure
+ * ```typescript
+ * { path: "/readonly/file.txt", error: "permission_denied" }
+ * ```
+ */
+export interface FileUploadResponse {
+  /** The file path that was requested */
+  path: string;
+  /** Standardized error code on failure, null on success */
+  error: FileOperationError | null;
+}
+
+/**
  * Shared state for deep agent operations.
  * This is passed to tools and modified during execution.
  */
@@ -162,6 +231,56 @@ export interface SandboxBackendProtocol extends BackendProtocol {
    * Unique identifier for this sandbox instance.
    */
   readonly id: string;
+
+  /**
+   * Upload multiple files to the sandbox.
+   *
+   * This API is designed to allow partial success - individual uploads may fail
+   * without affecting others. Check the error field in each response.
+   *
+   * @param files - Array of [path, content] tuples to upload
+   * @returns Array of FileUploadResponse objects, one per input file
+   *
+   * @example
+   * ```typescript
+   * const responses = await sandbox.uploadFiles([
+   *   ["/app/config.json", new Uint8Array(b"...")],
+   *   ["/app/data.txt", new Uint8Array(b"content")],
+   * ]);
+   * // Check for errors
+   * responses.forEach(r => {
+   *   if (r.error) console.error(`Failed to upload ${r.path}: ${r.error}`);
+   * });
+   * ```
+   */
+  uploadFiles(files: Array<[string, Uint8Array]>): Promise<FileUploadResponse[]>;
+
+  /**
+   * Download multiple files from the sandbox.
+   *
+   * This API is designed to allow partial success - individual downloads may fail
+   * without affecting others. Check the error field in each response.
+   *
+   * @param paths - Array of file paths to download
+   * @returns Array of FileDownloadResponse objects, one per input path
+   *
+   * @example
+   * ```typescript
+   * const responses = await sandbox.downloadFiles([
+   *   "/app/config.json",
+   *   "/app/data.txt",
+   * ]);
+   * // Process successful downloads
+   * for (const r of responses) {
+   *   if (r.content) {
+   *     console.log(`Downloaded ${r.path}: ${r.content.length} bytes`);
+   *   } else if (r.error) {
+   *     console.error(`Failed to download ${r.path}: ${r.error}`);
+   *   }
+   * }
+   * ```
+   */
+  downloadFiles(paths: string[]): Promise<FileDownloadResponse[]>;
 }
 
 /**
@@ -172,6 +291,8 @@ export function isSandboxBackend(
 ): backend is SandboxBackendProtocol {
   return (
     typeof (backend as SandboxBackendProtocol).execute === "function" &&
+    typeof (backend as SandboxBackendProtocol).uploadFiles === "function" &&
+    typeof (backend as SandboxBackendProtocol).downloadFiles === "function" &&
     typeof (backend as SandboxBackendProtocol).id === "string"
   );
 }

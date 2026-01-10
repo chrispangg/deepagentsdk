@@ -14,6 +14,9 @@ import type {
   ExecuteResponse,
   FileData,
   FileInfo,
+  FileDownloadResponse,
+  FileOperationError,
+  FileUploadResponse,
   GrepMatch,
   SandboxBackendProtocol,
   WriteResult,
@@ -24,6 +27,38 @@ import {
   STRING_NOT_FOUND,
 } from "../constants/errors";
 import { DEFAULT_READ_LIMIT } from "../constants/limits";
+
+/**
+ * Map error messages to FileOperationError literals.
+ *
+ * This provides structured error handling that LLMs can understand and potentially fix.
+ */
+function mapErrorToOperationError(
+  errorMessage: string,
+  path: string
+): FileOperationError {
+  const lowerError = errorMessage.toLowerCase();
+
+  if (lowerError.includes("no such file") ||
+      lowerError.includes("not found") ||
+      lowerError.includes("cannot find")) {
+    return "file_not_found";
+  }
+
+  if (lowerError.includes("permission denied") ||
+      lowerError.includes("access denied") ||
+      lowerError.includes("read-only")) {
+    return "permission_denied";
+  }
+
+  if (lowerError.includes("is a directory") ||
+      lowerError.includes("directory not empty")) {
+    return "is_directory";
+  }
+
+  // Default to invalid_path for other errors
+  return "invalid_path";
+}
 
 /**
  * Encode string to base64 for safe shell transmission.
@@ -80,6 +115,86 @@ export abstract class BaseSandbox implements SandboxBackendProtocol {
    * Must be implemented by subclasses.
    */
   abstract readonly id: string;
+
+  /**
+   * Upload multiple files to the sandbox.
+   *
+   * Default implementation uses base64 encoding via shell commands.
+   * Subclasses can override if they have a native file upload API.
+   *
+   * This API is designed to allow partial success - individual uploads may fail
+   * without affecting others. Check the error field in each response.
+   */
+  async uploadFiles(files: Array<[string, Uint8Array]>): Promise<FileUploadResponse[]> {
+    const responses: FileUploadResponse[] = [];
+
+    for (const [path, content] of files) {
+      try {
+        // Use shell command to write file via base64 encoding
+        const base64Content = Buffer.from(content).toString("base64");
+        // Escape single quotes in path for shell safety
+        const escapedPath = path.replace(/'/g, "'\\''");
+        const result = await this.execute(`echo '${base64Content}' | base64 -d > '${escapedPath}'`);
+
+        if (result.exitCode !== 0) {
+          responses.push({
+            path,
+            error: mapErrorToOperationError(result.output, path),
+          });
+        } else {
+          responses.push({ path, error: null });
+        }
+      } catch (error) {
+        responses.push({
+          path,
+          error: "permission_denied",
+        });
+      }
+    }
+
+    return responses;
+  }
+
+  /**
+   * Download multiple files from the sandbox.
+   *
+   * Default implementation uses base64 encoding via shell commands.
+   * Subclasses can override if they have a native file download API.
+   *
+   * This API is designed to allow partial success - individual downloads may fail
+   * without affecting others. Check the error field in each response.
+   */
+  async downloadFiles(paths: string[]): Promise<FileDownloadResponse[]> {
+    const responses: FileDownloadResponse[] = [];
+
+    for (const path of paths) {
+      try {
+        // Escape single quotes in path for shell safety
+        const escapedPath = path.replace(/'/g, "'\\''");
+        const result = await this.execute(`base64 '${escapedPath}'`);
+
+        if (result.exitCode !== 0) {
+          responses.push({
+            path,
+            content: null,
+            error: mapErrorToOperationError(result.output, path),
+          });
+        } else {
+          const base64Content = result.output.trim();
+          const content = Buffer.from(base64Content, "base64");
+          responses.push({ path, content, error: null });
+        }
+      } catch (error) {
+        responses.push({
+          path,
+          content: null,
+          error: "permission_denied",
+        });
+      }
+    }
+
+    return responses;
+  }
 
   /**
    * List files and directories in a path.

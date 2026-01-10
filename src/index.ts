@@ -32,6 +32,9 @@ export type {
   // Sandbox types
   ExecuteResponse,
   SandboxBackendProtocol,
+  FileUploadResponse,
+  FileDownloadResponse,
+  FileOperationError,
   // Event types for streaming
   DeepAgentEvent,
   EventCallback,
@@ -81,6 +84,17 @@ export {
   BaseSandbox,
   LocalSandbox,
   type LocalSandboxOptions,
+  // Cloud sandbox providers
+  E2BBackend,
+  createE2BBackend,
+  type E2BBackendOptions,
+  ModalBackend,
+  createModalBackend,
+  type ModalBackendOptions,
+  RunloopBackend,
+  type RunloopBackendOptions,
+  DaytonaBackend,
+  type DaytonaBackendOptions,
 } from "./backends/index";
 
 // Tools (for advanced usage)
