@@ -1,4 +1,5 @@
 ---
+name: 7_save_progress
 description: Create comprehensive progress checkpoint when pausing work on a feature
 model: claude-haiku-4-5-20251001
 allowed-tools: AskUserQuestion, Edit, Task, TodoWrite, Write, Bash(git:*), Bash(gh:*), Bash(basename:*), Bash(date:*)
@@ -171,9 +172,9 @@ To continue this work:
    # Document commit hash in session summary
    ```
 
-2. **Update todo list** to reflect saved state
+1. **Update todo list** to reflect saved state
 
-3. **Present summary** to user:
+2. **Present summary** to user:
 
    ```
    ✅ Progress saved successfully!

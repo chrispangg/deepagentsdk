@@ -1,4 +1,5 @@
 ---
+name: 2_create_plan
 description: Create detailed implementation plans through interactive, iterative process
 model: claude-sonnet-4-5-20250929
 allowed-tools: AskUserQuestion, Edit, Task, TodoWrite, Write, Bash(git:*), Bash(gh:*), Bash(basename:*), Bash(date:*)

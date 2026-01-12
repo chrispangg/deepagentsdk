@@ -1,4 +1,5 @@
 ---
+name: 9_research_cloud
 description: Conduct comprehensive READ-ONLY analysis of cloud deployments and infrastructure
 model: claude-sonnet-4-5-20250929
 allowed-tools: AskUserQuestion, Edit, Task, TodoWrite, Write, Bash(git:*), Bash(gh:*), Bash(basename:*), Bash(date:*), Bash(az:*), Bash(aws:*), Bash(gcloud:*)
