@@ -4,12 +4,12 @@
       "type": "http",
       "url": "https://mcp.deepwiki.com/mcp"
     },
-    // "playwright": {
-    //   "command": "bunx",
-    //   "args": [
-    //     "@playwright/mcp@latest",
-    //     "--headless"
-    //   ]
-    // }
+    "playwright": {
+      "command": "bunx",
+      "args": [
+        "@playwright/mcp@latest",
+        "--headless"
+      ]
+    }
   }
 }
