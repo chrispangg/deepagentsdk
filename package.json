@@ -1,6 +1,6 @@
 {
   "name": "deepagentsdk",
-  "version": "0.15.0",
+  "version": "0.16.0",
   "description": "Deep Agent implementation using Vercel AI SDK - build controllable AI agents with planning, filesystem, and subagent capabilities",
   "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",
