@@ -1,0 +1,84 @@
+---
+title: "Models Don't Need Better Memory. They Need Hands."
+description: "The industry isn't abandoning retrieval. It's realizing that a filesystem and a capable model might be all you need."
+date: 2026-01-18
+authors: [chris]
+tags: [agents, rag, architecture]
+---
+
+# Models Don't Need Better Memory. They Need Hands.
+
+[Karpathy described](https://karpathy.medium.com/software-2-0-a64152b37c35) the shift from Software 1.0 (explicit code) to Software 2.0 (learned weights) to Software 3.0 (natural language programming). I want to add a corollary about infrastructure.
+
+RAG was a harness for the pre-tool-use era. It solved a specific problem: "how do I get relevant information into the model's context window?" You chunk documents, embed them, store vectors, retrieve on query, and hope the right pieces land in context. It worked. For a while, it was the only thing that worked.
+
+But models can get information themselves now. They can search, read, filter, and synthesize. The harness needs to evolve.
+
+Here's my prediction: by the end of 2026, most production AI systems won't have a dedicated RAG pipeline. Not because retrieval stopped mattering, but because the model will just... do it.
+
+## The Evidence: Filesystem Beats Vectors
+
+[Clelia Bertelli and the LlamaIndex team](https://www.llamaindex.ai/blog/did-filesystem-tools-kill-vector-search) ran an experiment that reaffirmed this too. They compared traditional RAG (chunk, embed, retrieve) against a filesystem agent equipped with basic tools: `ls`, `grep`, `read_file`, `parse_file`.
+
+On a dataset of 5 documents, the filesystem agent scored 8.4 on correctness. Traditional RAG scored 6.4. The agent also won on relevance: 9.6 vs 8.0.
+
+Why the gap? The agent could read entire documents. It didn't lose context to chunking. When it needed information from multiple sections of the same file, it just read them. No retrieval step, no embedding similarity, no hoping the right chunks made it into the context window.
+
+There is a caveat though: RAG still won on speed (7.36s vs 11.17s) and scaled better to larger document sets. At 100+ documents, the latency gap widened and RAG's accuracy caught up. But the finding stands: for small to medium corpora, a model with file access outperforms a vector pipeline.
+
+Interestingly, [OpenAI's partnership with Cerebras](https://openai.com/index/cerebras-partnership/) probably means latency won't be an issue soon.
+
+## The Mechanism: Tools Beat Context Windows
+
+If filesystem agents work better, why? Zhang, Kraska, and Khattab from MIT answered this in December 2025 in their paper on [Recursive Language Models](https://arxiv.org/abs/2512.24601).
+
+The core idea is simple. Instead of stuffing a massive prompt into the model's context window, treat the input as an external environment. Load the entire prompt into a Python REPL as a variable `P`. Let the model write code to inspect it, slice it, filter it, and recursively call itself on sub-parts.
+
+The results: models handling inputs up to 10+ million tokens while maintaining accuracy. Two orders of magnitude beyond typical context windows. And cost per query stayed comparable or cheaper, because recursive decomposition avoids maintaining huge context windows in every call.
+
+This kills the "context window as competitive advantage" narrative. If a model can programmatically explore arbitrarily large inputs, the 128K vs 200K vs 1M debate becomes irrelevant. What matters is whether the model has tools to reach the information it needs.
+
+RAG was one answer to "how do I give models access to more information?" Tools are another. The MIT paper suggests tools scale better.
+
+## The Architecture: Everyone Converging to the Same Pattern
+
+This isn't theoretical. Every serious coding agent landed on the same pattern.
+
+Claude Code is effectively a single-threaded loop:
+
+```
+while (model's response includes a tool call):
+    execute tool
+    feed results back
+    repeat
+```
+
+Flat message history. At most one sub-agent branch. No elaborate scaffolding, no critic modules, no fancy memory databases. The tools are what matter: file operations (read, write, edit), shell commands (bash, ls, grep, glob), web access (search, fetch), and planning utilities (TODO lists, task splitting).
+
+Cursor, Windsurf, Devin all landed on variations of this. They are all effectively the same pattern because this is what works. The model is smart enough to plan. The model is smart enough to recover from errors. The model is smart enough to know when it needs more information. You just have to give it hands.
+
+I have made a small demo of this pattern [here](https://github.com/chrispangg/nanodeepagent).
+
+## The Market Signal: The RAG Company Pivoted
+
+[Jerry Liu](https://www.linkedin.com/posts/jerry-liu-64390071_as-2025-comes-to-a-close-i-want-to-highlight-activity-7412211768275595266-rpV7?utm_source=share&utm_medium=member_desktop&rcm=ACoAAA5E5ucBHBOrK2CLyKv52hQtDbCU4bazwPA), LlamaIndex's CEO, posted something telling recently. The company that built its reputation on RAG infrastructure announced they're now focused on "document OCR + workflows." His words: RAG 1.0 is dead."
+
+LlamaIndex processed over 500 million pages last year. They hit 25 million monthly downloads. And their conclusion? The bottleneck isn't retrieval anymore. It's getting documents into a format the model can work with.
+
+A month later, Anthropic shipped [Claude Cowork](https://claude.com/blog/cowork-research-preview). It's Claude Code for non-developers. You grant it access to specific folders, and it can read, create, edit, and organize files. Clean up your Downloads folder. Extract data from screenshots. Draft reports from notes.
+
+Here's the kicker: it was built mostly by Claude itself. Engineers provided high-level specs, Claude instances wrote the code. Two weeks, start to finish.
+
+The pattern is clear. Not "AI that knows everything" but "AI that can do everything." The filesystem becomes the universal interface.
+
+## What This Means
+
+The gap between "impressive demo" and "useful product" isn't model capability anymore. It's infrastructure. It's permissions. It's trust. It's the harness.
+
+Anyone can call Opus 4.5 or GPT 5. The differentiation is in what you let the model do. A model with file access and shell commands can solve a surprising number of problems. A model trapped behind a vector database can only answer questions about pre-chunked content.
+
+RAG is dead. Not because retrieval stopped mattering, but because it's no longer a separate system you need to build. The model handles it now, the same way it handles everything else: by using tools to interact with the world. Chunk, embed, retrieve was a workaround for models that couldn't reach information themselves. That constraint is gone.
+
+The question now is simple: what tools does your agent need? A filesystem, a coding environment, and maybe a browser. That's it. The model figures out the retrieval strategy. You just give it hands.
+
+Check out the [DeepAgent SDK docs](https://deepagentsdk.dev/docs) to get started with an effective agent harness.
