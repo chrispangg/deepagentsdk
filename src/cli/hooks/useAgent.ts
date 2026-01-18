@@ -16,6 +16,7 @@ import { parseModelString } from "../../utils/model-parser";
 import type { SandboxBackendProtocol } from "../../types";
 import type { ToolCallData } from "../components/Message";
 import { useEffect } from "react";
+import { DEFAULT_SUMMARIZATION_THRESHOLD, DEFAULT_KEEP_MESSAGES } from "../../constants/limits";
 
 export type AgentStatus =
   | "idle"
@@ -862,8 +863,12 @@ export function useAgent(options: UseAgentOptions): UseAgentReturn {
   const setSummarization = useCallback(
     (enabled: boolean) => {
       setSummarizationEnabled(enabled);
-      const newConfig = enabled 
-        ? { enabled: true, tokenThreshold: options.summarization?.tokenThreshold, keepMessages: options.summarization?.keepMessages }
+      const newConfig = enabled
+        ? {
+            enabled: true,
+            tokenThreshold: options.summarization?.tokenThreshold ?? DEFAULT_SUMMARIZATION_THRESHOLD,
+            keepMessages: options.summarization?.keepMessages ?? DEFAULT_KEEP_MESSAGES,
+          }
         : undefined;
       setSummarizationConfig(newConfig);
       recreateAgent({ summarization: newConfig });

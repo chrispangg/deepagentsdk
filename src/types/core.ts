@@ -161,6 +161,20 @@ export interface AdvancedAgentOptions {
 /**
  * Summarization configuration options.
  */
+export interface SummarizationConfig {
+  /** Whether summarization is enabled */
+  enabled: boolean;
+  /** Optional model to use for summarization (defaults to agent model) */
+  model?: import("ai").LanguageModel;
+  /** Token count threshold at which to trigger summarization */
+  tokenThreshold: number;
+  /** Number of recent messages to keep intact (not summarized) */
+  keepMessages: number;
+}
+
+/**
+ * Summarization configuration options.
+ */
 export interface ProviderConfig {
   baseURL?: string;
   apiKey?: string;

@@ -277,8 +277,8 @@ function App({ options, backend }: AppProps): React.ReactElement {
   const summarizationConfig = options.enableSummarization
     ? {
         enabled: true,
-        tokenThreshold: options.summarizationThreshold,
-        keepMessages: options.summarizationKeepMessages,
+        tokenThreshold: options.summarizationThreshold ?? DEFAULT_SUMMARIZATION_THRESHOLD,
+        keepMessages: options.summarizationKeepMessages ?? DEFAULT_KEEP_MESSAGES,
       }
     : undefined;
 
