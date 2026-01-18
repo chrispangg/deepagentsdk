@@ -224,3 +224,5 @@ Workflow **SKIPS** publishing for:
 **Need feature tracking?** → See `docs/PROJECT-STATE.md`
 
 **Need implementation process?** → See `PLAYBOOK.md`
+
+If you are unsure how to do something, use `gh_grep` to search code examples from GitHub, or `deepwiki` for documentation, questions, or implementation from public codebases, such as this one or any libraries.

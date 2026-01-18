@@ -10,6 +10,10 @@
         "@playwright/mcp@latest",
         "--headless"
       ]
+    },
+    "grep": {
+      "type": "http",
+      "url": "https://mcp.grep.app"
     }
   }
 }
