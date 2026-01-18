@@ -7,7 +7,7 @@ import React, { useState } from "react";
 import { Box, Text, useInput } from "ink";
 import { colors, emoji } from "../theme";
 
-type Provider = "anthropic" | "openai";
+type Provider = "anthropic" | "openai" | "zhipu";
 
 interface ApiKeyInputPanelProps {
   /** Callback when API key is saved */
@@ -30,6 +30,7 @@ export function ApiKeyInputPanel({
   // Get current API keys
   const anthropicKey = process.env.ANTHROPIC_API_KEY;
   const openaiKey = process.env.OPENAI_API_KEY;
+  const zhipuKey = process.env.ZHIPU_API_KEY;
 
   const maskKey = (key: string | undefined) => {
     if (!key) return null;
@@ -56,6 +57,14 @@ export function ApiKeyInputPanel({
         if (openaiKey) {
           setApiKey(openaiKey);
         }
+      } else if (input === "3" || input.toLowerCase() === "z") {
+        setSelectedProvider("zhipu");
+        setStep("enter-key");
+        setError(null);
+        // Pre-fill existing key if available
+        if (zhipuKey) {
+          setApiKey(zhipuKey);
+        }
       } else if (key.escape) {
         onClose?.();
       }
@@ -73,21 +82,13 @@ export function ApiKeyInputPanel({
           return;
         }
 
-        // Basic validation
-        if (selectedProvider === "anthropic" && !apiKey.startsWith("sk-ant-")) {
-          setError("Anthropic API keys typically start with 'sk-ant-'");
-          return;
-        }
-        if (selectedProvider === "openai" && !apiKey.startsWith("sk-")) {
-          setError("OpenAI API keys typically start with 'sk-'");
-          return;
-        }
-
         // Save to environment
         if (selectedProvider === "anthropic") {
           process.env.ANTHROPIC_API_KEY = apiKey.trim();
         } else if (selectedProvider === "openai") {
           process.env.OPENAI_API_KEY = apiKey.trim();
+        } else if (selectedProvider === "zhipu") {
+          process.env.ZHIPU_API_KEY = apiKey.trim();
         }
 
         setStep("success");
@@ -168,6 +169,21 @@ export function ApiKeyInputPanel({
           </>
         )}
       </Box>
+      <Box marginLeft={2}>
+        {zhipuKey ? (
+          <>
+            <Text color={colors.success}>✓ </Text>
+            <Text>Zhipu: </Text>
+            <Text dimColor>{maskKey(zhipuKey)}</Text>
+          </>
+        ) : (
+          <>
+            <Text color={colors.warning}>✗ </Text>
+            <Text>Zhipu: </Text>
+            <Text dimColor>not set</Text>
+          </>
+        )}
+      </Box>
       <Box height={1} />
 
       {step === "select-provider" && (
@@ -184,8 +200,13 @@ export function ApiKeyInputPanel({
             <Text> OpenAI (GPT)</Text>
             {openaiKey && <Text dimColor> (overwrite)</Text>}
           </Box>
+          <Box marginLeft={2}>
+            <Text color={colors.primary}>[3]</Text>
+            <Text> Zhipu (GLM)</Text>
+            {zhipuKey && <Text dimColor> (overwrite)</Text>}
+          </Box>
           <Box height={1} />
-          <Text dimColor>Press 1 or 2 to select, Esc to close</Text>
+          <Text dimColor>Press 1, 2, or 3 to select, Esc to close</Text>
         </>
       )}
 
@@ -194,15 +215,19 @@ export function ApiKeyInputPanel({
           <Text>
             Enter your{" "}
             <Text color={colors.primary}>
-              {selectedProvider === "anthropic" ? "Anthropic" : "OpenAI"}
+              {selectedProvider === "anthropic" ? "Anthropic" : selectedProvider === "openai" ? "OpenAI" : "Zhipu"}
             </Text>{" "}
-            API key:
+            API key
             {selectedProvider === "anthropic" && anthropicKey && (
               <Text dimColor> (current: {maskKey(anthropicKey)})</Text>
             )}
             {selectedProvider === "openai" && openaiKey && (
               <Text dimColor> (current: {maskKey(openaiKey)})</Text>
             )}
+            {selectedProvider === "zhipu" && zhipuKey && (
+              <Text dimColor> (current: {maskKey(zhipuKey)})</Text>
+            )}
+            :
           </Text>
           <Box height={1} />
           <Box>
@@ -225,7 +250,7 @@ export function ApiKeyInputPanel({
         <>
           <Text color={colors.success}>
             {emoji.completed} API key saved for{" "}
-            {selectedProvider === "anthropic" ? "Anthropic" : "OpenAI"}!
+            {selectedProvider === "anthropic" ? "Anthropic" : selectedProvider === "openai" ? "OpenAI" : "Zhipu"}!
           </Text>
           <Box height={1} />
           <Text dimColor>Press Enter or Esc to return to menu</Text>
@@ -241,6 +266,7 @@ export function ApiKeyInputPanel({
 export function ApiKeyStatus(): React.ReactElement {
   const anthropicKey = process.env.ANTHROPIC_API_KEY;
   const openaiKey = process.env.OPENAI_API_KEY;
+  const zhipuKey = process.env.ZHIPU_API_KEY;
 
   const maskKey = (key: string | undefined) => {
     if (!key) return null;
@@ -286,6 +312,21 @@ export function ApiKeyStatus(): React.ReactElement {
           <>
             <Text color={colors.warning}>✗ </Text>
             <Text>OpenAI: </Text>
+            <Text dimColor>not set</Text>
+          </>
+        )}
+      </Box>
+      <Box>
+        {zhipuKey ? (
+          <>
+            <Text color={colors.success}>✓ </Text>
+            <Text>Zhipu: </Text>
+            <Text dimColor>{maskKey(zhipuKey)}</Text>
+          </>
+        ) : (
+          <>
+            <Text color={colors.warning}>✗ </Text>
+            <Text>Zhipu: </Text>
             <Text dimColor>not set</Text>
           </>
         )}

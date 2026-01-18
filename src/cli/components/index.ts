@@ -20,5 +20,6 @@ export { StatusBar } from "./StatusBar";
 export { ToolCallSummary, InlineToolCall } from "./ToolCallSummary";
 export { ModelSelectionPanel } from "./ModelSelection";
 export { ApiKeyInputPanel, ApiKeyStatus } from "./ApiKeyInput";
+export { BaseURLInput } from "./BaseURLInput";
 export { ToolApproval } from "./ToolApproval";
 

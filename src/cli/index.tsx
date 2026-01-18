@@ -47,11 +47,13 @@ import {
   StatusBar,
   ModelSelectionPanel,
   ApiKeyInputPanel,
+  BaseURLInput,
   ToolApproval,
   type MessageData,
 } from "./components/index";
 import { parseCommand, colors, SLASH_COMMANDS } from "./theme";
 import type { FileInfo } from "../types";
+import { parseModelString, setProvidersConfig, getProvidersConfig, type ProvidersConfig } from "@/utils/model-parser";
 import { estimateMessagesTokens } from "../utils/summarization";
 
 // ============================================================================
@@ -70,6 +72,13 @@ interface CLIOptions {
   enableSummarization?: boolean;
   summarizationThreshold?: number;
   summarizationKeepMessages?: number;
+  // Provider configuration
+  anthropicBaseURL?: string;
+  openaiBaseURL?: string;
+  zhipuBaseURL?: string;
+  anthropicApiKey?: string;
+  openaiApiKey?: string;
+  zhipuApiKey?: string;
 }
 
 // Default values for features (enabled by default)
@@ -133,6 +142,18 @@ function parseArgs(): CLIOptions {
     } else if (arg && arg.startsWith("--session=")) {
       const sessionVal = arg.split("=")[1];
       if (sessionVal) options.session = sessionVal;
+    } else if (arg === "--anthropic-base-url") {
+      options.anthropicBaseURL = args[++i];
+    } else if (arg === "--openai-base-url") {
+      options.openaiBaseURL = args[++i];
+    } else if (arg === "--zhipu-base-url") {
+      options.zhipuBaseURL = args[++i];
+    } else if (arg === "--anthropic-api-key") {
+      options.anthropicApiKey = args[++i];
+    } else if (arg === "--openai-api-key") {
+      options.openaiApiKey = args[++i];
+    } else if (arg === "--zhipu-api-key") {
+      options.zhipuApiKey = args[++i];
     } else if (arg === "--help" || arg === "-h") {
       printHelp();
       process.exit(0);
@@ -180,6 +201,14 @@ Options:
   --dir, -d <directory>     Working directory for file operations (default: current dir)
   --help, -h                Show this help
 
+Provider Configuration:
+  --anthropic-base-url <url>  Custom base URL for Anthropic API
+  --openai-base-url <url>     Custom base URL for OpenAI API
+  --zhipu-base-url <url>      Custom base URL for Zhipu API
+  --anthropic-api-key <key>   Anthropic API key (overrides environment variable)
+  --openai-api-key <key>      OpenAI API key (overrides environment variable)
+  --zhipu-api-key <key>       Zhipu AI API key (overrides environment variable)
+
 Performance & Memory (all enabled by default):
   --no-cache                Disable prompt caching (enabled by default for Anthropic)
   --no-eviction             Disable tool result eviction (enabled by default: 20k tokens)
@@ -196,12 +225,16 @@ Runtime Commands:
 
 API Keys:
   The CLI automatically loads API keys from:
-  1. Environment variables (ANTHROPIC_API_KEY, OPENAI_API_KEY, TAVILY_API_KEY)
+  1. Environment variables (ANTHROPIC_API_KEY, OPENAI_API_KEY, ZHIPU_API_KEY, TAVILY_API_KEY)
   2. .env or .env.local file in the working directory
 
   Example .env file:
     ANTHROPIC_API_KEY=sk-ant-...
     OPENAI_API_KEY=sk-...
+    ZHIPU_API_KEY=...
+    ANTHROPIC_BASE_URL=https://custom-endpoint.com/v1
+    OPENAI_BASE_URL=https://custom-openai-endpoint.com/v1
+    ZHIPU_BASE_URL=https://api.z.ai/api/coding/paas/v4
     TAVILY_API_KEY=tvly-...  # For web_search tool
 
 Examples:
@@ -209,6 +242,12 @@ Examples:
   bun src/cli-ink/index.tsx --dir ./my-project                 # loads .env from ./my-project
   ANTHROPIC_API_KEY=xxx bun src/cli-ink/index.tsx              # env var takes precedence
   bun src/cli-ink/index.tsx --model anthropic/claude-sonnet-4-20250514
+
+  # Use Zhipu with custom base URL
+  bun src/cli-ink/index.tsx --model zhipu/glm-4-plus --zhipu-base-url https://api.z.ai/api/coding/paas/v4
+
+  # Use Anthropic with custom API key
+  bun src/cli-ink/index.tsx --model anthropic/claude-3.5-sonnet --anthropic-api-key sk-custom-...
 `);
 }
 
@@ -221,7 +260,7 @@ interface AppProps {
   backend: LocalSandbox;
 }
 
-type PanelView = "none" | "help" | "todos" | "files" | "file-content" | "apikey-input" | "features" | "tokens" | "models";
+type PanelView = "none" | "help" | "todos" | "files" | "file-content" | "apikey-input" | "baseurl-input" | "features" | "tokens" | "models";
 
 interface PanelState {
   view: PanelView;
@@ -360,6 +399,12 @@ function App({ options, backend }: AppProps): React.ReactElement {
       case "api":
         // Always show interactive API key panel
         setPanel({ view: "apikey-input" });
+        break;
+
+      case "baseurl":
+      case "base-url":
+        // Show base URL configuration panel
+        setPanel({ view: "baseurl-input" });
         break;
 
       case "model":
@@ -527,7 +572,7 @@ function App({ options, backend }: AppProps): React.ReactElement {
   const isGenerating = agent.status !== "idle" && agent.status !== "done" && agent.status !== "error";
   
   // Disable input when in interactive panels that capture keyboard input
-  const isInteractivePanel = panel.view === "apikey-input" || panel.view === "models";
+  const isInteractivePanel = panel.view === "apikey-input" || panel.view === "baseurl-input" || panel.view === "models";
   const isInputDisabled = isGenerating || isInteractivePanel;
 
   return (
@@ -553,6 +598,30 @@ function App({ options, backend }: AppProps): React.ReactElement {
             // Key saved, returns to provider selection automatically
           }}
           onClose={() => setPanel({ view: "none" })}
+        />
+      )}
+      {panel.view === "baseurl-input" && (
+        <BaseURLInput
+          onSubmit={(provider, baseURL) => {
+            // Update global provider configuration
+            const config = getProvidersConfig();
+            const providerConfig = config[provider] || {};
+
+            setProvidersConfig({
+              [provider]: {
+                ...providerConfig,
+                baseURL,
+              },
+            });
+
+            // Update environment for consistency
+            const envVar = `${provider.toUpperCase()}_BASE_URL`;
+            process.env[envVar] = baseURL;
+
+            // Show success message
+            console.log(`\x1b[32m✓\x1b[0m Set ${provider} base URL: ${baseURL}`);
+          }}
+          onCancel={() => setPanel({ view: "none" })}
         />
       )}
       {panel.view === "features" && <FeaturesPanel features={agent.features} options={options} />}
@@ -961,6 +1030,7 @@ interface EnvLoadResult {
   loaded: boolean;
   path?: string;
   keysFound: string[];
+  providerConfig?: ProvidersConfig;
 }
 
 /**
@@ -974,7 +1044,10 @@ async function loadEnvFile(workDir: string): Promise<EnvLoadResult> {
     `${workDir}/.env.local`,
   ];
   
-  const keysToCheck = ['ANTHROPIC_API_KEY', 'OPENAI_API_KEY'];
+  const keysToCheck = [
+    'ANTHROPIC_API_KEY', 'OPENAI_API_KEY', 'ZHIPU_API_KEY',
+    'ANTHROPIC_BASE_URL', 'OPENAI_BASE_URL', 'ZHIPU_BASE_URL'
+  ];
   const result: EnvLoadResult = { loaded: false, keysFound: [] };
   
   for (const envPath of envPaths) {
@@ -1051,8 +1124,74 @@ async function main() {
   }
   
   // Warn if no API keys found
-  if (!process.env.ANTHROPIC_API_KEY && !process.env.OPENAI_API_KEY) {
-    console.log(`\x1b[33m⚠\x1b[0m No API keys found. Set ANTHROPIC_API_KEY or OPENAI_API_KEY in environment or .env file.`);
+  if (!process.env.ANTHROPIC_API_KEY && !process.env.OPENAI_API_KEY && !process.env.ZHIPU_API_KEY) {
+    console.log(`\x1b[33m⚠\x1b[0m No API keys found. Set ANTHROPIC_API_KEY, OPENAI_API_KEY, or ZHIPU_API_KEY in environment or .env file.`);
+  }
+
+  // Initialize provider configuration from environment variables
+  const providerConfig: ProvidersConfig = {};
+
+  if (process.env.ANTHROPIC_BASE_URL || process.env.ANTHROPIC_API_KEY) {
+    providerConfig.anthropic = {
+      baseURL: process.env.ANTHROPIC_BASE_URL,
+      apiKey: process.env.ANTHROPIC_API_KEY,
+    };
+  }
+
+  if (process.env.OPENAI_BASE_URL || process.env.OPENAI_API_KEY) {
+    providerConfig.openai = {
+      baseURL: process.env.OPENAI_BASE_URL,
+      apiKey: process.env.OPENAI_API_KEY,
+    };
+  }
+
+  if (process.env.ZHIPU_BASE_URL || process.env.ZHIPU_API_KEY) {
+    providerConfig.zhipu = {
+      baseURL: process.env.ZHIPU_BASE_URL,
+      apiKey: process.env.ZHIPU_API_KEY,
+    };
+  }
+
+  // Set global provider configuration from environment
+  setProvidersConfig(providerConfig);
+
+  // Show loaded base URLs from environment
+  const loadedBaseUrls = Object.entries(providerConfig)
+    .filter(([_, config]) => config?.baseURL)
+    .map(([provider]) => provider);
+  if (loadedBaseUrls.length > 0) {
+    console.log(`\x1b[32m✓\x1b[0m Loaded custom base URLs: ${loadedBaseUrls.join(', ')}`);
+  }
+
+  // Override with CLI flags (highest priority)
+  const cliConfig: ProvidersConfig = {};
+
+  if (options.anthropicBaseURL || options.anthropicApiKey) {
+    cliConfig.anthropic = {
+      baseURL: options.anthropicBaseURL,
+      apiKey: options.anthropicApiKey,
+    };
+  }
+
+  if (options.openaiBaseURL || options.openaiApiKey) {
+    cliConfig.openai = {
+      baseURL: options.openaiBaseURL,
+      apiKey: options.openaiApiKey,
+    };
+  }
+
+  if (options.zhipuBaseURL || options.zhipuApiKey) {
+    cliConfig.zhipu = {
+      baseURL: options.zhipuBaseURL,
+      apiKey: options.zhipuApiKey,
+    };
+  }
+
+  // Apply CLI overrides
+  if (Object.keys(cliConfig).length > 0) {
+    setProvidersConfig(cliConfig);
+    const overriddenProviders = Object.keys(cliConfig).join(', ');
+    console.log(`\x1b[32m✓\x1b[0m Applied CLI overrides for: ${overriddenProviders}`);
   }
 
   const backend = new LocalSandbox({

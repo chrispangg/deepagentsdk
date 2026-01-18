@@ -97,6 +97,11 @@ export const SLASH_COMMANDS: SlashCommand[] = [
     description: "Manage API keys (interactive)",
   },
   {
+    command: "/baseurl",
+    aliases: ["/base-url"],
+    description: "Configure custom base URLs for providers (interactive)",
+  },
+  {
     command: "/model",
     aliases: [],
     description: "Show available models or change model (usage: /model [model-name])",

@@ -2,7 +2,10 @@
   "$schema": "https://opencode.ai/config.json",
   "permission": "allow",
   "tui": {
-    "scroll_speed": 1
+    "scroll_speed": 1,
+    "scroll_acceleration": {
+      "enabled": true
+    }
   },
   "mcp": {
     "shadcn": {

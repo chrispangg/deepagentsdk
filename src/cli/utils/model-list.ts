@@ -5,7 +5,7 @@
 export interface AvailableModel {
   id: string;
   name: string;
-  provider: "anthropic" | "openai";
+  provider: "anthropic" | "openai" | "zhipu";
   description?: string;
   createdAt?: string;
 }
@@ -28,6 +28,7 @@ interface CacheEntry {
 const modelCache: {
   anthropic?: CacheEntry;
   openai?: CacheEntry;
+  zhipu?: CacheEntry;
 } = {};
 
 // Cache TTL: 24 hours in milliseconds
@@ -45,7 +46,7 @@ function hashApiKey(key: string | undefined): string {
 /**
  * Check if cache is valid for a provider.
  */
-function isCacheValid(provider: "anthropic" | "openai"): boolean {
+function isCacheValid(provider: "anthropic" | "openai" | "zhipu"): boolean {
   const entry = modelCache[provider];
   if (!entry) return false;
 
@@ -56,7 +57,9 @@ function isCacheValid(provider: "anthropic" | "openai"): boolean {
   const currentKeyHash =
     provider === "anthropic"
       ? hashApiKey(process.env.ANTHROPIC_API_KEY)
-      : hashApiKey(process.env.OPENAI_API_KEY);
+      : provider === "openai"
+        ? hashApiKey(process.env.OPENAI_API_KEY)
+        : hashApiKey(process.env.ZHIPU_API_KEY);
 
   return entry.apiKeyHash === currentKeyHash;
 }
@@ -64,7 +67,7 @@ function isCacheValid(provider: "anthropic" | "openai"): boolean {
 /**
  * Get cached models for a provider.
  */
-function getCachedModels(provider: "anthropic" | "openai"): AvailableModel[] | null {
+function getCachedModels(provider: "anthropic" | "openai" | "zhipu"): AvailableModel[] | null {
   if (isCacheValid(provider)) {
     return modelCache[provider]!.models;
   }
@@ -74,11 +77,13 @@ function getCachedModels(provider: "anthropic" | "openai"): AvailableModel[] | n
 /**
  * Set cached models for a provider.
  */
-function setCachedModels(provider: "anthropic" | "openai", models: AvailableModel[]): void {
+function setCachedModels(provider: "anthropic" | "openai" | "zhipu", models: AvailableModel[]): void {
   const apiKeyHash =
     provider === "anthropic"
       ? hashApiKey(process.env.ANTHROPIC_API_KEY)
-      : hashApiKey(process.env.OPENAI_API_KEY);
+      : provider === "openai"
+        ? hashApiKey(process.env.OPENAI_API_KEY)
+        : hashApiKey(process.env.ZHIPU_API_KEY);
 
   modelCache[provider] = {
     models,
@@ -90,12 +95,13 @@ function setCachedModels(provider: "anthropic" | "openai", models: AvailableMode
 /**
  * Clear cache for a specific provider or all providers.
  */
-export function clearModelCache(provider?: "anthropic" | "openai"): void {
+export function clearModelCache(provider?: "anthropic" | "openai" | "zhipu"): void {
   if (provider) {
     delete modelCache[provider];
   } else {
     delete modelCache.anthropic;
     delete modelCache.openai;
+    delete modelCache.zhipu;
   }
 }
 
@@ -109,10 +115,12 @@ export function clearModelCache(provider?: "anthropic" | "openai"): void {
 export function detectAvailableProviders(): {
   anthropic: boolean;
   openai: boolean;
+  zhipu: boolean;
 } {
   return {
     anthropic: !!process.env.ANTHROPIC_API_KEY,
     openai: !!process.env.OPENAI_API_KEY,
+    zhipu: !!process.env.ZHIPU_API_KEY,
   };
 }
 
@@ -291,6 +299,49 @@ function getOpenAIModelDescription(modelId: string): string {
 }
 
 // ============================================================================
+// Zhipu AI API
+// ============================================================================
+
+/**
+ * Known Zhipu GLM models with descriptions.
+ * Zhipu doesn't have a public models list API, so we use a static list.
+ */
+const ZHIPU_MODELS: { id: string; description: string }[] = [
+  { id: "glm-4.7", description: "Most capable GLM models" },
+  
+];
+
+/**
+ * Get available Zhipu models.
+ * Returns a static list of known models since Zhipu doesn't have a models list API.
+ */
+export async function fetchZhipuModels(): Promise<FetchModelsResult> {
+  const apiKey = process.env.ZHIPU_API_KEY;
+  if (!apiKey) {
+    return { models: [], error: "No Zhipu API key configured" };
+  }
+
+  // Check cache first
+  const cached = getCachedModels("zhipu");
+  if (cached) {
+    return { models: cached };
+  }
+
+  // Return static list of known models
+  const models: AvailableModel[] = ZHIPU_MODELS.map((model) => ({
+    id: `zhipu/${model.id}`,
+    name: model.id,
+    provider: "zhipu" as const,
+    description: model.description,
+  }));
+
+  // Cache the results
+  setCachedModels("zhipu", models);
+
+  return { models };
+}
+
+// ============================================================================
 // Combined Functions
 // ============================================================================
 
@@ -309,7 +360,7 @@ export async function getAvailableModels(): Promise<GetModelsResult> {
   const allModels: AvailableModel[] = [];
   const errors: { provider: string; error: string }[] = [];
 
-  // Fetch from both providers in parallel
+  // Fetch from all providers in parallel
   const promises: Promise<void>[] = [];
 
   if (providers.anthropic) {
@@ -334,6 +385,17 @@ export async function getAvailableModels(): Promise<GetModelsResult> {
     );
   }
 
+  if (providers.zhipu) {
+    promises.push(
+      fetchZhipuModels().then((result) => {
+        allModels.push(...result.models);
+        if (result.error) {
+          errors.push({ provider: "Zhipu", error: result.error });
+        }
+      })
+    );
+  }
+
   await Promise.all(promises);
 
   return { models: allModels, errors, loading: false };
@@ -345,12 +407,14 @@ export async function getAvailableModels(): Promise<GetModelsResult> {
 export async function getModelsByProvider(): Promise<{
   anthropic?: AvailableModel[];
   openai?: AvailableModel[];
+  zhipu?: AvailableModel[];
   errors: { provider: string; error: string }[];
 }> {
   const result = await getAvailableModels();
   const grouped: {
     anthropic?: AvailableModel[];
     openai?: AvailableModel[];
+    zhipu?: AvailableModel[];
     errors: { provider: string; error: string }[];
   } = { errors: result.errors };
 

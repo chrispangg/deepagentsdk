@@ -161,15 +161,15 @@ export interface AdvancedAgentOptions {
 /**
  * Summarization configuration options.
  */
-export interface SummarizationConfig {
-  /** Enable automatic summarization when approaching token limits. */
-  enabled: boolean;
-  /** Token threshold to trigger summarization (default: 170000). */
-  tokenThreshold?: number;
-  /** Number of recent messages to keep intact without summarization (default: 6). */
-  keepMessages?: number;
-  /** Model to use for summarization. */
-  model?: LanguageModel;
+export interface ProviderConfig {
+  baseURL?: string;
+  apiKey?: string;
+}
+
+export interface ProvidersConfig {
+  anthropic?: ProviderConfig;
+  openai?: ProviderConfig;
+  zhipu?: ProviderConfig;
 }
 
 /**
