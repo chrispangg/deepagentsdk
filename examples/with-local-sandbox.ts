@@ -6,7 +6,7 @@
  *
  * The execute tool is AUTOMATICALLY added when using a SandboxBackendProtocol!
  *
- * Run with: bun examples/with-local-sandbox.ts
+ * Run with: node --import tsx examples/with-local-sandbox.ts
  *
  * Bun automatically loads .env files, so just create a .env file with:
  *   ANTHROPIC_API_KEY=your-key
@@ -162,7 +162,7 @@ The workspace is a real directory on the local filesystem at: ${workspaceDir}
 
 When creating projects:
 - Always create a package.json first if needed
-- Use appropriate commands for the runtime (bun or node)
+- Use appropriate commands for the runtime (node)
 - Check command output for errors and fix them
 
 Be efficient and avoid unnecessary commands.`,
@@ -178,7 +178,7 @@ Be efficient and avoid unnecessary commands.`,
 
 1. Create a package.json with name "hello-world" and a "start" script
 2. Create a src/index.ts file that prints "Hello from LocalSandbox!"
-3. Run the script using "bun src/index.ts" to verify it works
+3. Run the script using "node --import tsx src/index.ts" to verify it works
 
 Use the execute tool to run commands. Show me the output of running the script.`,
     maxSteps: 15,

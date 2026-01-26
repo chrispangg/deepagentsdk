@@ -14,8 +14,8 @@ import type { SandboxBackendProtocol, EventCallback } from "../types";
 const EXECUTE_TOOL_DESCRIPTION = `Execute a shell command in the sandbox environment.
 
 Use this tool to:
-- Run build commands (npm install, npm run build, bun install)
-- Run tests (npm test, bun test, pytest)
+- Run build commands (npm install, npm run build)
+- Run tests (npm test, pytest)
 - Execute scripts (node script.js, python script.py)
 - Check system state (ls, cat, pwd, which)
 - Install dependencies

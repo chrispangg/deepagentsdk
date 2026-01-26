@@ -2,10 +2,11 @@
  * Tests for src/backends/composite.ts
  */
 
-import { test, describe, expect } from "bun:test";
+import { test, describe } from "node:test";
 import { CompositeBackend } from "@/backends/composite";
 import { StateBackend } from "@/backends/state";
 import type { FileData, FileInfo, GrepMatch } from "@/types";
+import assert from "node:assert/strict";
 
 // Helper to create a mock backend with predefined files
 function createMockBackend(files: Record<string, FileData> = {}): StateBackend {
@@ -22,7 +23,7 @@ describe("backends/composite", () => {
         "/cache/": createMockBackend(),
       };
       const backend = new CompositeBackend(defaultBackend, routes);
-      expect(backend).toBeDefined();
+      assert.notStrictEqual(backend, undefined);
     });
 
     test("should sort routes by length (longest first)", () => {
@@ -34,7 +35,7 @@ describe("backends/composite", () => {
       };
       const backend = new CompositeBackend(defaultBackend, routes);
       // Routes should be sorted longest first for correct prefix matching
-      expect(backend).toBeDefined();
+      assert.notStrictEqual(backend, undefined);
     });
   });
 
@@ -51,8 +52,8 @@ describe("backends/composite", () => {
       const backend = new CompositeBackend(defaultBackend, routes);
 
       const result = await backend.write("/default/file.txt", "content");
-      expect(result.success).toBe(true);
-      expect(defaultFiles["/default/file.txt"]).toBeDefined();
+      assert.strictEqual(result.success, true);
+      assert.notStrictEqual(defaultFiles["/default/file.txt"], undefined);
     });
 
     test("should write to routed backend for matching paths", async () => {
@@ -70,8 +71,8 @@ describe("backends/composite", () => {
       );
 
       const result = await backend.write("/persistent/file.txt", "content");
-      expect(result.success).toBe(true);
-      expect(persistentFiles["/file.txt"]).toBeDefined();
+      assert.strictEqual(result.success, true);
+      assert.notStrictEqual(persistentFiles["/file.txt"], undefined);
     });
 
     test("should strip route prefix from path", async () => {
@@ -89,7 +90,7 @@ describe("backends/composite", () => {
       );
 
       await backend.write("/persistent/subdir/file.txt", "content");
-      expect(persistentFiles["/subdir/file.txt"]).toBeDefined();
+      assert.notStrictEqual(persistentFiles["/subdir/file.txt"], undefined);
     });
   });
 
@@ -108,7 +109,7 @@ describe("backends/composite", () => {
       const backend = new CompositeBackend(defaultBackend, {});
 
       const result = await defaultBackend.read("/file.txt");
-      expect(result).toContain("default content");
+      assert.ok(result.includes("default content"));
     });
 
     test("should read from routed backend for matching paths", async () => {
@@ -131,7 +132,7 @@ describe("backends/composite", () => {
       );
 
       const result = await backend.read("/persistent/file.txt");
-      expect(result).toContain("persistent content");
+      assert.ok(result.includes("persistent content"));
     });
 
     test("should apply offset and limit parameters", async () => {
@@ -154,8 +155,8 @@ describe("backends/composite", () => {
       );
 
       const result = await backend.read("/persistent/file.txt", 1, 2);
-      expect(result).toContain("line2");
-      expect(result).toContain("line3");
+      assert.ok(result.includes("line2"));
+      assert.ok(result.includes("line3"));
     });
   });
 
@@ -180,9 +181,9 @@ describe("backends/composite", () => {
       );
 
       const result = await backend.readRaw("/persistent/file.txt");
-      expect(result.content).toEqual(["raw content"]);
-      expect(result.created_at).toBe("2024-01-01T00:00:00.000Z");
-      expect(result.modified_at).toBe("2024-01-02T00:00:00.000Z");
+      assert.deepStrictEqual(result.content, ["raw content"]);
+      assert.strictEqual(result.created_at, "2024-01-01T00:00:00.000Z");
+      assert.strictEqual(result.modified_at, "2024-01-02T00:00:00.000Z");
     });
   });
 
@@ -201,7 +202,7 @@ describe("backends/composite", () => {
       const backend = new CompositeBackend(defaultBackend, {});
 
       const result = await backend.edit("/file.txt", "world", "there", false);
-      expect(result.success).toBe(true);
+      assert.strictEqual(result.success, true);
     });
 
     test("should edit file in routed backend", async () => {
@@ -224,7 +225,7 @@ describe("backends/composite", () => {
       );
 
       const result = await backend.edit("/persistent/file.txt", "world", "there", false);
-      expect(result.success).toBe(true);
+      assert.strictEqual(result.success, true);
     });
   });
 
@@ -248,9 +249,9 @@ describe("backends/composite", () => {
       const backend = new CompositeBackend(defaultBackend, {});
 
       const result = await backend.lsInfo("/");
-      expect(result.length).toBe(2);
-      expect(result.some((f: FileInfo) => f.path.endsWith("file1.txt"))).toBe(true);
-      expect(result.some((f: FileInfo) => f.path.endsWith("file2.txt"))).toBe(true);
+      assert.strictEqual(result.length, 2);
+      assert.ok(result.some((f: FileInfo) => f.path.endsWith("file1.txt")));
+      assert.ok(result.some((f: FileInfo) => f.path.endsWith("file2.txt")));
     });
 
     test("should list root with route directories", async () => {
@@ -277,9 +278,9 @@ describe("backends/composite", () => {
       const backend = new CompositeBackend(defaultBackend, routes);
 
       const result = await backend.lsInfo("/");
-      expect(result.some((f: FileInfo) => f.path === "/persistent/")).toBe(true);
-      expect(result.some((f: FileInfo) => f.path === "/cache/")).toBe(true);
-      expect(result.some((f: FileInfo) => f.path === "/default.txt")).toBe(true);
+      assert.ok(result.some((f: FileInfo) => f.path === "/persistent/"));
+      assert.ok(result.some((f: FileInfo) => f.path === "/cache/"));
+      assert.ok(result.some((f: FileInfo) => f.path === "/default.txt"));
     });
 
     test("should list files in routed backend", async () => {
@@ -302,8 +303,8 @@ describe("backends/composite", () => {
       );
 
       const result = await backend.lsInfo("/persistent/");
-      expect(result.length).toBe(1);
-      expect(result[0]?.path).toBe("/persistent/file.txt");
+      assert.strictEqual(result.length, 1);
+      assert.strictEqual(result[0]?.path, "/persistent/file.txt");
     });
   });
 
@@ -322,10 +323,10 @@ describe("backends/composite", () => {
       const backend = new CompositeBackend(defaultBackend, {});
 
       const result = await backend.grepRaw("hello");
-      expect(Array.isArray(result)).toBe(true);
+      assert.ok(Array.isArray(result));
       if (Array.isArray(result)) {
-        expect(result.length).toBeGreaterThan(0);
-        expect(result[0]?.path).toBe("/file.txt");
+        assert.ok(result.length > 0);
+        assert.strictEqual(result[0]?.path, "/file.txt");
       }
     });
 
@@ -349,10 +350,10 @@ describe("backends/composite", () => {
       );
 
       const result = await backend.grepRaw("persistent", "/persistent/");
-      expect(Array.isArray(result)).toBe(true);
+      assert.ok(Array.isArray(result));
       if (Array.isArray(result)) {
-        expect(result.length).toBeGreaterThan(0);
-        expect(result[0]?.path).toBe("/persistent/file.txt");
+        assert.ok(result.length > 0);
+        assert.strictEqual(result[0]?.path, "/persistent/file.txt");
       }
     });
 
@@ -383,9 +384,9 @@ describe("backends/composite", () => {
       const backend = new CompositeBackend(defaultBackend, routes);
 
       const result = await backend.grepRaw("content", "/");
-      expect(Array.isArray(result)).toBe(true);
+      assert.ok(Array.isArray(result));
       if (Array.isArray(result)) {
-        expect(result.length).toBeGreaterThan(0);
+        assert.ok(result.length > 0);
       }
     });
   });
@@ -410,8 +411,8 @@ describe("backends/composite", () => {
       const backend = new CompositeBackend(defaultBackend, {});
 
       const result = await backend.globInfo("*.txt");
-      expect(result.length).toBe(1);
-      expect(result[0]?.path).toBe("/file1.txt");
+      assert.strictEqual(result.length, 1);
+      assert.strictEqual(result[0]?.path, "/file1.txt");
     });
 
     test("should find files matching pattern in routed backend", async () => {
@@ -434,8 +435,8 @@ describe("backends/composite", () => {
       );
 
       const result = await backend.globInfo("*.txt", "/persistent/");
-      expect(result.length).toBe(1);
-      expect(result[0]?.path).toBe("/persistent/file.txt");
+      assert.strictEqual(result.length, 1);
+      assert.strictEqual(result[0]?.path, "/persistent/file.txt");
     });
 
     test("should search all backends when path is root", async () => {
@@ -465,7 +466,7 @@ describe("backends/composite", () => {
       const backend = new CompositeBackend(defaultBackend, routes);
 
       const result = await backend.globInfo("*.txt");
-      expect(result.length).toBe(2);
+      assert.strictEqual(result.length, 2);
     });
   });
 
@@ -513,7 +514,8 @@ describe("backends/composite", () => {
 
       // Should handle paths with or without trailing slash in the request
       const result = await backend.read("/persistent/file.txt");
-      expect(result).toContain("test");
+      assert.ok(result.includes("test"));
     });
   });
 });
+

@@ -9,7 +9,7 @@
  * All perform the SAME task (research, calculate, and document), but the streaming
  * events show WHO is doing WHAT in each approach.
  *
- * Run with: bun examples/with-selective-tools.ts
+ * Run with: node --import tsx examples/with-selective-tools.ts
  *
  * Requires ANTHROPIC_API_KEY and TAVILY_API_KEY environment variables.
  */

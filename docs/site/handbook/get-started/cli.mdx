@@ -55,12 +55,7 @@ The CLI is ideal for:
 
 ### Prerequisites
 
-<Callout title="Bun Required" type="warn">The CLI requires [Bun](https://bun.sh) runtime (>= 1.0.0)</Callout>
-
-```bash title="install-bun.sh"
-# Install Bun
-curl -fsSL https://bun.sh/install | bash
-```
+<Callout title="Node.js Required" type="warn">The CLI requires Node.js 24.11.1</Callout>
 
 ### Installation Options
 
@@ -69,28 +64,28 @@ curl -fsSL https://bun.sh/install | bash
     **Recommended for quick use**
 
     ```bash
-    bunx deepagentsdk
+    npx deep-agent
     ```
   </Tab>
   <Tab value="Install globally">
     ```bash
-    bun add -g deepagentsdk
+    npm install -g deepagentsdk
     deep-agent
     ```
   </Tab>
   <Tab value="Install locally">
     ```bash
     cd your-project
-    bun add deepagentsdk
-    bunx deep-agent
+    npm install deepagentsdk
+    npx deep-agent
     ```
   </Tab>
   <Tab value="From source">
     ```bash
     git clone https://github.com/chrispangg/deepagentsdk.git
     cd deepagentsdk
-    bun install
-    bun run cli
+    npm install
+    npm run cli
     ```
   </Tab>
 </Tabs>
@@ -121,7 +116,7 @@ export TAVILY_API_KEY=tvly-...     # For web search capabilities
 ### Start the CLI
 
 ```bash
-bunx deepagentsdk
+npx deep-agent
 ```
 </Step>
 
@@ -197,10 +192,10 @@ Save and resume conversations:
 
 ```bash
 # Start a new session
-bunx deepagentsdk --session my-project
+npx deep-agent --session my-project
 
 # Later, resume the session
-bunx deepagentsdk --session my-project
+npx deep-agent --session my-project
 ```
 
 ### Performance Features

@@ -1,7 +1,8 @@
-import { test, expect, beforeEach, afterEach } from "bun:test";
+import { test, beforeEach, afterEach } from "node:test";
 import { FileSaver } from "@/checkpointer/file-saver.ts";
 import { rmSync, existsSync } from "node:fs";
 import type { Checkpoint } from "@/checkpointer/types.ts";
+import assert from "node:assert/strict";
 
 const TEST_DIR = "./.test-checkpoints";
 
@@ -27,20 +28,20 @@ afterEach(() => {
 });
 
 test("FileSaver > creates directory if it doesn't exist", () => {
-  expect(existsSync(TEST_DIR)).toBe(true);
+  assert.strictEqual(existsSync(TEST_DIR), true);
 });
 
 test("FileSaver > save and load checkpoint", async () => {
   await saver.save(createTestCheckpoint("test-thread"));
   
   const loaded = await saver.load("test-thread");
-  expect(loaded?.threadId).toBe("test-thread");
-  expect(loaded?.messages).toHaveLength(1);
+  assert.strictEqual(loaded?.threadId, "test-thread");
+  assert.strictEqual(loaded?.messages.length, 1);
 });
 
 test("FileSaver > load returns undefined for non-existent thread", async () => {
   const loaded = await saver.load("non-existent");
-  expect(loaded).toBeUndefined();
+  assert.strictEqual(loaded, undefined);
 });
 
 test("FileSaver > list returns saved threads", async () => {
@@ -48,24 +49,24 @@ test("FileSaver > list returns saved threads", async () => {
   await saver.save(createTestCheckpoint("thread-b"));
   
   const threads = await saver.list();
-  expect(threads).toHaveLength(2);
-  expect(threads).toContain("thread-a");
-  expect(threads).toContain("thread-b");
+  assert.strictEqual(threads.length, 2);
+  assert.ok(threads.includes("thread-a"));
+  assert.ok(threads.includes("thread-b"));
 });
 
 test("FileSaver > delete removes file", async () => {
   await saver.save(createTestCheckpoint("to-delete"));
-  expect(await saver.exists("to-delete")).toBe(true);
+  assert.strictEqual(await saver.exists("to-delete"), true);
   
   await saver.delete("to-delete");
-  expect(await saver.exists("to-delete")).toBe(false);
+  assert.strictEqual(await saver.exists("to-delete"), false);
 });
 
 test("FileSaver > exists returns correct value", async () => {
-  expect(await saver.exists("test-thread")).toBe(false);
+  assert.strictEqual(await saver.exists("test-thread"), false);
   
   await saver.save(createTestCheckpoint("test-thread"));
-  expect(await saver.exists("test-thread")).toBe(true);
+  assert.strictEqual(await saver.exists("test-thread"), true);
 });
 
 test("FileSaver > sanitizes unsafe thread IDs", async () => {
@@ -73,7 +74,7 @@ test("FileSaver > sanitizes unsafe thread IDs", async () => {
   await saver.save(createTestCheckpoint(unsafeId));
   
   const loaded = await saver.load(unsafeId);
-  expect(loaded?.threadId).toBe(unsafeId);
+  assert.strictEqual(loaded?.threadId, unsafeId);
 });
 
 test("FileSaver > overwrites existing checkpoint", async () => {
@@ -81,10 +82,10 @@ test("FileSaver > overwrites existing checkpoint", async () => {
   await saver.save(createTestCheckpoint("thread-1", 2));
   
   const loaded = await saver.load("thread-1");
-  expect(loaded?.step).toBe(2);
+  assert.strictEqual(loaded?.step, 2);
   
   const threads = await saver.list();
-  expect(threads).toHaveLength(1);
+  assert.strictEqual(threads.length, 1);
 });
 
 test("FileSaver > handles empty directory for list", async () => {
@@ -92,7 +93,7 @@ test("FileSaver > handles empty directory for list", async () => {
   rmSync(TEST_DIR, { recursive: true });
   
   const threads = await saver.list();
-  expect(threads).toEqual([]);
+  assert.deepStrictEqual(threads, []);
 });
 
 test("FileSaver > handles corrupted JSON file", async () => {
@@ -103,7 +104,7 @@ test("FileSaver > handles corrupted JSON file", async () => {
   writeFileSync(join(TEST_DIR, "corrupted.json"), "{ invalid json", "utf-8");
   
   const loaded = await saver.load("corrupted");
-  expect(loaded).toBeUndefined();
+  assert.strictEqual(loaded, undefined);
 });
 
 test("FileSaver > updatedAt is set on save", async () => {
@@ -115,7 +116,8 @@ test("FileSaver > updatedAt is set on save", async () => {
   await saver.save(checkpoint);
   const loaded = await saver.load("thread-1");
   
-  expect(loaded?.updatedAt).toBeDefined();
-  expect(loaded?.updatedAt).not.toBe(originalUpdatedAt);
+  assert.notStrictEqual(loaded?.updatedAt, undefined);
+  assert.notStrictEqual(loaded?.updatedAt, originalUpdatedAt);
 });
+
 

@@ -9,7 +9,7 @@
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/chrispangg/deepagentsdk)
 [![Documentation](https://img.shields.io/badge/docs-ai--sdk--deepagent-blue)](https://deepagentsdk.dev/docs)
 
-> **Note:** This package requires [Bun](https://bun.sh) runtime. It uses Bun-specific features and TypeScript imports.
+> **Note:** This package requires Node.js 24.11.1.
 
 A TypeScript library for building controllable AI agents using [Vercel AI SDK](https://ai-sdk.dev/). This is a reimplementation of [deepagentsjs](https://github.com/langchain-ai/deepagentsjs) without any LangChain/LangGraph dependencies.
 
@@ -28,20 +28,17 @@ Deep Agent addresses these limitations through four core architectural component
 
 ## Installation
 
-This package requires Bun runtime:
+This package requires Node.js:
 
 ```bash
-# Install Bun if you haven't already
-curl -fsSL https://bun.sh/install | bash
-
 # Install the package
-bun add deepagentsdk
+npm install deepagentsdk
 
 # Or install globally for CLI usage
-bun add -g deepagentsdk
+npm install -g deepagentsdk
 ```
 
-**Why Bun?** This package publishes TypeScript source directly and uses Bun-specific optimizations for better performance.
+**Why Node?** The package targets the current Node.js LTS line and ships compiled JS for broad compatibility.
 
 ## Quick Start
 
@@ -142,14 +139,14 @@ The interactive CLI is built with [Ink](https://github.com/vadimdemedes/ink):
 
 ```bash
 # Run without installing (recommended)
-bunx deepagentsdk
+npx deep-agent
 
 # Or install globally
-bun add -g deepagentsdk
+npm install -g deepagentsdk
 deep-agent
 
 # With options
-bunx deepagentsdk --model anthropic/claude-haiku-4-5-20251001
+npx deep-agent --model anthropic/claude-haiku-4-5-20251001
 ```
 
 **API Keys**: Load from environment variables (`ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `TAVILY_API_KEY`) or `.env` file.

@@ -10,7 +10,7 @@
  *    LANGFUSE_PUBLIC_KEY=pk-lf-...
  *    LANGFUSE_BASEURL=https://cloud.langfuse.com  # or https://us.cloud.langfuse.com for US
  *
- * 2. Run with: bun examples/with-langfuse.ts
+ * 2. Run with: node --import tsx examples/with-langfuse.ts
  *
  * @see https://ai-sdk.dev/providers/observability/langfuse
  */

@@ -8,7 +8,8 @@
  * Test coverage: Current functionality + configuration management
  */
 
-import { test, expect, beforeEach, describe } from "bun:test";
+import { test, beforeEach, describe } from "node:test";
+import assert from "node:assert/strict";
 import {
   parseModelString,
   setProvidersConfig,
@@ -32,8 +33,8 @@ describe("Phase 1: Core parseModelString functionality", () => {
     const model = parseModelString("anthropic/claude-sonnet-4-20250514");
 
     // Then: Should return a LanguageModel instance
-    expect(model).toBeDefined();
-    expect(typeof model).toBe("object");
+    assert.notStrictEqual(model, undefined);
+    assert.strictEqual(typeof model, "object");
   });
 
   test("parses openai model string with full specification", () => {
@@ -43,8 +44,8 @@ describe("Phase 1: Core parseModelString functionality", () => {
     const model = parseModelString("openai/gpt-4o");
 
     // Then: Should return a LanguageModel instance
-    expect(model).toBeDefined();
-    expect(typeof model).toBe("object");
+    assert.notStrictEqual(model, undefined);
+    assert.strictEqual(typeof model, "object");
   });
 
   test("parses zhipu model string with full specification", () => {
@@ -54,8 +55,8 @@ describe("Phase 1: Core parseModelString functionality", () => {
     const model = parseModelString("zhipu/glm-4-plus");
 
     // Then: Should return a LanguageModel instance
-    expect(model).toBeDefined();
-    expect(typeof model).toBe("object");
+    assert.notStrictEqual(model, undefined);
+    assert.strictEqual(typeof model, "object");
   });
 
   test("defaults to anthropic when no provider specified", () => {
@@ -65,8 +66,8 @@ describe("Phase 1: Core parseModelString functionality", () => {
     const model = parseModelString("claude-3-sonnet-20240229");
 
     // Then: Should default to Anthropic provider
-    expect(model).toBeDefined();
-    expect(typeof model).toBe("object");
+    assert.notStrictEqual(model, undefined);
+    assert.strictEqual(typeof model, "object");
   });
 
   test("uses default model name for anthropic when model is empty", () => {
@@ -76,8 +77,8 @@ describe("Phase 1: Core parseModelString functionality", () => {
     const model = parseModelString("anthropic/");
 
     // Then: Should use default model name
-    expect(model).toBeDefined();
-    expect(typeof model).toBe("object");
+    assert.notStrictEqual(model, undefined);
+    assert.strictEqual(typeof model, "object");
   });
 
   test("uses default model name for openai when model is empty", () => {
@@ -87,8 +88,8 @@ describe("Phase 1: Core parseModelString functionality", () => {
     const model = parseModelString("openai/");
 
     // Then: Should use default model name
-    expect(model).toBeDefined();
-    expect(typeof model).toBe("object");
+    assert.notStrictEqual(model, undefined);
+    assert.strictEqual(typeof model, "object");
   });
 
   test("uses default model name for zhipu when model is empty", () => {
@@ -98,8 +99,8 @@ describe("Phase 1: Core parseModelString functionality", () => {
     const model = parseModelString("zhipu/");
 
     // Then: Should use default model name
-    expect(model).toBeDefined();
-    expect(typeof model).toBe("object");
+    assert.notStrictEqual(model, undefined);
+    assert.strictEqual(typeof model, "object");
   });
 
   test("handles empty string input", () => {
@@ -109,8 +110,8 @@ describe("Phase 1: Core parseModelString functionality", () => {
     const model = parseModelString("");
 
     // Then: Should return anthropic with empty model
-    expect(model).toBeDefined();
-    expect(typeof model).toBe("object");
+    assert.notStrictEqual(model, undefined);
+    assert.strictEqual(typeof model, "object");
   });
 
   test("handles multiple slashes in model string", () => {
@@ -120,7 +121,7 @@ describe("Phase 1: Core parseModelString functionality", () => {
     const model = parseModelString("anthropic/claude/sonnet");
 
     // Then: First part is provider, rest is model
-    expect(model).toBeDefined();
-    expect(typeof model).toBe("object");
+    assert.notStrictEqual(model, undefined);
+    assert.strictEqual(typeof model, "object");
   });
 });

@@ -1,7 +1,22 @@
-import { test, expect } from "bun:test";
+import { test } from "node:test";
 import { createDeepAgent } from "@/agent.ts";
 import { createAnthropic } from '@ai-sdk/anthropic';
 import type { LanguageModelMiddleware } from "ai";
+import assert from "node:assert/strict";
+
+type TestCallback = () => void | Promise<void>;
+type TestOptions = { timeout?: number } & Record<string, unknown>;
+
+const skipIf = (condition: boolean) => {
+  const runner = condition ? test.skip : test;
+  return (name: string, fn: TestCallback, options?: TestOptions) => {
+    if (options) {
+      runner(name, options, fn);
+      return;
+    }
+    runner(name, fn);
+  };
+};
 
 const anthropic = createAnthropic({
   baseURL: 'https://api.anthropic.com/v1',
@@ -10,7 +25,7 @@ const anthropic = createAnthropic({
 // Skip tests if no API key
 const hasApiKey = !!process.env.ANTHROPIC_API_KEY;
 
-test.skipIf(!hasApiKey)("middleware - single middleware applied", async () => {
+skipIf(!hasApiKey)("middleware - single middleware applied", async () => {
   let callCount = 0;
 
   const countingMiddleware: LanguageModelMiddleware = {
@@ -27,10 +42,10 @@ test.skipIf(!hasApiKey)("middleware - single middleware applied", async () => {
   });
 
   await agent.generate({ prompt: "Say hello" });
-  expect(callCount).toBe(1);
+  assert.strictEqual(callCount, 1);
 });
 
-test.skipIf(!hasApiKey)("middleware - multiple middlewares applied in order", async () => {
+skipIf(!hasApiKey)("middleware - multiple middlewares applied in order", async () => {
   const executionOrder: string[] = [];
 
   const firstMiddleware: LanguageModelMiddleware = {
@@ -61,7 +76,7 @@ test.skipIf(!hasApiKey)("middleware - multiple middlewares applied in order", as
   await agent.generate({ prompt: "Say hello" });
 
   // First middleware wraps second middleware
-  expect(executionOrder).toEqual([
+  assert.deepStrictEqual(executionOrder, [
     "first-before",
     "second-before",
     "second-after",
@@ -69,7 +84,7 @@ test.skipIf(!hasApiKey)("middleware - multiple middlewares applied in order", as
   ]);
 });
 
-test.skipIf(!hasApiKey)("middleware - factory with closure context", async () => {
+skipIf(!hasApiKey)("middleware - factory with closure context", async () => {
   let contextValue = "";
 
   function createContextMiddleware(context: string): LanguageModelMiddleware {
@@ -88,14 +103,15 @@ test.skipIf(!hasApiKey)("middleware - factory with closure context", async () =>
   });
 
   await agent.generate({ prompt: "Say hello" });
-  expect(contextValue).toBe("test-context");
+  assert.strictEqual(contextValue, "test-context");
 });
 
-test.skipIf(!hasApiKey)("middleware - backwards compatible (no middleware)", async () => {
+skipIf(!hasApiKey)("middleware - backwards compatible (no middleware)", async () => {
   const agent = createDeepAgent({
     model: anthropic("claude-sonnet-4-20250514"),
   });
 
   const result = await agent.generate({ prompt: "Say hello" });
-  expect(result.text).toBeDefined();
+  assert.notStrictEqual(result.text, undefined);
 });
+

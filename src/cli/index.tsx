@@ -1,15 +1,16 @@
-#!/usr/bin/env bun
+#!/usr/bin/env node
 /**
  * Deep Agent CLI - Interactive terminal interface using Ink.
  *
  * Usage:
- *   ANTHROPIC_API_KEY=xxx bunx deep-agent-ink
- *   ANTHROPIC_API_KEY=xxx bun src/cli-ink/index.tsx
+ *   ANTHROPIC_API_KEY=xxx npx deep-agent
+ *   ANTHROPIC_API_KEY=xxx node --import tsx src/cli/index.tsx
  *
  * Or with options:
- *   ANTHROPIC_API_KEY=xxx bunx deep-agent-ink --model anthropic/claude-sonnet-4-20250514
+ *   ANTHROPIC_API_KEY=xxx npx deep-agent --model anthropic/claude-sonnet-4-20250514
  */
 
+import { readFile } from "node:fs/promises";
 import React, { useState, useEffect, useCallback } from "react";
 import { render, useApp, useInput, Box, Text, Static } from "ink";
 import { LocalSandbox } from "../backends/local-sandbox";
@@ -192,7 +193,7 @@ function printHelp(): void {
 ${DEEP_AGENTS_ASCII}
 
 Usage:
-  bun src/cli-ink/index.tsx [options]
+  node --import tsx src/cli/index.tsx [options]
 
 Options:
   --model, -m <model>       Model to use (default: anthropic/claude-haiku-4-5-20251001)
@@ -238,16 +239,16 @@ API Keys:
     TAVILY_API_KEY=tvly-...  # For web_search tool
 
 Examples:
-  bun src/cli-ink/index.tsx                                    # uses .env file
-  bun src/cli-ink/index.tsx --dir ./my-project                 # loads .env from ./my-project
-  ANTHROPIC_API_KEY=xxx bun src/cli-ink/index.tsx              # env var takes precedence
-  bun src/cli-ink/index.tsx --model anthropic/claude-sonnet-4-20250514
+  node --import tsx src/cli/index.tsx                                    # uses .env file
+  node --import tsx src/cli/index.tsx --dir ./my-project                 # loads .env from ./my-project
+  ANTHROPIC_API_KEY=xxx node --import tsx src/cli/index.tsx              # env var takes precedence
+  node --import tsx src/cli/index.tsx --model anthropic/claude-sonnet-4-20250514
 
   # Use Zhipu with custom base URL
-  bun src/cli-ink/index.tsx --model zhipu/glm-4-plus --zhipu-base-url https://api.z.ai/api/coding/paas/v4
+  node --import tsx src/cli/index.tsx --model zhipu/glm-4-plus --zhipu-base-url https://api.z.ai/api/coding/paas/v4
 
   # Use Anthropic with custom API key
-  bun src/cli-ink/index.tsx --model anthropic/claude-3.5-sonnet --anthropic-api-key sk-custom-...
+  node --import tsx src/cli/index.tsx --model anthropic/claude-3.5-sonnet --anthropic-api-key sk-custom-...
 `);
 }
 
@@ -1035,7 +1036,7 @@ interface EnvLoadResult {
 
 /**
  * Load environment variables from .env file in the working directory.
- * Bun automatically loads .env from cwd, but we want to also check the
+ * Node.js does not automatically load .env, so we check the
  * specified working directory if different.
  */
 async function loadEnvFile(workDir: string): Promise<EnvLoadResult> {
@@ -1052,46 +1053,41 @@ async function loadEnvFile(workDir: string): Promise<EnvLoadResult> {
   
   for (const envPath of envPaths) {
     try {
-      const file = Bun.file(envPath);
-      const exists = await file.exists();
-      
-      if (exists) {
-        const content = await file.text();
-        const lines = content.split('\n');
-        
-        for (const line of lines) {
-          const trimmed = line.trim();
-          // Skip comments and empty lines
-          if (!trimmed || trimmed.startsWith('#')) continue;
-          
-          // Parse KEY=VALUE format
-          const match = trimmed.match(/^([A-Z_][A-Z0-9_]*)=(.*)$/);
-          if (match) {
-            const key = match[1];
-            const rawValue = match[2];
-            if (!key || rawValue === undefined) continue;
-            
-            // Remove quotes if present
-            let value = rawValue.trim();
-            if ((value.startsWith('"') && value.endsWith('"')) ||
-                (value.startsWith("'") && value.endsWith("'"))) {
-              value = value.slice(1, -1);
-            }
-            
-            // Only set if not already set (env vars take precedence)
-            if (!process.env[key] && value) {
-              process.env[key] = value;
-              if (keysToCheck.includes(key)) {
-                result.keysFound.push(key);
-              }
+      const content = await readFile(envPath, "utf8");
+      const lines = content.split('\n');
+
+      for (const line of lines) {
+        const trimmed = line.trim();
+        // Skip comments and empty lines
+        if (!trimmed || trimmed.startsWith('#')) continue;
+
+        // Parse KEY=VALUE format
+        const match = trimmed.match(/^([A-Z_][A-Z0-9_]*)=(.*)$/);
+        if (match) {
+          const key = match[1];
+          const rawValue = match[2];
+          if (!key || rawValue === undefined) continue;
+
+          // Remove quotes if present
+          let value = rawValue.trim();
+          if ((value.startsWith('"') && value.endsWith('"')) ||
+              (value.startsWith("'") && value.endsWith("'"))) {
+            value = value.slice(1, -1);
+          }
+
+          // Only set if not already set (env vars take precedence)
+          if (!process.env[key] && value) {
+            process.env[key] = value;
+            if (keysToCheck.includes(key)) {
+              result.keysFound.push(key);
             }
           }
         }
-        
-        result.loaded = true;
-        result.path = envPath;
-        break; // Stop after first .env file found
       }
+
+      result.loaded = true;
+      result.path = envPath;
+      break; // Stop after first .env file found
     } catch {
       // File doesn't exist or can't be read, continue
     }

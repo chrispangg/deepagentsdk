@@ -11,7 +11,22 @@
  * - DAYTONA_API_KEY (for Daytona tests)
  */
 
-import { test, expect, describe } from "bun:test";
+import { test, describe } from "node:test";
+import assert from "node:assert/strict";
+
+type TestCallback = () => void | Promise<void>;
+type TestOptions = { timeout?: number } & Record<string, unknown>;
+
+const skipIf = (condition: boolean) => {
+  const runner = condition ? test.skip : test;
+  return (name: string, fn: TestCallback, options?: TestOptions) => {
+    if (options) {
+      runner(name, options, fn);
+      return;
+    }
+    runner(name, fn);
+  };
+};
 
 // Sandbox backends and factory functions
 import {
@@ -62,36 +77,36 @@ async function testSandboxFileOperations(
 
   // Then: File should exist and contain correct content
   const readContent = await backend.read(testFilePath);
-  expect(readContent).toContain(testContent);
+  assert.ok(readContent.includes(testContent));
 
   // When: Listing directory
   const files = await backend.lsInfo(workingDir);
 
   // Then: Test file should be in listing
   const fileName = testFilePath.split("/").pop()!;
-  expect(files.some((f: any) => f.path === fileName)).toBe(true);
+  assert.ok(files.some((f: any) => f.path === fileName));
 
   // When: Grepping for content
   const matches = await backend.grepRaw("Hello", workingDir);
 
   // Then: Should find the test file
-  expect(matches.length).toBeGreaterThan(0);
-  expect(matches[0].path).toBe(fileName);
+  assert.ok(matches.length > 0);
+  assert.strictEqual(matches[0].path, fileName);
 
   // When: Downloading file
   const downloaded = await backend.downloadFiles([testFilePath]);
 
   // Then: Content should match
-  expect(downloaded[0].content).toBeInstanceOf(Uint8Array);
+  assert.ok(downloaded[0].content instanceof Uint8Array);
   const decoded = new TextDecoder().decode(downloaded[0].content);
-  expect(decoded).toContain(testContent);
+  assert.ok(decoded.includes(testContent));
 
   // Cleanup: Remove file via shell command
   await backend.execute(`rm "${testFilePath}"`);
 
   // Then: File should be removed
   const filesAfter = await backend.lsInfo(workingDir);
-  expect(filesAfter.some((f: any) => f.path === fileName)).toBe(false);
+  assert.ok(!filesAfter.some((f: any) => f.path === fileName));
 }
 
 /**
@@ -104,15 +119,15 @@ async function testCommandExecution(backend: any): Promise<void> {
   const result = await backend.execute("echo 'Hello, World!'");
 
   // Then: Should return output with exit code 0
-  expect(result.output).toContain("Hello, World!");
-  expect(result.exitCode).toBe(0);
-  expect(result.truncated).toBe(false);
+  assert.ok(result.output.includes("Hello, World!"));
+  assert.strictEqual(result.exitCode, 0);
+  assert.strictEqual(result.truncated, false);
 
   // When: Executing command that fails
   const errorResult = await backend.execute("exit 42");
 
   // Then: Should return non-zero exit code
-  expect(errorResult.exitCode).toBe(42);
+  assert.strictEqual(errorResult.exitCode, 42);
 }
 
 /**
@@ -131,14 +146,14 @@ async function testFileEditOperations(
   const editResult = await backend.edit(testFilePath, "Line 2", "Line 2 - Edited");
 
   // Then: Edit should succeed
-  expect(editResult.success).toBe(true);
+  assert.strictEqual(editResult.success, true);
 
   // When: Reading the file
   const content = await backend.read(testFilePath);
 
   // Then: Content should be updated
-  expect(content).toContain("Line 2 - Edited");
-  expect(content).not.toContain("Line 2\n");
+  assert.ok(content.includes("Line 2 - Edited"));
+  assert.ok(!content.includes("Line 2\n"));
 
   // Cleanup
   await backend.execute(`rm "${testFilePath}"`);
@@ -150,7 +165,7 @@ async function testFileEditOperations(
 
 describe("E2B Sandbox Backend", () => {
   describe("Basic Operations", () => {
-    test.skipIf(!hasE2BKey)(
+    skipIf(!hasE2BKey)(
       "creates sandbox with valid API key",
       async () => {
         // Given: Valid E2B API key in environment
@@ -161,9 +176,9 @@ describe("E2B Sandbox Backend", () => {
         });
 
         // Then: Sandbox should have valid ID
-        expect(backend.id).toBeDefined();
-        expect(typeof backend.id).toBe("string");
-        expect(backend.id.length).toBeGreaterThan(0);
+        assert.notStrictEqual(backend.id, undefined);
+        assert.strictEqual(typeof backend.id, "string");
+        assert.ok(backend.id.length > 0);
 
         // Cleanup
         await backend.dispose();
@@ -171,7 +186,7 @@ describe("E2B Sandbox Backend", () => {
       { timeout: 60000 }
     );
 
-    test.skipIf(!hasE2BKey)(
+    skipIf(!hasE2BKey)(
       "executes shell commands",
       async () => {
         // Given: E2B backend instance
@@ -190,7 +205,7 @@ describe("E2B Sandbox Backend", () => {
   });
 
   describe("File Operations", () => {
-    test.skipIf(!hasE2BKey)(
+    skipIf(!hasE2BKey)(
       "performs complete file operations",
       async () => {
         // Given: E2B backend instance
@@ -207,7 +222,7 @@ describe("E2B Sandbox Backend", () => {
       { timeout: 60000 }
     );
 
-    test.skipIf(!hasE2BKey)(
+    skipIf(!hasE2BKey)(
       "edits file content",
       async () => {
         // Given: E2B backend instance
@@ -226,7 +241,7 @@ describe("E2B Sandbox Backend", () => {
   });
 
   describe("Edge Cases", () => {
-    test.skipIf(!hasE2BKey)(
+    skipIf(!hasE2BKey)(
       "handles non-existent file read",
       async () => {
         // Given: E2B backend instance
@@ -237,7 +252,7 @@ describe("E2B Sandbox Backend", () => {
           const result = await backend.read("/tmp/does-not-exist.txt");
 
           // Then: Should return error message (read() doesn't throw, returns error string)
-          expect(result).toContain("not found");
+          assert.ok(result.includes("not found"));
         } finally {
           await backend.dispose();
         }
@@ -245,7 +260,7 @@ describe("E2B Sandbox Backend", () => {
       { timeout: 60000 }
     );
 
-    test.skipIf(!hasE2BKey)(
+    skipIf(!hasE2BKey)(
       "handles large file upload",
       async () => {
         // Given: E2B backend and large content (1MB)
@@ -260,8 +275,8 @@ describe("E2B Sandbox Backend", () => {
           // Use readRaw() for raw content (read() formats with line numbers)
           const fileData = await backend.readRaw("/tmp/large.txt");
           const content = fileData.content.join("\n");
-          expect(content.length).toBe(1024 * 1024);
-          expect(content).toBe(largeContent);
+          assert.strictEqual(content.length, 1024 * 1024);
+          assert.strictEqual(content, largeContent);
 
           // Cleanup
           await backend.execute("rm /tmp/large.txt");
@@ -274,7 +289,7 @@ describe("E2B Sandbox Backend", () => {
   });
 
   describe("Error Scenarios", () => {
-    test.skipIf(!hasE2BKey)(
+    skipIf(!hasE2BKey)(
       "rejects invalid API key",
       async () => {
         // Given: Invalid API key
@@ -285,12 +300,12 @@ describe("E2B Sandbox Backend", () => {
           createE2BBackend({ apiKey: invalidKey });
 
         // Then: Should throw error
-        await expect(createBackend()).rejects.toThrow();
+        await assert.rejects(createBackend);
       },
       { timeout: 30000 }
     );
 
-    test.skipIf(!hasE2BKey)(
+    skipIf(!hasE2BKey)(
       "handles invalid command gracefully",
       async () => {
         // Given: E2B backend
@@ -303,8 +318,8 @@ describe("E2B Sandbox Backend", () => {
           );
 
           // Then: Should return non-zero exit code
-          expect(result.exitCode).not.toBe(0);
-          expect(result.output).toBeDefined();
+          assert.notStrictEqual(result.exitCode, 0);
+          assert.notStrictEqual(result.output, undefined);
         } finally {
           await backend.dispose();
         }
@@ -320,7 +335,7 @@ describe("E2B Sandbox Backend", () => {
 
 describe("Modal Sandbox Backend", () => {
   describe("Basic Operations", () => {
-    test.skipIf(!hasModalKey)(
+    skipIf(!hasModalKey)(
       "creates sandbox with valid credentials",
       async () => {
         // Given: Valid Modal credentials in environment
@@ -333,8 +348,8 @@ describe("Modal Sandbox Backend", () => {
 
         try {
           // Then: Sandbox should have valid ID
-          expect(backend.id).toBeDefined();
-          expect(typeof backend.id).toBe("string");
+          assert.notStrictEqual(backend.id, undefined);
+          assert.strictEqual(typeof backend.id, "string");
         } finally {
           await backend.dispose();
         }
@@ -342,7 +357,7 @@ describe("Modal Sandbox Backend", () => {
       { timeout: 120000 } // Modal can take longer to start
     );
 
-    test.skipIf(!hasModalKey)(
+    skipIf(!hasModalKey)(
       "executes shell commands",
       async () => {
         // Given: Modal backend instance
@@ -363,7 +378,7 @@ describe("Modal Sandbox Backend", () => {
   });
 
   describe("File Operations", () => {
-    test.skipIf(!hasModalKey)(
+    skipIf(!hasModalKey)(
       "performs complete file operations",
       async () => {
         // Given: Modal backend instance
@@ -382,7 +397,7 @@ describe("Modal Sandbox Backend", () => {
       { timeout: 120000 }
     );
 
-    test.skipIf(!hasModalKey)(
+    skipIf(!hasModalKey)(
       "edits file content",
       async () => {
         // Given: Modal backend instance
@@ -403,7 +418,7 @@ describe("Modal Sandbox Backend", () => {
   });
 
   describe("Edge Cases", () => {
-    test.skipIf(!hasModalKey)(
+    skipIf(!hasModalKey)(
       "handles custom image",
       async () => {
         // Given: Custom image specification
@@ -417,8 +432,8 @@ describe("Modal Sandbox Backend", () => {
           const result = await backend.execute("node --version");
 
           // Then: Should execute successfully
-          expect(result.exitCode).toBe(0);
-          expect(result.output).toContain("v");
+          assert.strictEqual(result.exitCode, 0);
+          assert.ok(result.output.includes("v"));
         } finally {
           await backend.dispose();
         }
@@ -426,7 +441,7 @@ describe("Modal Sandbox Backend", () => {
       { timeout: 120000 }
     );
 
-    test.skipIf(!hasModalKey)(
+    skipIf(!hasModalKey)(
       "handles concurrent file operations",
       async () => {
         // Given: Modal backend
@@ -447,8 +462,9 @@ describe("Modal Sandbox Backend", () => {
               backend.read(`/workspace/concurrent-${i}.txt`)
             )
           );
-          expect(results).toHaveLength(10);
-          expect(results[0]).toContain("content-0");
+          assert.strictEqual(results.length, 10);
+          assert.ok(results[0]);
+          assert.ok(results[0].includes("content-0"));
 
           // Cleanup
           for (let i = 0; i < 10; i++) {
@@ -469,7 +485,7 @@ describe("Modal Sandbox Backend", () => {
 
 describe("Runloop Sandbox Backend", () => {
   describe("Basic Operations", () => {
-    test.skipIf(!hasRunloopKey)(
+    skipIf(!hasRunloopKey)(
       "creates devbox with valid API key",
       async () => {
         // Given: Valid Runloop API key in environment
@@ -482,8 +498,8 @@ describe("Runloop Sandbox Backend", () => {
           await new Promise((resolve) => setTimeout(resolve, 5000));
 
           // Then: Devbox should have valid ID
-          expect(backend.id).toBeDefined();
-          expect(typeof backend.id).toBe("string");
+          assert.notStrictEqual(backend.id, undefined);
+          assert.strictEqual(typeof backend.id, "string");
         } finally {
           await backend.dispose();
         }
@@ -491,7 +507,7 @@ describe("Runloop Sandbox Backend", () => {
       { timeout: 30000 }
     );
 
-    test.skipIf(!hasRunloopKey)(
+    skipIf(!hasRunloopKey)(
       "executes shell commands",
       async () => {
         // Given: Runloop backend instance
@@ -513,7 +529,7 @@ describe("Runloop Sandbox Backend", () => {
   });
 
   describe("File Operations", () => {
-    test.skipIf(!hasRunloopKey)(
+    skipIf(!hasRunloopKey)(
       "performs complete file operations",
       async () => {
         // Given: Runloop backend instance
@@ -541,7 +557,7 @@ describe("Runloop Sandbox Backend", () => {
 
 describe("Daytona Sandbox Backend", () => {
   describe("Basic Operations", () => {
-    test.skipIf(!hasDaytonaKey)(
+    skipIf(!hasDaytonaKey)(
       "creates sandbox with valid API key",
       async () => {
         // Given: Valid Daytona API key in environment
@@ -554,8 +570,8 @@ describe("Daytona Sandbox Backend", () => {
           await new Promise((resolve) => setTimeout(resolve, 5000));
 
           // Then: Sandbox should have valid ID
-          expect(backend.id).toBeDefined();
-          expect(typeof backend.id).toBe("string");
+          assert.notStrictEqual(backend.id, undefined);
+          assert.strictEqual(typeof backend.id, "string");
         } finally {
           await backend.dispose();
         }
@@ -563,7 +579,7 @@ describe("Daytona Sandbox Backend", () => {
       { timeout: 30000 }
     );
 
-    test.skipIf(!hasDaytonaKey)(
+    skipIf(!hasDaytonaKey)(
       "executes shell commands",
       async () => {
         // Given: Daytona backend instance
@@ -585,7 +601,7 @@ describe("Daytona Sandbox Backend", () => {
   });
 
   describe("File Operations", () => {
-    test.skipIf(!hasDaytonaKey)(
+    skipIf(!hasDaytonaKey)(
       "performs complete file operations",
       async () => {
         // Given: Daytona backend instance
@@ -607,7 +623,7 @@ describe("Daytona Sandbox Backend", () => {
   });
 
   describe("Edge Cases", () => {
-    test.skipIf(!hasDaytonaKey)(
+    skipIf(!hasDaytonaKey)(
       "supports different languages",
       async () => {
         // Given: Daytona backend with Python language
@@ -621,8 +637,8 @@ describe("Daytona Sandbox Backend", () => {
           const result = await backend.execute("python --version");
 
           // Then: Should execute successfully
-          expect(result.exitCode).toBe(0);
-          expect(result.output).toMatch(/Python 3/);
+          assert.strictEqual(result.exitCode, 0);
+          assert.match(result.output, /Python 3/);
         } finally {
           await backend.dispose();
         }
@@ -637,7 +653,7 @@ describe("Daytona Sandbox Backend", () => {
 // ============================================================================
 
 describe("Cross-Provider Compatibility", () => {
-  test.skipIf(!hasE2BKey)(
+  skipIf(!hasE2BKey)(
     "E2B: implements SandboxBackendProtocol correctly",
     async () => {
       // Given: E2B backend
@@ -646,11 +662,11 @@ describe("Cross-Provider Compatibility", () => {
       try {
         // When: Checking protocol compliance
         // Then: Should have required properties
-        expect(typeof backend.execute).toBe("function");
-        expect(typeof backend.id).toBe("string");
-        expect(typeof backend.read).toBe("function");
-        expect(typeof backend.write).toBe("function");
-        expect(typeof backend.lsInfo).toBe("function");
+        assert.strictEqual(typeof backend.execute, "function");
+        assert.strictEqual(typeof backend.id, "string");
+        assert.strictEqual(typeof backend.read, "function");
+        assert.strictEqual(typeof backend.write, "function");
+        assert.strictEqual(typeof backend.lsInfo, "function");
       } finally {
         await backend.dispose();
       }
@@ -658,7 +674,7 @@ describe("Cross-Provider Compatibility", () => {
     { timeout: 60000 }
   );
 
-  test.skipIf(!hasModalKey)(
+  skipIf(!hasModalKey)(
     "Modal: implements SandboxBackendProtocol correctly",
     async () => {
       // Given: Modal backend
@@ -667,11 +683,11 @@ describe("Cross-Provider Compatibility", () => {
       try {
         // When: Checking protocol compliance
         // Then: Should have required properties
-        expect(typeof backend.execute).toBe("function");
-        expect(typeof backend.id).toBe("string");
-        expect(typeof backend.read).toBe("function");
-        expect(typeof backend.write).toBe("function");
-        expect(typeof backend.lsInfo).toBe("function");
+        assert.strictEqual(typeof backend.execute, "function");
+        assert.strictEqual(typeof backend.id, "string");
+        assert.strictEqual(typeof backend.read, "function");
+        assert.strictEqual(typeof backend.write, "function");
+        assert.strictEqual(typeof backend.lsInfo, "function");
       } finally {
         await backend.dispose();
       }
@@ -679,7 +695,7 @@ describe("Cross-Provider Compatibility", () => {
     { timeout: 120000 }
   );
 
-  test.skipIf(!hasRunloopKey)(
+  skipIf(!hasRunloopKey)(
     "Runloop: implements SandboxBackendProtocol correctly",
     async () => {
       // Given: Runloop backend
@@ -691,11 +707,11 @@ describe("Cross-Provider Compatibility", () => {
 
         // When: Checking protocol compliance
         // Then: Should have required properties
-        expect(typeof backend.execute).toBe("function");
-        expect(typeof backend.id).toBe("string");
-        expect(typeof backend.read).toBe("function");
-        expect(typeof backend.write).toBe("function");
-        expect(typeof backend.lsInfo).toBe("function");
+        assert.strictEqual(typeof backend.execute, "function");
+        assert.strictEqual(typeof backend.id, "string");
+        assert.strictEqual(typeof backend.read, "function");
+        assert.strictEqual(typeof backend.write, "function");
+        assert.strictEqual(typeof backend.lsInfo, "function");
       } finally {
         await backend.dispose();
       }
@@ -703,7 +719,7 @@ describe("Cross-Provider Compatibility", () => {
     { timeout: 30000 }
   );
 
-  test.skipIf(!hasDaytonaKey)(
+  skipIf(!hasDaytonaKey)(
     "Daytona: implements SandboxBackendProtocol correctly",
     async () => {
       // Given: Daytona backend
@@ -715,11 +731,11 @@ describe("Cross-Provider Compatibility", () => {
 
         // When: Checking protocol compliance
         // Then: Should have required properties
-        expect(typeof backend.execute).toBe("function");
-        expect(typeof backend.id).toBe("string");
-        expect(typeof backend.read).toBe("function");
-        expect(typeof backend.write).toBe("function");
-        expect(typeof backend.lsInfo).toBe("function");
+        assert.strictEqual(typeof backend.execute, "function");
+        assert.strictEqual(typeof backend.id, "string");
+        assert.strictEqual(typeof backend.read, "function");
+        assert.strictEqual(typeof backend.write, "function");
+        assert.strictEqual(typeof backend.lsInfo, "function");
       } finally {
         await backend.dispose();
       }
@@ -727,3 +743,4 @@ describe("Cross-Provider Compatibility", () => {
     { timeout: 30000 }
   );
 });
+

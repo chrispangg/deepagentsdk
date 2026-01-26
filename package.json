@@ -41,12 +41,12 @@
   "scripts": {
     "build": "tsdown",
     "dev": "tsdown --watch",
-    "test": "bun test test/",
-    "test:integration": "bun test test-integration/",
-    "test:all": "bun run test && bun run test:integration",
+    "test": "node --import tsx --test \"test/**/*.test.ts\"",
+    "test:integration": "node --import tsx --test \"test-integration/**/*.test.ts\"",
+    "test:all": "npm run test && npm run test:integration",
     "typecheck": "tsc --noEmit",
-    "prepublishOnly": "bun run build",
-    "cli": "bun src/cli/index.tsx"
+    "prepublishOnly": "npm run build",
+    "cli": "node --import tsx src/cli/index.tsx"
   },
   "repository": {
     "type": "git",
@@ -68,12 +68,12 @@
     "@tavily/core": "^0.6.1",
     "ai": "^6.0.19",
     "fast-glob": "^3.3.3",
-    "ink": "^5.1.0",
+    "ink": "^4.4.1",
     "jsdom": "^25.0.1",
     "micromatch": "^4.0.8",
     "modal": "^0.6.0",
     "react": "^18.2.0",
-    "react-devtools-core": "^5.3.2",
+    "react-devtools-core": "^4.28.5",
     "turndown": "^7.2.0",
     "zhipu-ai-provider": "^0.2.1",
     "zod": "^3.25.0"
@@ -86,17 +86,18 @@
     "@opentelemetry/sdk-logs": "^0.208.0",
     "@opentelemetry/sdk-node": "^0.208.0",
     "@testing-library/react": "^16.3.1",
-    "@types/bun": "latest",
     "@types/jsdom": "^21.1.7",
     "@types/micromatch": "^4.0.9",
     "@types/react": "^18.3.18",
     "@types/turndown": "^5.0.5",
     "@vercel/otel": "^2.1.0",
+    "expect": "^29.7.0",
     "install": "^0.13.0",
     "langfuse-vercel": "^3.38.6",
     "react-dom": "^18.2.0",
     "shadcn": "^3.7.0",
     "tsdown": "^0.19.0-beta.5",
+    "tsx": "^4.19.2",
     "typescript": "^5.7.3"
   },
   "peerDependencies": {
@@ -109,13 +110,12 @@
     "vercel-ai-sdk",
     "llm",
     "typescript",
-    "bun",
     "anthropic",
     "openai",
     "ai-sdk"
   ],
   "engines": {
-    "bun": ">=1.0.0"
+    "node": "24.11.1"
   },
   "license": "MIT"
 }

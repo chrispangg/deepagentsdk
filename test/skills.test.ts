@@ -1,13 +1,14 @@
-import { test, expect, beforeAll, afterAll } from "bun:test";
+import { test, before, after } from "node:test";
 import { parseSkillMetadata, listSkills } from "@/skills/index.ts";
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
 import * as os from "node:os";
+import assert from "node:assert/strict";
 
 // Test fixtures directory
 let tempDir: string;
 
-beforeAll(async () => {
+before(async () => {
   // Create temporary directory for test fixtures
   tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "skills-test-"));
 
@@ -63,7 +64,7 @@ description: Should be skipped
   );
 });
 
-afterAll(async () => {
+after(async () => {
   // Clean up temporary directory
   await fs.rm(tempDir, { recursive: true, force: true });
 });
@@ -72,41 +73,41 @@ test("parseSkillMetadata - valid frontmatter", async () => {
   const skillPath = path.join(tempDir, "valid-skill", "SKILL.md");
   const metadata = await parseSkillMetadata(skillPath, "project");
 
-  expect(metadata).not.toBeNull();
-  expect(metadata?.name).toBe("test-skill");
-  expect(metadata?.description).toBe("A test skill for unit testing");
-  expect(metadata?.path).toBe(skillPath);
-  expect(metadata?.source).toBe("project");
+  assert.notStrictEqual(metadata, null);
+  assert.strictEqual(metadata?.name, "test-skill");
+  assert.strictEqual(metadata?.description, "A test skill for unit testing");
+  assert.strictEqual(metadata?.path, skillPath);
+  assert.strictEqual(metadata?.source, "project");
 });
 
 test("parseSkillMetadata - missing frontmatter", async () => {
   const skillPath = path.join(tempDir, "no-frontmatter", "SKILL.md");
   const metadata = await parseSkillMetadata(skillPath, "user");
 
-  expect(metadata).toBeNull();
+  assert.strictEqual(metadata, null);
 });
 
 test("parseSkillMetadata - missing required fields", async () => {
   const skillPath = path.join(tempDir, "missing-fields", "SKILL.md");
   const metadata = await parseSkillMetadata(skillPath, "user");
 
-  expect(metadata).toBeNull();
+  assert.strictEqual(metadata, null);
 });
 
 test("parseSkillMetadata - non-existent file", async () => {
   const skillPath = path.join(tempDir, "non-existent", "SKILL.md");
   const metadata = await parseSkillMetadata(skillPath, "project");
 
-  expect(metadata).toBeNull();
+  assert.strictEqual(metadata, null);
 });
 
 test("listSkills - finds valid skills", async () => {
   const skills = await listSkills({ projectSkillsDir: tempDir });
 
   // Should find only the valid skill, not the ones with issues or hidden
-  expect(skills.length).toBe(1);
-  expect(skills[0]?.name).toBe("test-skill");
-  expect(skills[0]?.source).toBe("project");
+  assert.strictEqual(skills.length, 1);
+  assert.strictEqual(skills[0]?.name, "test-skill");
+  assert.strictEqual(skills[0]?.source, "project");
 });
 
 test("listSkills - project skills override user skills", async () => {
@@ -131,10 +132,10 @@ description: User version of test skill
     });
 
     // Should have only one skill (project overrides user)
-    expect(skills.length).toBe(1);
-    expect(skills[0]?.name).toBe("test-skill");
-    expect(skills[0]?.description).toBe("A test skill for unit testing");
-    expect(skills[0]?.source).toBe("project");
+    assert.strictEqual(skills.length, 1);
+    assert.strictEqual(skills[0]?.name, "test-skill");
+    assert.strictEqual(skills[0]?.description, "A test skill for unit testing");
+    assert.strictEqual(skills[0]?.source, "project");
   } finally {
     await fs.rm(userDir, { recursive: true, force: true });
   }
@@ -145,7 +146,7 @@ test("listSkills - handles non-existent directory", async () => {
     projectSkillsDir: "/non/existent/path",
   });
 
-  expect(skills.length).toBe(0);
+  assert.strictEqual(skills.length, 0);
 });
 
 test("listSkills - skips hidden directories", async () => {
@@ -153,7 +154,7 @@ test("listSkills - skips hidden directories", async () => {
 
   // Should not include the hidden skill
   const hiddenSkill = skills.find((s) => s.name === "hidden");
-  expect(hiddenSkill).toBeUndefined();
+  assert.strictEqual(hiddenSkill, undefined);
 });
 
 test("listSkills - combines user and project skills", async () => {
@@ -177,17 +178,18 @@ description: Only in user directory
     });
 
     // Should have both user and project skills
-    expect(skills.length).toBe(2);
+    assert.strictEqual(skills.length, 2);
 
     const skillNames = skills.map((s) => s.name).sort();
-    expect(skillNames).toEqual(["test-skill", "user-skill"]);
+    assert.deepStrictEqual(skillNames, ["test-skill", "user-skill"]);
 
     const userSkill = skills.find((s) => s.name === "user-skill");
-    expect(userSkill?.source).toBe("user");
+    assert.strictEqual(userSkill?.source, "user");
 
     const projectSkill = skills.find((s) => s.name === "test-skill");
-    expect(projectSkill?.source).toBe("project");
+    assert.strictEqual(projectSkill?.source, "project");
   } finally {
     await fs.rm(userDir, { recursive: true, force: true });
   }
 });
+

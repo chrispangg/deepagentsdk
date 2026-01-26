@@ -10,13 +10,29 @@
  * Test coverage: Phase 1 (main agent) + Phase 1.5 (subagent) implementation
  */
 
-import { test, expect, describe, beforeEach } from "bun:test";
+import { test, describe, beforeEach } from "node:test";
 import { createDeepAgent } from "@/agent.ts";
 import { StateBackend } from "@/backends/state.ts";
 import type { DeepAgentState, CreateDeepAgentParams, DoneEvent, SubAgent } from "@/types.ts";
 import { tool } from "ai";
 import { z } from "zod";
 import { createAnthropic } from '@ai-sdk/anthropic';
+import assert from "node:assert/strict";
+import { expect } from "expect";
+
+type TestCallback = () => void | Promise<void>;
+type TestOptions = { timeout?: number } & Record<string, unknown>;
+
+const skipIf = (condition: boolean) => {
+  const runner = condition ? test.skip : test;
+  return (name: string, fn: TestCallback, options?: TestOptions) => {
+    if (options) {
+      runner(name, options, fn);
+      return;
+    }
+    runner(name, fn);
+  };
+};
 
 const anthropic = createAnthropic({
   baseURL: 'https://api.anthropic.com/v1',
@@ -150,9 +166,9 @@ describe("Phase 1: Core Structured Output", () => {
       };
 
       // Then: Type definition should accept the output field
-      expect(params.output).toBeDefined();
-      expect(params.output?.schema).toBe(outputSchema);
-      expect(params.output?.description).toBe("Sentiment analysis output");
+      assert.notStrictEqual(params.output, undefined);
+      assert.strictEqual(params.output?.schema, outputSchema);
+      assert.strictEqual(params.output?.description, "Sentiment analysis output");
     });
 
     test("output field is optional and can be undefined", () => {
@@ -165,7 +181,7 @@ describe("Phase 1: Core Structured Output", () => {
       };
 
       // Then: Should be valid without output field
-      expect(params.output).toBeUndefined();
+      assert.strictEqual(params.output, undefined);
     });
 
     test("output schema can be any Zod type", () => {
@@ -183,7 +199,7 @@ describe("Phase 1: Core Structured Output", () => {
       };
 
       // Then: All should be accepted
-      expect(params1.output?.schema).toBe(numberSchema);
+      assert.strictEqual(params1.output?.schema, numberSchema);
     });
   });
 
@@ -208,7 +224,7 @@ describe("Phase 1: Core Structured Output", () => {
       });
 
       // Then: Agent should be created and store output config
-      expect(agent).toBeDefined();
+      assert.notStrictEqual(agent, undefined);
       expect((agent as any).outputConfig).toBeDefined();
       expect((agent as any).outputConfig.schema).toBe(outputSchema);
     });
@@ -223,7 +239,7 @@ describe("Phase 1: Core Structured Output", () => {
       });
 
       // Then: Agent should work normally without output config
-      expect(agent).toBeDefined();
+      assert.notStrictEqual(agent, undefined);
       expect((agent as any).outputConfig).toBeUndefined();
     });
 
@@ -254,7 +270,7 @@ describe("Phase 1: Core Structured Output", () => {
 
       // When/Then: Should not create agent with non-Zod schema
       // (This would be caught by TypeScript, but runtime validation could be added)
-      expect(invalidConfig).toBeDefined();
+      assert.notStrictEqual(invalidConfig, undefined);
     });
   });
 
@@ -333,9 +349,9 @@ describe("Phase 1: Core Structured Output", () => {
 
       // Then: Original properties should be preserved
       // The Object.defineProperty pattern should maintain compatibility
-      // expect(result.text).toBeDefined();
-      // expect(result.output).toBeDefined();
-      expect(agent).toBeDefined();
+      // assert.notStrictEqual(result.text, undefined);
+      // assert.notStrictEqual(result.output, undefined);
+      assert.notStrictEqual(agent, undefined);
     });
 
     test("adds structured output property to result using Object.defineProperty", () => {
@@ -376,8 +392,8 @@ describe("Phase 1: Core Structured Output", () => {
         output: { sentiment: "positive", score: 0.85, summary: "Very positive" },
       };
 
-      expect(doneEvent.type).toBe("done");
-      expect(doneEvent.output).toBeDefined();
+      assert.strictEqual(doneEvent.type, "done");
+      assert.notStrictEqual(doneEvent.output, undefined);
     });
 
     test("DoneEvent output field is optional and backwards compatible", () => {
@@ -391,8 +407,8 @@ describe("Phase 1: Core Structured Output", () => {
         // output field omitted
       };
 
-      expect(doneEvent.type).toBe("done");
-      expect(doneEvent.output).toBeUndefined();
+      assert.strictEqual(doneEvent.type, "done");
+      assert.strictEqual(doneEvent.output, undefined);
     });
   });
 
@@ -413,7 +429,7 @@ describe("Phase 1: Core Structured Output", () => {
       });
 
       // Then: Should accept and configure the agent
-      expect(agent).toBeDefined();
+      assert.notStrictEqual(agent, undefined);
       expect((agent as any).outputConfig?.schema).toBe(emptySchema);
     });
 
@@ -497,8 +513,8 @@ describe("Phase 1.5: Subagent Structured Output", () => {
 
       // When: Validating SubAgent type
       // Then: output field should be optional but accepted
-      expect(subagentConfig.output).toBeDefined();
-      expect(subagentConfig.output?.schema).toBeDefined();
+      assert.notStrictEqual(subagentConfig.output, undefined);
+      assert.notStrictEqual(subagentConfig.output?.schema, undefined);
     });
 
     test("SubAgent output field is optional (backwards compatible)", () => {
@@ -514,7 +530,7 @@ describe("Phase 1.5: Subagent Structured Output", () => {
 
       // When: Creating subagent without output
       // Then: Should work normally
-      expect(subagentConfig.output).toBeUndefined();
+      assert.strictEqual(subagentConfig.output, undefined);
     });
   });
 
@@ -544,8 +560,8 @@ describe("Phase 1.5: Subagent Structured Output", () => {
 
       // Then: Registry should store output config
       const sentimentAnalyzer = registry["sentiment_analyzer"];
-      expect(sentimentAnalyzer?.output).toBeDefined();
-      expect(sentimentAnalyzer?.output?.schema).toBe(outputSchema);
+      assert.notStrictEqual(sentimentAnalyzer?.output, undefined);
+      assert.strictEqual(sentimentAnalyzer?.output?.schema, outputSchema);
     });
 
     test("registry handles subagents with and without output configs", () => {
@@ -572,8 +588,8 @@ describe("Phase 1.5: Subagent Structured Output", () => {
       // Then: Both configurations should be valid
       const withOutput = registry["with_output"];
       const withoutOutput = registry["without_output"];
-      expect(withOutput?.output).toBeDefined();
-      expect(withoutOutput?.output).toBeUndefined();
+      assert.notStrictEqual(withOutput?.output, undefined);
+      assert.strictEqual(withoutOutput?.output, undefined);
     });
   });
 
@@ -601,7 +617,7 @@ describe("Phase 1.5: Subagent Structured Output", () => {
       // (Would use spread operator: ...(subagentConfig.output ? { output: subagentConfig.output } : {}))
 
       // Then: Output should be included in ToolLoopAgent config
-      expect(subagentConfig.output).toBeDefined();
+      assert.notStrictEqual(subagentConfig.output, undefined);
     });
 
     test("subagent ToolLoopAgent omits output when not configured", () => {
@@ -616,7 +632,7 @@ describe("Phase 1.5: Subagent Structured Output", () => {
 
       // When: Creating ToolLoopAgent without output
       // Then: Should not break (backwards compatible)
-      expect(subagentConfig.output).toBeUndefined();
+      assert.strictEqual(subagentConfig.output, undefined);
     });
   });
 
@@ -645,9 +661,9 @@ describe("Phase 1.5: Subagent Structured Output", () => {
       }
 
       // Then: Should include formatted structured output
-      expect(formattedResult).toContain("Sentiment analysis complete");
-      expect(formattedResult).toContain("[Structured Output]");
-      expect(formattedResult).toContain('"sentiment": "positive"');
+      assert.ok(formattedResult.includes("Sentiment analysis complete"));
+      assert.ok(formattedResult.includes("[Structured Output]"));
+      assert.ok(formattedResult.includes('"sentiment": "positive"'));
     });
 
     test("returns only text when subagent has no output config", () => {
@@ -661,8 +677,8 @@ describe("Phase 1.5: Subagent Structured Output", () => {
       let formattedResult = result.text;
 
       // Then: Should return text unchanged
-      expect(formattedResult).toBe("Calculation complete: 42");
-      expect(formattedResult).not.toContain("[Structured Output]");
+      assert.strictEqual(formattedResult, "Calculation complete: 42");
+      assert.ok(!formattedResult.includes("[Structured Output]"));
     });
 
     test("handles complex nested structured output", () => {
@@ -686,9 +702,9 @@ describe("Phase 1.5: Subagent Structured Output", () => {
       const formatted = `${result.text}\n\n[Structured Output]\n${JSON.stringify(result.output, null, 2)}`;
 
       // Then: JSON should preserve nested structure
-      expect(formatted).toContain('"sentiment": "positive"');
-      expect(formatted).toContain('"overall": 0.85');
-      expect(formatted).toContain('"tags"');
+      assert.ok(formatted.includes('"sentiment": "positive"'));
+      assert.ok(formatted.includes('"overall": 0.85'));
+      assert.ok(formatted.includes('"tags"'));
     });
   });
 
@@ -703,8 +719,8 @@ describe("Phase 1.5: Subagent Structured Output", () => {
       const subagentResult = `Initial analysis: positive sentiment\n\n[Structured Output]\n{"sentiment": "positive", "score": 0.85, "summary": "Very positive"}`;
 
       // Then: Parent agent tool result should include formatted output
-      expect(subagentResult).toContain("[Structured Output]");
-      expect(subagentResult).toContain('"sentiment": "positive"');
+      assert.ok(subagentResult.includes("[Structured Output]"));
+      assert.ok(subagentResult.includes('"sentiment": "positive"'));
     });
 
     test("parent agent can parse subagent JSON output", () => {
@@ -716,9 +732,9 @@ describe("Phase 1.5: Subagent Structured Output", () => {
       const parsedOutput = jsonMatch && jsonMatch[1] ? JSON.parse(jsonMatch[1]) as any : null;
 
       // Then: Should successfully extract and parse JSON
-      expect(parsedOutput).toBeDefined();
-      expect(parsedOutput.sentiment).toBe("positive");
-      expect(parsedOutput.score).toBe(0.85);
+      assert.notStrictEqual(parsedOutput, undefined);
+      assert.strictEqual(parsedOutput.sentiment, "positive");
+      assert.strictEqual(parsedOutput.score, 0.85);
     });
   });
 
@@ -740,7 +756,7 @@ describe("Phase 1.5: Subagent Structured Output", () => {
 
       // When: Creating subagent
       // Then: Should be valid configuration
-      expect(subagentConfig.output).toBeDefined();
+      assert.notStrictEqual(subagentConfig.output, undefined);
     });
 
     test("handles output schema validation type mismatch", () => {
@@ -755,7 +771,7 @@ describe("Phase 1.5: Subagent Structured Output", () => {
       // (ToolLoopAgent's native support handles validation)
 
       // Then: Validation error would be caught by ToolLoopAgent
-      expect(result.output).toBeDefined();
+      assert.notStrictEqual(result.output, undefined);
     });
 
     test("maintains output format consistency across multiple subagents", () => {
@@ -765,8 +781,8 @@ describe("Phase 1.5: Subagent Structured Output", () => {
 
       // When: Formatting outputs from different subagents
       // Then: Both should follow same format pattern
-      expect(sentimentOutput).toMatch(/\[Structured Output\]\n\{.*\}/);
-      expect(calcOutput).toMatch(/\[Structured Output\]\n\{.*\}/);
+      assert.match(sentimentOutput, /\[Structured Output\]\n\{.*\}/);
+      assert.match(calcOutput, /\[Structured Output\]\n\{.*\}/);
     });
   });
 });
@@ -778,7 +794,7 @@ describe("Phase 1.5: Subagent Structured Output", () => {
 const hasApiKey = !!process.env.ANTHROPIC_API_KEY;
 
 describe("Phase 2: Integration Tests", () => {
-  test.skipIf(!hasApiKey)(
+  skipIf(!hasApiKey)(
     "end-to-end: agent generates text with structured output parsing",
     async () => {
       // Given: Agent configured with output schema
@@ -805,14 +821,14 @@ describe("Phase 2: Integration Tests", () => {
       });
 
       // Then: Result should include text and potentially structured output
-      expect(result).toBeDefined();
-      expect(result.text).toBeDefined();
+      assert.notStrictEqual(result, undefined);
+      assert.notStrictEqual(result.text, undefined);
       // Note: Actual structured output depends on ToolLoopAgent's native support
     },
     { timeout: 30000 }
   );
 
-  test.skipIf(!hasApiKey)(
+  skipIf(!hasApiKey)(
     "end-to-end: subagent with structured output delegates and formats correctly",
     async () => {
       // Given: Parent agent with subagent that has output schema
@@ -828,8 +844,9 @@ describe("Phase 2: Integration Tests", () => {
 
       // When: Agent delegates to subagent (would use task tool in real scenario)
       // Then: Subagent output should be formatted for parent consumption
-      expect(agent).toBeDefined();
+      assert.notStrictEqual(agent, undefined);
     },
     { timeout: 30000 }
   );
 });
+

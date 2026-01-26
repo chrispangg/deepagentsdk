@@ -3,7 +3,8 @@
  * Simplified version that focuses on core functionality
  */
 
-import { test, expect, describe } from "bun:test";
+import { test, describe } from "node:test";
+import assert from "node:assert/strict";
 import { createDeepAgent } from "@/agent.ts";
 import { anthropic } from "@ai-sdk/anthropic";
 import type {
@@ -12,6 +13,7 @@ import type {
   AdvancedAgentOptions,
   SubAgent,
 } from "@/types.ts";
+import { expect } from "expect";
 
 // Simple mock for testing
 const mockModel = {
@@ -45,7 +47,7 @@ describe("ToolLoopAgent Passthrough - Working Tests", () => {
       },
     });
 
-    expect(agent).toBeDefined();
+    assert.notStrictEqual(agent, undefined);
     // Verify options were stored
     expect((agent as any).loopControl).toBeDefined();
     expect((agent as any).loopControl.onStepFinish).toBe(onStepFinish);
@@ -65,7 +67,7 @@ describe("ToolLoopAgent Passthrough - Working Tests", () => {
       generationOptions,
     });
 
-    expect(agent).toBeDefined();
+    assert.notStrictEqual(agent, undefined);
     expect((agent as any).generationOptions).toEqual(generationOptions);
   });
 
@@ -87,7 +89,7 @@ describe("ToolLoopAgent Passthrough - Working Tests", () => {
       advancedOptions,
     });
 
-    expect(agent).toBeDefined();
+    assert.notStrictEqual(agent, undefined);
     expect((agent as any).advancedOptions).toEqual(advancedOptions);
   });
 
@@ -110,7 +112,7 @@ describe("ToolLoopAgent Passthrough - Working Tests", () => {
       subagents: [subagent],
     });
 
-    expect(agent).toBeDefined();
+    assert.notStrictEqual(agent, undefined);
   });
 
   test("should prevent loop control in subagents", () => {
@@ -135,7 +137,7 @@ describe("ToolLoopAgent Passthrough - Working Tests", () => {
       subagents: [invalidSubagent],
     });
 
-    expect(agent).toBeDefined();
+    assert.notStrictEqual(agent, undefined);
   });
 
   test("should build stop conditions with maxSteps safety", () => {
@@ -146,7 +148,7 @@ describe("ToolLoopAgent Passthrough - Working Tests", () => {
       },
     });
 
-    expect(agent).toBeDefined();
+    assert.notStrictEqual(agent, undefined);
   });
 
   test("should maintain backward compatibility", () => {
@@ -154,7 +156,7 @@ describe("ToolLoopAgent Passthrough - Working Tests", () => {
     const agent1 = createDeepAgent({
       model: mockModel as any,
     });
-    expect(agent1).toBeDefined();
+    assert.notStrictEqual(agent1, undefined);
 
     // Should work with old options
     const agent2 = createDeepAgent({
@@ -162,7 +164,7 @@ describe("ToolLoopAgent Passthrough - Working Tests", () => {
       systemPrompt: "Test prompt",
       maxSteps: 50,
     });
-    expect(agent2).toBeDefined();
+    assert.notStrictEqual(agent2, undefined);
   });
 
   test("should accept all options together", () => {
@@ -196,6 +198,6 @@ describe("ToolLoopAgent Passthrough - Working Tests", () => {
       }],
     });
 
-    expect(agent).toBeDefined();
+    assert.notStrictEqual(agent, undefined);
   });
 });

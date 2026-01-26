@@ -1,7 +1,7 @@
 /**
  * Basic example of using AI SDK Deep Agent with ToolLoopAgent.
  *
- * Run with: ANTHROPIC_API_KEY=your-key bun examples/basic.ts
+ * Run with: ANTHROPIC_API_KEY=your-key node --import tsx examples/basic.ts
  */
 
 import { createDeepAgent } from "../src/index";

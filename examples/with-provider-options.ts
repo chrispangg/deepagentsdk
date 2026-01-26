@@ -7,7 +7,7 @@
  * Provider options are passed through DeepAgent's `advancedOptions.providerOptions`
  * parameter and routed to the appropriate provider by the AI SDK.
  *
- * Run with: bun examples/with-provider-options.ts
+ * Run with: node --import tsx examples/with-provider-options.ts
  */
 
 import { createDeepAgent } from "../src";

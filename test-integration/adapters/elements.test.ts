@@ -5,7 +5,7 @@
  * with real API calls (requires ANTHROPIC_API_KEY).
  */
 
-import { test, expect, describe } from "bun:test";
+import { test, describe } from "node:test";
 import { anthropic } from "@ai-sdk/anthropic";
 import { createDeepAgent } from "@/agent";
 import {
@@ -17,12 +17,27 @@ import {
   extractTextFromMessage,
 } from "@/adapters/elements";
 import type { UIMessage } from "ai";
+import assert from "node:assert/strict";
+
+type TestCallback = () => void | Promise<void>;
+type TestOptions = { timeout?: number } & Record<string, unknown>;
+
+const skipIf = (condition: boolean) => {
+  const runner = condition ? test.skip : test;
+  return (name: string, fn: TestCallback, options?: TestOptions) => {
+    if (options) {
+      runner(name, options, fn);
+      return;
+    }
+    runner(name, fn);
+  };
+};
 
 // Skip all tests if no API key
 const SKIP = !process.env.ANTHROPIC_API_KEY;
 
 describe("createElementsRouteHandler", () => {
-  test.skipIf(SKIP)("handles basic chat request", async () => {
+  skipIf(SKIP)("handles basic chat request", async () => {
     const agent = createDeepAgent({
       model: anthropic("claude-haiku-4-5-20251001"),
       maxSteps: 3,
@@ -46,8 +61,8 @@ describe("createElementsRouteHandler", () => {
 
     const response = await handler(request);
 
-    expect(response.status).toBe(200);
-    expect(response.headers.get("content-type")).toContain("text/event-stream");
+    assert.strictEqual(response.status, 200);
+    assert.ok(response.headers.get("content-type")?.includes("text/event-stream"));
 
     // Read the stream
     const reader = response.body?.getReader();
@@ -66,10 +81,10 @@ describe("createElementsRouteHandler", () => {
       }
     }
 
-    expect(receivedText).toBe(true);
+    assert.strictEqual(receivedText, true);
   });
 
-  test.skipIf(SKIP)("handles onRequest hook", async () => {
+  skipIf(SKIP)("handles onRequest hook", async () => {
     const agent = createDeepAgent({
       model: anthropic("claude-haiku-4-5-20251001"),
       maxSteps: 1,
@@ -100,10 +115,10 @@ describe("createElementsRouteHandler", () => {
 
     await handler(request);
 
-    expect(hookCalled).toBe(true);
+    assert.strictEqual(hookCalled, true);
   });
 
-  test.skipIf(SKIP)("rejects request when onRequest throws", async () => {
+  skipIf(SKIP)("rejects request when onRequest throws", async () => {
     const agent = createDeepAgent({
       model: anthropic("claude-haiku-4-5-20251001"),
       maxSteps: 1,
@@ -132,9 +147,9 @@ describe("createElementsRouteHandler", () => {
 
     const response = await handler(request);
 
-    expect(response.status).toBe(401);
+    assert.strictEqual(response.status, 401);
     const body = await response.json();
-    expect(body.error).toBe("Unauthorized");
+    assert.strictEqual(body.error, "Unauthorized");
   });
 
   test("returns 400 for invalid JSON", async () => {
@@ -153,9 +168,9 @@ describe("createElementsRouteHandler", () => {
 
     const response = await handler(request);
 
-    expect(response.status).toBe(400);
+    assert.strictEqual(response.status, 400);
     const body = await response.json();
-    expect(body.error).toBe("Invalid JSON body");
+    assert.strictEqual(body.error, "Invalid JSON body");
   });
 
   test("returns 400 when messages array is missing", async () => {
@@ -174,9 +189,9 @@ describe("createElementsRouteHandler", () => {
 
     const response = await handler(request);
 
-    expect(response.status).toBe(400);
+    assert.strictEqual(response.status, 400);
     const body = await response.json();
-    expect(body.error).toBe("messages array is required");
+    assert.strictEqual(body.error, "messages array is required");
   });
 });
 
@@ -192,7 +207,7 @@ describe("Message conversion utilities", () => {
 
     const modelMessages = await convertUIMessagesToModelMessages(uiMessages);
 
-    expect(modelMessages.length).toBeGreaterThan(0);
+    assert.ok(modelMessages.length > 0);
   });
 
   test("extractLastUserMessage extracts text", () => {
@@ -215,7 +230,7 @@ describe("Message conversion utilities", () => {
     ];
 
     const result = extractLastUserMessage(messages);
-    expect(result).toBe("Last message");
+    assert.strictEqual(result, "Last message");
   });
 
   test("extractLastUserMessage returns undefined for no user messages", () => {
@@ -228,7 +243,7 @@ describe("Message conversion utilities", () => {
     ];
 
     const result = extractLastUserMessage(messages);
-    expect(result).toBeUndefined();
+    assert.strictEqual(result, undefined);
   });
 
   test("hasToolParts detects tool parts", () => {
@@ -258,8 +273,8 @@ describe("Message conversion utilities", () => {
       },
     ];
 
-    expect(hasToolParts(messagesWithTools)).toBe(true);
-    expect(hasToolParts(messagesWithoutTools)).toBe(false);
+    assert.strictEqual(hasToolParts(messagesWithTools), true);
+    assert.strictEqual(hasToolParts(messagesWithoutTools), false);
   });
 
   test("countMessagesByRole counts correctly", () => {
@@ -272,9 +287,9 @@ describe("Message conversion utilities", () => {
 
     const counts = countMessagesByRole(messages);
 
-    expect(counts.user).toBe(2);
-    expect(counts.assistant).toBe(2);
-    expect(counts.system).toBe(0);
+    assert.strictEqual(counts.user, 2);
+    assert.strictEqual(counts.assistant, 2);
+    assert.strictEqual(counts.system, 0);
   });
 
   test("extractTextFromMessage extracts all text parts", () => {
@@ -288,6 +303,7 @@ describe("Message conversion utilities", () => {
     };
 
     const text = extractTextFromMessage(message);
-    expect(text).toBe("Part 1. Part 2.");
+    assert.strictEqual(text, "Part 1. Part 2.");
   });
 });
+

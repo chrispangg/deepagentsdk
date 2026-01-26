@@ -5,10 +5,11 @@
  * Tests are skipped if ANTHROPIC_API_KEY is not set.
  */
 
-import { test, expect, beforeEach } from "bun:test";
+import { test, beforeEach } from "node:test";
 import { createDeepAgent, MemorySaver, FileSaver } from "@/index.ts";
 import { createAnthropic } from '@ai-sdk/anthropic';
 import { rmSync, existsSync } from "node:fs";
+import assert from "node:assert/strict";
 
 const anthropic = createAnthropic({
   baseURL: 'https://api.anthropic.com/v1',
@@ -16,6 +17,19 @@ const anthropic = createAnthropic({
 
 // Skip tests if no API key
 const hasApiKey = !!process.env.ANTHROPIC_API_KEY;
+type TestCallback = () => void | Promise<void>;
+const testWithApiKey = (
+  name: string,
+  fn: TestCallback,
+  timeout?: number
+) => {
+  const runner = hasApiKey ? test : test.skip;
+  if (timeout !== undefined) {
+    runner(name, { timeout }, fn);
+    return;
+  }
+  runner(name, fn);
+};
 const TEST_DIR = "./.test-integration-checkpoints";
 
 // Helper to clean up test directory
@@ -29,7 +43,7 @@ beforeEach(() => {
   cleanupTestDir();
 });
 
-test.skipIf(!hasApiKey)("Checkpointer > saves and restores conversation state", async () => {
+testWithApiKey("Checkpointer > saves and restores conversation state", async () => {
   const checkpointer = new MemorySaver();
   
   const agent = createDeepAgent({
@@ -51,13 +65,14 @@ test.skipIf(!hasApiKey)("Checkpointer > saves and restores conversation state", 
     }
   }
   
-  expect(checkpointSaved).toBe(true);
+  assert.strictEqual(checkpointSaved, true);
   
   // Verify checkpoint exists
   const checkpoint = await checkpointer.load(threadId);
-  expect(checkpoint).toBeDefined();
-  expect(checkpoint?.messages.length).toBeGreaterThan(0);
-  expect(checkpoint?.threadId).toBe(threadId);
+  assert.ok(checkpoint);
+  assert.ok(checkpoint.messages);
+  assert.ok(checkpoint.messages.length > 0);
+  assert.strictEqual(checkpoint.threadId, threadId);
   
   // Second interaction - verify context is maintained
   let foundBlue = false;
@@ -73,11 +88,11 @@ test.skipIf(!hasApiKey)("Checkpointer > saves and restores conversation state", 
     }
   }
   
-  expect(checkpointLoaded).toBe(true);
-  expect(foundBlue).toBe(true);
+  assert.strictEqual(checkpointLoaded, true);
+  assert.strictEqual(foundBlue, true);
 }, 30000); // 30 second timeout for API calls
 
-test.skipIf(!hasApiKey)("Checkpointer > preserves todos across invocations", async () => {
+testWithApiKey("Checkpointer > preserves todos across invocations", async () => {
   const checkpointer = new MemorySaver();
   
   const agent = createDeepAgent({
@@ -98,12 +113,14 @@ test.skipIf(!hasApiKey)("Checkpointer > preserves todos across invocations", asy
     }
   }
   
-  expect(todosCreated).toBe(true);
+  assert.strictEqual(todosCreated, true);
   
   // Verify todos in checkpoint
   const checkpoint1 = await checkpointer.load(threadId);
-  expect(checkpoint1?.state.todos.length).toBeGreaterThan(0);
-  const todoCount = checkpoint1?.state.todos.length || 0;
+  assert.ok(checkpoint1);
+  assert.ok(checkpoint1.state.todos);
+  assert.ok(checkpoint1.state.todos.length > 0);
+  const todoCount = checkpoint1.state.todos.length;
   
   // Second interaction - todos should still be there
   let todosStillPresent = false;
@@ -116,10 +133,10 @@ test.skipIf(!hasApiKey)("Checkpointer > preserves todos across invocations", asy
     }
   }
   
-  expect(todosStillPresent).toBe(true);
+  assert.strictEqual(todosStillPresent, true);
 }, 30000);
 
-test.skipIf(!hasApiKey)("Checkpointer > thread isolation works correctly", async () => {
+testWithApiKey("Checkpointer > thread isolation works correctly", async () => {
   const checkpointer = new MemorySaver();
   
   const agent = createDeepAgent({
@@ -161,16 +178,16 @@ test.skipIf(!hasApiKey)("Checkpointer > thread isolation works correctly", async
     }
   }
   
-  expect(foundAlpha).toBe(true);
-  expect(foundBeta).toBe(false); // Thread A should NOT know about Beta
+  assert.strictEqual(foundAlpha, true);
+  assert.strictEqual(foundBeta, false); // Thread A should NOT know about Beta
   
   // Verify list shows both threads
   const threads = await checkpointer.list();
-  expect(threads).toContain(threadA);
-  expect(threads).toContain(threadB);
+  assert.ok(threads.includes(threadA));
+  assert.ok(threads.includes(threadB));
 }, 45000);
 
-test.skipIf(!hasApiKey)("FileSaver > persists checkpoints to disk", async () => {
+testWithApiKey("FileSaver > persists checkpoints to disk", async () => {
   const checkpointer = new FileSaver({ dir: TEST_DIR });
   
   const agent = createDeepAgent({
@@ -189,20 +206,20 @@ test.skipIf(!hasApiKey)("FileSaver > persists checkpoints to disk", async () => 
   }
   
   // Verify file was created
-  expect(existsSync(TEST_DIR)).toBe(true);
+  assert.strictEqual(existsSync(TEST_DIR), true);
   const threads = await checkpointer.list();
-  expect(threads).toContain(threadId);
+  assert.ok(threads.includes(threadId));
   
   // Load checkpoint
   const checkpoint = await checkpointer.load(threadId);
-  expect(checkpoint).toBeDefined();
-  expect(checkpoint?.threadId).toBe(threadId);
+  assert.notStrictEqual(checkpoint, undefined);
+  assert.strictEqual(checkpoint?.threadId, threadId);
   
   // Cleanup
   cleanupTestDir();
 }, 20000);
 
-test.skipIf(!hasApiKey)("Checkpointer > step counter increments correctly", async () => {
+testWithApiKey("Checkpointer > step counter increments correctly", async () => {
   const checkpointer = new MemorySaver();
   
   const agent = createDeepAgent({
@@ -224,7 +241,7 @@ test.skipIf(!hasApiKey)("Checkpointer > step counter increments correctly", asyn
   }
   
   const step1 = maxStep;
-  expect(step1).toBeGreaterThan(0);
+  assert.ok(step1 > 0);
   
   // Second interaction - steps should continue from previous
   maxStep = 0;
@@ -238,10 +255,10 @@ test.skipIf(!hasApiKey)("Checkpointer > step counter increments correctly", asyn
   }
   
   const step2 = maxStep;
-  expect(step2).toBeGreaterThan(step1); // Steps should increment
+  assert.ok(step2 > step1); // Steps should increment
 }, 30000);
 
-test("Checkpointer > without threadId, no checkpoints are saved", async () => {
+test("Checkpointer > without threadId, no checkpoints are saved", { timeout: 20000 }, async () => {
   const checkpointer = new MemorySaver();
   
   const agent = createDeepAgent({
@@ -261,9 +278,10 @@ test("Checkpointer > without threadId, no checkpoints are saved", async () => {
     }
   }
   
-  expect(checkpointSaved).toBe(false);
+  assert.strictEqual(checkpointSaved, false);
   
   const threads = await checkpointer.list();
-  expect(threads.length).toBe(0);
-}, 20000);
+  assert.strictEqual(threads.length, 0);
+});
+
 

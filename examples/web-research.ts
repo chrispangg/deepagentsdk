@@ -7,7 +7,7 @@
  * - TAVILY_API_KEY environment variable must be set
  * - ANTHROPIC_API_KEY environment variable must be set
  *
- * Run: bun examples/web-research.ts
+ * Run: node --import tsx examples/web-research.ts
  */
 
 import { createDeepAgent } from "../src/index";

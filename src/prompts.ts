@@ -143,8 +143,8 @@ You have access to an \`execute\` tool to run shell commands in the sandbox envi
 ### When to Use This Tool
 
 Use for:
-- Running build commands (npm install, npm run build, bun install)
-- Running tests (npm test, bun test, pytest)
+- Running build commands (npm install, npm run build)
+- Running tests (npm test, pytest)
 - Executing scripts (node script.js, python script.py)
 - Installing dependencies
 - Checking system state (ls, cat, pwd, which)

@@ -1,7 +1,8 @@
 /**
  * Unit tests for approval utility functions.
  */
-import { test, expect, describe } from "bun:test";
+import { test, describe } from "node:test";
+import assert from "node:assert/strict";
 import { applyInterruptConfig, hasApprovalTools } from "@/utils/approval";
 import { tool } from "ai";
 import { z } from "zod";
@@ -22,7 +23,7 @@ describe("applyInterruptConfig", () => {
 
     const result = applyInterruptConfig(tools, undefined);
 
-    expect(result).toBe(tools);
+    assert.strictEqual(result, tools);
   });
 
   test("returns tools unchanged when interruptOn is empty", () => {
@@ -33,7 +34,7 @@ describe("applyInterruptConfig", () => {
     const result = applyInterruptConfig(tools, {});
 
     // Should be a new object but tools unchanged
-    expect(result.test_tool).toBe(tools.test_tool);
+    assert.strictEqual(result.test_tool, tools.test_tool);
   });
 
   test("adds needsApproval: true for boolean true config", () => {
@@ -44,8 +45,8 @@ describe("applyInterruptConfig", () => {
 
     const result = applyInterruptConfig(tools, { write_file: true });
 
-    expect(result.write_file!.needsApproval).toBe(true);
-    expect(result.read_file!.needsApproval).toBeUndefined();
+    assert.strictEqual(result.write_file!.needsApproval, true);
+    assert.strictEqual(result.read_file!.needsApproval, undefined);
   });
 
   test("does not add needsApproval for boolean false config", () => {
@@ -55,7 +56,7 @@ describe("applyInterruptConfig", () => {
 
     const result = applyInterruptConfig(tools, { write_file: false });
 
-    expect(result.write_file!.needsApproval).toBeUndefined();
+    assert.strictEqual(result.write_file!.needsApproval, undefined);
   });
 
   test("adds needsApproval function for DynamicApprovalConfig", () => {
@@ -72,7 +73,7 @@ describe("applyInterruptConfig", () => {
       execute: { shouldApprove },
     });
 
-    expect(result.execute!.needsApproval).toBe(shouldApprove);
+    assert.strictEqual(result.execute!.needsApproval, shouldApprove);
   });
 
   test("defaults to true when DynamicApprovalConfig has no shouldApprove", () => {
@@ -84,7 +85,7 @@ describe("applyInterruptConfig", () => {
       execute: {}, // Empty DynamicApprovalConfig
     });
 
-    expect(result.execute!.needsApproval).toBe(true);
+    assert.strictEqual(result.execute!.needsApproval, true);
   });
 
   test("handles multiple tools with mixed configs", () => {
@@ -104,10 +105,10 @@ describe("applyInterruptConfig", () => {
       // execute not specified
     });
 
-    expect(result.write_file!.needsApproval).toBe(true);
-    expect(result.edit_file!.needsApproval).toBe(shouldApprove);
-    expect(result.read_file!.needsApproval).toBeUndefined();
-    expect(result.execute!.needsApproval).toBeUndefined();
+    assert.strictEqual(result.write_file!.needsApproval, true);
+    assert.strictEqual(result.edit_file!.needsApproval, shouldApprove);
+    assert.strictEqual(result.read_file!.needsApproval, undefined);
+    assert.strictEqual(result.execute!.needsApproval, undefined);
   });
 
   test("preserves original tool properties", () => {
@@ -116,55 +117,55 @@ describe("applyInterruptConfig", () => {
 
     const result = applyInterruptConfig(tools, { test: true });
 
-    expect(result.test!.description).toBe(originalTool.description);
+    assert.strictEqual(result.test!.description, originalTool.description);
     // Use inputSchema instead of parameters (AI SDK v6 naming)
-    expect(result.test!.inputSchema).toBe(originalTool.inputSchema);
-    expect(result.test!.execute).toBe(originalTool.execute);
+    assert.strictEqual(result.test!.inputSchema, originalTool.inputSchema);
+    assert.strictEqual(result.test!.execute, originalTool.execute);
   });
 });
 
 describe("hasApprovalTools", () => {
   test("returns false when interruptOn is undefined", () => {
-    expect(hasApprovalTools(undefined)).toBe(false);
+    assert.strictEqual(hasApprovalTools(undefined), false);
   });
 
   test("returns false when interruptOn is empty", () => {
-    expect(hasApprovalTools({})).toBe(false);
+    assert.strictEqual(hasApprovalTools({}), false);
   });
 
   test("returns false when all values are false", () => {
-    expect(
+    assert.strictEqual(
       hasApprovalTools({
         write_file: false,
         edit_file: false,
       })
-    ).toBe(false);
+    , false);
   });
 
   test("returns true when any value is true", () => {
-    expect(
+    assert.strictEqual(
       hasApprovalTools({
         write_file: true,
         edit_file: false,
       })
-    ).toBe(true);
+    , true);
   });
 
   test("returns true when any value is DynamicApprovalConfig", () => {
-    expect(
+    assert.strictEqual(
       hasApprovalTools({
         execute: { shouldApprove: () => true },
       })
-    ).toBe(true);
+    , true);
   });
 
   test("returns true for mixed configs with at least one truthy", () => {
-    expect(
+    assert.strictEqual(
       hasApprovalTools({
         write_file: false,
         edit_file: true,
         execute: { shouldApprove: () => false },
       })
-    ).toBe(true);
+    , true);
   });
 });

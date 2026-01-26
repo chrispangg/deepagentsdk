@@ -6,7 +6,7 @@
  * Test coverage: Type system modularisation, error handling standardisation, and function decomposition
  */
 
-import { test, expect, describe, beforeEach, afterEach } from "bun:test";
+import { test, describe, beforeEach, afterEach } from "node:test";
 import { createDeepAgent } from "@/agent.ts";
 import { StateBackend } from "@/backends/state.ts";
 import { FilesystemBackend } from "@/backends/filesystem.ts";
@@ -24,6 +24,21 @@ import type {
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
 import * as os from "node:os";
+import assert from "node:assert/strict";
+
+type TestCallback = () => void | Promise<void>;
+type TestOptions = { timeout?: number } & Record<string, unknown>;
+
+const skipIf = (condition: boolean) => {
+  const runner = condition ? test.skip : test;
+  return (name: string, fn: TestCallback, options?: TestOptions) => {
+    if (options) {
+      runner(name, options, fn);
+      return;
+    }
+    runner(name, fn);
+  };
+};
 
 // Skip integration tests without API key
 const hasApiKey = !!process.env.ANTHROPIC_API_KEY;
@@ -108,12 +123,12 @@ describe("Phase 1: Type System Modularisation", () => {
       };
 
       // Then: Types should be properly defined
-      expect(config.model).toBeDefined();
-      expect(config.backend).toBeDefined();
-      expect(state.files).toEqual({});
-      expect(state.todos).toEqual([]);
-      expect(todo.id).toBe("test-1");
-      expect(todo.status).toBe("pending");
+      assert.notStrictEqual(config.model, undefined);
+      assert.notStrictEqual(config.backend, undefined);
+      assert.deepStrictEqual(state.files, {});
+      assert.deepStrictEqual(state.todos, []);
+      assert.strictEqual(todo.id, "test-1");
+      assert.strictEqual(todo.status, "pending");
     });
 
     test("should maintain type safety for complex nested configurations", () => {
@@ -133,10 +148,10 @@ describe("Phase 1: Type System Modularisation", () => {
       const agent = createDeepAgent(complexConfig);
 
       // Then: Agent should be created successfully with all properties
-      expect(agent).toBeDefined();
-      expect(complexConfig.subagents).toBeDefined();
-      expect(complexConfig.subagents?.length).toBe(1);
-      expect(complexConfig.subagents?.[0]?.name).toBe("test-subagent");
+      assert.notStrictEqual(agent, undefined);
+      assert.notStrictEqual(complexConfig.subagents, undefined);
+      assert.strictEqual(complexConfig.subagents?.length, 1);
+      assert.strictEqual(complexConfig.subagents?.[0]?.name, "test-subagent");
     });
   });
 
@@ -155,10 +170,10 @@ describe("Phase 1: Type System Modularisation", () => {
       const stateResult = await testWrite(stateBackend);
       const fsResult = await testWrite(fsBackend);
 
-      expect(stateResult).toBeDefined();
-      expect(fsResult).toBeDefined();
-      expect(typeof stateResult.path).toBe("string");
-      expect(typeof fsResult.path).toBe("string");
+      assert.notStrictEqual(stateResult, undefined);
+      assert.notStrictEqual(fsResult, undefined);
+      assert.strictEqual(typeof stateResult.path, "string");
+      assert.strictEqual(typeof fsResult.path, "string");
     });
 
     test("should maintain compatibility between different backend implementations", async () => {
@@ -172,17 +187,17 @@ describe("Phase 1: Type System Modularisation", () => {
       for (const backend of backends) {
         // Write operation
         const writeResult = await backend.write("test.txt", "test content");
-        expect(writeResult.path).toBe("test.txt");
+        assert.strictEqual(writeResult.path, "test.txt");
 
         // Read operation
         const readResult = await backend.read("test.txt");
         // Both backends format read results with line numbers for better agent UX
-        expect(readResult).toContain("test content");
-        expect(readResult).toMatch(/\d+\s+test content/);
+        assert.ok(readResult.includes("test content"));
+        assert.match(readResult, /\d+\s+test content/);
       }
 
       // Then: All operations should work consistently across implementations
-      expect(backends).toHaveLength(2);
+      assert.strictEqual(backends.length, 2);
     });
   });
 
@@ -203,12 +218,12 @@ describe("Phase 1: Type System Modularisation", () => {
       testEvents.forEach(onEvent);
 
       // Then: All event types should be properly typed and collected
-      expect(events).toHaveLength(5);
-      expect(events[0]?.type).toBe("text");
-      expect(events[1]?.type).toBe("tool-call");
-      expect(events[2]?.type).toBe("tool-result");
-      expect(events[3]?.type).toBe("error");
-      expect(events[4]?.type).toBe("done");
+      assert.strictEqual(events.length, 5);
+      assert.strictEqual(events[0]?.type, "text");
+      assert.strictEqual(events[1]?.type, "tool-call");
+      assert.strictEqual(events[2]?.type, "tool-result");
+      assert.strictEqual(events[3]?.type, "error");
+      assert.strictEqual(events[4]?.type, "done");
     });
 
     test("should maintain event type safety with discriminated unions", () => {
@@ -225,14 +240,14 @@ describe("Phase 1: Type System Modularisation", () => {
       const errorEvents = events.filter(e => e.type === "error");
 
       // Then: TypeScript should narrow types correctly
-      expect(textEvents).toHaveLength(1);
-      expect(textEvents[0]).toHaveProperty("text");
+      assert.strictEqual(textEvents.length, 1);
+      assert.ok(Object.prototype.hasOwnProperty.call(textEvents[0], "text"));
 
-      expect(toolEvents).toHaveLength(1);
-      expect(toolEvents[0]).toHaveProperty("toolCallId");
+      assert.strictEqual(toolEvents.length, 1);
+      assert.ok(Object.prototype.hasOwnProperty.call(toolEvents[0], "toolCallId"));
 
-      expect(errorEvents).toHaveLength(1);
-      expect(errorEvents[0]).toHaveProperty("error");
+      assert.strictEqual(errorEvents.length, 1);
+      assert.ok(Object.prototype.hasOwnProperty.call(errorEvents[0], "error"));
     });
   });
 
@@ -255,11 +270,11 @@ describe("Phase 1: Type System Modularisation", () => {
       });
 
       // Then: Subagent types should be properly enforced
-      expect(agent).toBeDefined();
-      expect(subagent.name).toBe("test-subagent");
-      expect(subagent.description).toBe("Test subagent for analysis");
-      expect(subagent.systemPrompt).toBe("You are a test subagent");
-      expect(subagent.tools).toHaveProperty("read_file");
+      assert.notStrictEqual(agent, undefined);
+      assert.strictEqual(subagent.name, "test-subagent");
+      assert.strictEqual(subagent.description, "Test subagent for analysis");
+      assert.strictEqual(subagent.systemPrompt, "You are a test subagent");
+      assert.ok(Object.prototype.hasOwnProperty.call(subagent.tools, "read_file"));
     });
 
     test("should validate subagent tool configurations", () => {
@@ -291,9 +306,9 @@ describe("Phase 1: Type System Modularisation", () => {
       );
 
       // Then: All configurations should be valid
-      expect(agents).toHaveLength(2);
-      expect(agents[0]).toBeDefined();
-      expect(agents[1]).toBeDefined();
+      assert.strictEqual(agents.length, 2);
+      assert.notStrictEqual(agents[0], undefined);
+      assert.notStrictEqual(agents[1], undefined);
     });
   });
 
@@ -305,9 +320,9 @@ describe("Phase 1: Type System Modularisation", () => {
       const agent = createTestAgent();
 
       // Then: All types should be available without import path changes
-      expect(agent).toBeDefined();
-      expect(agent.generate).toBeDefined();
-      expect(agent.stream).toBeDefined();
+      assert.notStrictEqual(agent, undefined);
+      assert.notStrictEqual(agent.generate, undefined);
+      assert.notStrictEqual(agent.stream, undefined);
     });
 
     test("should maintain type access after modularisation", async () => {
@@ -318,9 +333,9 @@ describe("Phase 1: Type System Modularisation", () => {
       const state = createTestState() as any;
 
       // Then: Types should work regardless of import path
-      expect(state).toBeDefined();
-      expect(state.files).toBeDefined();
-      expect(state.todos).toBeDefined();
+      assert.notStrictEqual(state, undefined);
+      assert.notStrictEqual(state.files, undefined);
+      assert.notStrictEqual(state.todos, undefined);
     });
   });
 });
@@ -354,13 +369,13 @@ describe("Phase 2: Error Handling Standardisation", () => {
         const result = await backend.write("test.txt", "test content");
 
         // Then: Result should maintain current structure
-        expect(result).toHaveProperty("path");
+        assert.ok(Object.prototype.hasOwnProperty.call(result, "path"));
         if (result.error) {
-          expect(typeof result.error).toBe("string");
-          expect(result.path).toBeUndefined();
+          assert.strictEqual(typeof result.error, "string");
+          assert.strictEqual(result.path, undefined);
         } else {
-          expect(typeof result.path).toBe("string");
-          expect(result.error).toBeUndefined();
+          assert.strictEqual(typeof result.path, "string");
+          assert.strictEqual(result.error, undefined);
         }
       }
     });
@@ -374,10 +389,10 @@ describe("Phase 2: Error Handling Standardisation", () => {
       const fsResult = await fsBackend.write("success.txt", content);
 
       // Then: Both should return path without error
-      expect(stateResult.path).toBe("success.txt");
-      expect(fsResult.path).toBe("success.txt");
-      expect(stateResult.error).toBeUndefined();
-      expect(fsResult.error).toBeUndefined();
+      assert.strictEqual(stateResult.path, "success.txt");
+      assert.strictEqual(fsResult.path, "success.txt");
+      assert.strictEqual(stateResult.error, undefined);
+      assert.strictEqual(fsResult.error, undefined);
     });
 
     test("should return error for failed writes", async () => {
@@ -388,9 +403,9 @@ describe("Phase 2: Error Handling Standardisation", () => {
       const duplicateResult = await stateBackend.write("exists.txt", "duplicate");
 
       // Then: Should return error without path
-      expect(duplicateResult.error).toBeDefined();
-      expect(duplicateResult.error).toContain("already exists");
-      expect(duplicateResult.path).toBeUndefined();
+      assert.ok(duplicateResult.error);
+      assert.ok(duplicateResult.error.includes("already exists"));
+      assert.strictEqual(duplicateResult.path, undefined);
     });
 
     test("should maintain compatibility with existing error checking patterns", async () => {
@@ -403,11 +418,11 @@ describe("Phase 2: Error Handling Standardisation", () => {
 
       // Then: Current pattern should work (will be enhanced with success field later)
       if (result.error) {
-        expect(result.error).toContain("already exists");
-        expect(result.path).toBeUndefined();
+        assert.ok(result.error.includes("already exists"));
+        assert.strictEqual(result.path, undefined);
       } else {
         // Should not reach here for this test case
-        expect(true).toBe(false);
+        assert.strictEqual(true, false);
       }
     });
   });
@@ -423,14 +438,14 @@ describe("Phase 2: Error Handling Standardisation", () => {
       const fsResult = await fsBackend.edit("edit-test.txt", "original", "modified");
 
       // Then: Results should maintain current structure
-      expect(stateResult).toHaveProperty("path");
-      expect(fsResult).toHaveProperty("path");
+      assert.ok(Object.prototype.hasOwnProperty.call(stateResult, "path"));
+      assert.ok(Object.prototype.hasOwnProperty.call(fsResult, "path"));
       if (stateResult.error) {
-        expect(typeof stateResult.error).toBe("string");
-        expect(stateResult.path).toBeUndefined();
+        assert.strictEqual(typeof stateResult.error, "string");
+        assert.strictEqual(stateResult.path, undefined);
       } else {
-        expect(typeof stateResult.path).toBe("string");
-        expect(stateResult.error).toBeUndefined();
+        assert.strictEqual(typeof stateResult.path, "string");
+        assert.strictEqual(stateResult.error, undefined);
       }
     });
 
@@ -442,9 +457,9 @@ describe("Phase 2: Error Handling Standardisation", () => {
       const result = await stateBackend.edit("editable.txt", "Original", "Modified");
 
       // Then: Should report success with metrics
-      expect(result.path).toBe("editable.txt");
-      expect(result.occurrences).toBe(1);
-      expect(result.error).toBeUndefined();
+      assert.strictEqual(result.path, "editable.txt");
+      assert.strictEqual(result.occurrences, 1);
+      assert.strictEqual(result.error, undefined);
     });
 
     test("should return error for failed edits", async () => {
@@ -455,10 +470,10 @@ describe("Phase 2: Error Handling Standardisation", () => {
       const result = await stateBackend.edit("no-match.txt", "not found", "replacement");
 
       // Then: Should report failure
-      expect(result.error).toBeDefined();
-      expect(result.error).toContain("not found");
-      expect(result.path).toBeUndefined();
-      expect(result.occurrences).toBeUndefined();
+      assert.ok(result.error);
+      assert.ok(result.error.includes("not found"));
+      assert.strictEqual(result.path, undefined);
+      assert.strictEqual(result.occurrences, undefined);
     });
   });
 
@@ -472,10 +487,10 @@ describe("Phase 2: Error Handling Standardisation", () => {
       const editResult = await stateBackend.edit(nonExistentFile, "test", "test");
 
       // Then: Both should return error strings
-      expect(typeof readResult).toBe("string");
-      expect(readResult).toContain("not found");
-      expect(editResult.error).toBeDefined();
-      expect(editResult.error).toContain("not found");
+      assert.strictEqual(typeof readResult, "string");
+      assert.ok(readResult.includes("not found"));
+      assert.ok(editResult.error);
+      assert.ok(editResult.error.includes("not found"));
     });
 
     test("should handle invalid operations gracefully", async () => {
@@ -486,8 +501,8 @@ describe("Phase 2: Error Handling Standardisation", () => {
       const writeResult = await stateBackend.write(invalidPath, "content");
 
       // Then: Should return structured error
-      expect(writeResult.error).toBeDefined();
-      expect(writeResult.path).toBeUndefined();
+      assert.notStrictEqual(writeResult.error, undefined);
+      assert.strictEqual(writeResult.path, undefined);
     });
   });
 });
@@ -497,7 +512,7 @@ describe("Phase 2: Error Handling Standardisation", () => {
 // ============================================================================
 
 describe("Phase 3: Function Decomposition", () => {
-  test.skipIf(!hasApiKey)("should break down streamWithEvents into focused methods", async () => {
+  skipIf(!hasApiKey)("should break down streamWithEvents into focused methods", async () => {
     // Given: Agent instance
     const agent = createTestAgent();
     const events: DeepAgentEvent[] = [];
@@ -509,8 +524,8 @@ describe("Phase 3: Function Decomposition", () => {
     }
 
     // Then: Should receive expected event sequence
-    expect(events.length).toBeGreaterThan(0);
-    expect(events.some(e => e.type === "done")).toBe(true);
+    assert.ok(events.length > 0);
+    assert.ok(events.some(e => e.type === "done"));
   });
 
   test("should decompose createTools into logical groupings", () => {
@@ -524,7 +539,7 @@ describe("Phase 3: Function Decomposition", () => {
     // Note: This tests the interface, implementation details tested separately
 
     // Then: Agent should be created successfully
-    expect(agent).toBeDefined();
+    assert.notStrictEqual(agent, undefined);
   });
 
   test("should maintain identical behavior after decomposition", async () => {
@@ -539,10 +554,10 @@ describe("Phase 3: Function Decomposition", () => {
     const agent2 = createDeepAgent(config);
 
     // Then: Should have identical capabilities
-    expect(agent1.generate).toBeDefined();
-    expect(agent2.generate).toBeDefined();
-    expect(agent1.stream).toBeDefined();
-    expect(agent2.stream).toBeDefined();
+    assert.notStrictEqual(agent1.generate, undefined);
+    assert.notStrictEqual(agent2.generate, undefined);
+    assert.notStrictEqual(agent1.stream, undefined);
+    assert.notStrictEqual(agent2.stream, undefined);
   });
 });
 
@@ -557,7 +572,7 @@ describe("Integration Tests", () => {
     agent = createTestAgent();
   });
 
-  test.skipIf(!hasApiKey)(
+  skipIf(!hasApiKey)(
     "end-to-end test with all architectural improvements",
     async () => {
       // Given: Real agent with modularized types
@@ -571,16 +586,16 @@ describe("Integration Tests", () => {
 
       // Then: Should work seamlessly with new architecture
       const doneEvent = events.find(e => e.type === "done");
-      expect(doneEvent).toBeDefined();
+      assert.notStrictEqual(doneEvent, undefined);
       if (doneEvent && doneEvent.type === "done" && doneEvent.text) {
-        expect(doneEvent.text.length).toBeGreaterThan(0);
+        assert.ok(doneEvent.text.length > 0);
       }
-      expect(events.length).toBeGreaterThan(0);
+      assert.ok(events.length > 0);
     },
     { timeout: 30000 }
   );
 
-  test.skipIf(!hasApiKey)(
+  skipIf(!hasApiKey)(
     "error handling works in real environment",
     async () => {
       // Given: Agent for integration testing
@@ -592,7 +607,7 @@ describe("Integration Tests", () => {
       });
 
       // Then: Should handle errors gracefully
-      expect(result.text).toBeDefined();
+      assert.notStrictEqual(result.text, undefined);
       // Should not crash or hang
     },
     { timeout: 30000 }
@@ -615,7 +630,7 @@ describe("Performance and Compatibility", () => {
     const importTime = end - start;
 
     // Then: Import time should be reasonable (< 100ms)
-    expect(importTime).toBeLessThan(100);
+    assert.ok(importTime < 100);
   });
 
   test("should maintain type checking performance", () => {
@@ -635,8 +650,9 @@ describe("Performance and Compatibility", () => {
     const agent = createDeepAgent(complexConfig);
 
     // Then: Should be created without type errors
-    expect(agent).toBeDefined();
-    expect(complexConfig.subagents).toHaveLength(10);
+    assert.notStrictEqual(agent, undefined);
+    assert.ok(complexConfig.subagents);
+    assert.strictEqual(complexConfig.subagents.length, 10);
   });
 
   test("should support gradual migration", () => {
@@ -648,8 +664,8 @@ describe("Performance and Compatibility", () => {
     const state2: DeepAgentState = createTestState();
 
     // Then: Should work interchangeably
-    expect(state1).toEqual(state2);
-    expect(state1.files).toEqual(state2.files);
-    expect(state1.todos).toEqual(state2.todos);
+    assert.deepStrictEqual(state1, state2);
+    assert.deepStrictEqual(state1.files, state2.files);
+    assert.deepStrictEqual(state1.todos, state2.todos);
   });
 });

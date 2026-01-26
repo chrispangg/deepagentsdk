@@ -293,9 +293,9 @@ Use `/2_create_plan` command to create implementation plans.
 
 #### Automated Verification
 
-- [ ] Tests pass: `bun test`
-- [ ] Type checking passes: `bun run typecheck`
-- [ ] Linting passes: `bun run lint`
+- [ ] Tests pass: `npm test`
+- [ ] Type checking passes: `npm run typecheck`
+- [ ] Linting passes: `npm run lint`
 
 #### Manual Verification
 
@@ -394,7 +394,7 @@ Use `/3_define_test_cases` command to create test specifications.
    - Create actual runnable test code: `test/[feature]/[feature].test.ts`
    - Use Given-When-Then comments for readability
    - Create helper functions ONLY when duplication appears 3+ times
-   - Use native framework (bun:test with describe/test structure)
+   - Use native framework (node:test with describe/test structure)
    - Tests ARE the specification - executable documentation
 
 5. **Generate Lightweight Index** (SECONDARY OUTPUT):
@@ -522,7 +522,7 @@ Use `/4_implement_plan` command to implement approved plans.
 
 - [ ] All plan steps completed
 - [ ] Plan checkboxes updated with [x]
-- [ ] `bun run typecheck` passes
+- [ ] `npm run typecheck` passes
 - [ ] All tests pass (if test file exists)
 - [ ] Note files created for new requirements
 - [ ] No improvised changes outside the plan (unless documented in notes)
@@ -576,7 +576,7 @@ Use `/5_validate_implementation` command to validate implementations.
 - ✓ Additional requirements from notes implemented
 
 ### Test Coverage (if test file exists)
-- ✓ All tests passing: `bun test [file]` (25/25)
+- ✓ All tests passing: `npm test -- [file]` (25/25)
 - ⚠️ Failing tests: [list]
 
 ### Automated Verification Results

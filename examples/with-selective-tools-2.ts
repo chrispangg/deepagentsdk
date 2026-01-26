@@ -4,7 +4,7 @@
  * This example demonstrates a subagent that has custom tools.
  * The main agent only delegates work to the subagent.
  *
- * Run with: bun examples/with-selective-tools-copy.ts
+ * Run with: node --import tsx examples/with-selective-tools-copy.ts
  *
  * Requires ANTHROPIC_API_KEY environment variable.
  */

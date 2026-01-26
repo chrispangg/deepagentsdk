@@ -4,7 +4,7 @@
  * This example demonstrates user-level agent memory with actual runnable tests.
  * We've set up memory files in .deepagents/ to test different scenarios.
  *
- * Run: bun examples/with-agent-memory.ts
+ * Run: node --import tsx examples/with-agent-memory.ts
  */
 
 import { createDeepAgent, createAgentMemoryMiddleware } from "../src/index";
@@ -57,7 +57,7 @@ console.log("-".repeat(60));
 console.log("Testing: Loading additional .md files (decisions.md)");
 console.log("User memory: examples/.deepagents/example-agent/agent.md");
 console.log("Additional file: examples/.deepagents/example-agent/decisions.md");
-console.log("Expected: Knows about bun:test decision + emojis 🎉\n");
+console.log("Expected: Knows about node:test decision + emojis 🎉\n");
 
 const example2Middleware = createAgentMemoryMiddleware({
   agentId: "example-agent",
@@ -76,7 +76,7 @@ const result2 = await agent2.generate({
 });
 
 console.log("Response:", result2.text);
-console.log("\n✅ Check: Does it mention bun:test? (from decisions.md)");
+console.log("\n✅ Check: Does it mention node:test? (from decisions.md)");
 
 // =============================================================================
 // Example 3: Using agentId parameter (simplified API)
@@ -116,7 +116,7 @@ console.log(`
 
 ✅ Example 2: Additional memory files
    - Automatically loaded decisions.md (additional .md file)
-   - Agent knew about bun:test decision from memory
+   - Agent knew about node:test decision from memory
    - All .md files in user directory are loaded
 
 ✅ Example 3: Simplified agentId API

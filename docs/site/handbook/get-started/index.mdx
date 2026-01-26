@@ -38,14 +38,11 @@ This combination enables agents to handle complex, multi-step tasks that would o
   - Azure OpenAI
   - Or any AI SDK v6 compatible provider
 
-### Install Bun (if needed)
+### Install Node.js (if needed)
 
 ```bash
-# Install Bun
-curl -fsSL https://bun.sh/install | bash
-
 # Verify installation
-bun --version
+node --version
 ```
 
 ## Installation
@@ -56,25 +53,25 @@ bun --version
     # Create a new project
     mkdir my-agent-project
     cd my-agent-project
-    bun init -y
+    npm init -y
 
     # Install the package
-    bun add deepagentsdk
+    npm install deepagentsdk
 
     # Install AI SDK providers
-    bun add @ai-sdk/anthropic @ai-sdk/openai
+    npm install @ai-sdk/anthropic @ai-sdk/openai
     ```
   </Tab>
   <Tab value="Existing Project">
     ```bash
     cd your-project
-    bun add deepagentsdk
+    npm install deepagentsdk
     ```
   </Tab>
   <Tab value="CLI Global">
     ```bash
     # Install globally
-    bun add -g deepagentsdk
+    npm install -g deepagentsdk
 
     # Now you can run from anywhere
     deep-agent
@@ -139,7 +136,7 @@ Ensure your `tsconfig.json` has these settings:
     "target": "ESNext",
     "module": "ESNext",
     "moduleResolution": "bundler",
-    "types": ["bun-types"],
+    "types": ["node"],
     "strict": true
   }
 }
@@ -178,7 +175,7 @@ console.log('Files:', Object.keys(result.state.files));
 Run it:
 
 ```bash
-ANTHROPIC_API_KEY=your-key bun run agent.ts
+ANTHROPIC_API_KEY=your-key node --import tsx agent.ts
 ```
 
 ### Streaming Example
@@ -523,7 +520,7 @@ for await (const event of agent.streamWithEvents({
 
     ```bash
     # Run with Bun (not node or tsx)
-    bun run your-script.ts
+    node --import tsx your-script.ts
 
     # Not
     node your-script.ts
@@ -736,7 +733,7 @@ Check out the `/examples` directory for working code:
 
 ```bash
 # Run any example
-bun run examples/basic.ts
+node --import tsx examples/basic.ts
 ```
 
 ### Try the CLI
@@ -745,10 +742,10 @@ Interactive CLI for quick prototyping:
 
 ```bash
 # Start CLI
-bunx deepagentsdk
+npx deep-agent
 
 # Or with specific model
-bunx deepagentsdk --model anthropic/claude-sonnet-4-5-20250929
+npx deep-agent --model anthropic/claude-sonnet-4-5-20250929
 
 # CLI Commands
 /help          # Show all commands

@@ -1,7 +1,8 @@
-import { test, expect, beforeEach } from "bun:test";
+import { test, beforeEach } from "node:test";
 import { KeyValueStoreSaver } from "@/checkpointer/kv-saver.ts";
 import { InMemoryStore } from "@/backends/persistent.ts";
 import type { Checkpoint } from "@/checkpointer/types.ts";
+import assert from "node:assert/strict";
 
 const createTestCheckpoint = (threadId: string, step = 1): Checkpoint => ({
   threadId,
@@ -25,14 +26,14 @@ test("KeyValueStoreSaver > save and load checkpoint", async () => {
   await saver.save(checkpoint);
   
   const loaded = await saver.load("thread-1");
-  expect(loaded).toBeDefined();
-  expect(loaded?.threadId).toBe("thread-1");
-  expect(loaded?.step).toBe(1);
+  assert.notStrictEqual(loaded, undefined);
+  assert.strictEqual(loaded?.threadId, "thread-1");
+  assert.strictEqual(loaded?.step, 1);
 });
 
 test("KeyValueStoreSaver > load returns undefined for non-existent thread", async () => {
   const loaded = await saver.load("non-existent");
-  expect(loaded).toBeUndefined();
+  assert.strictEqual(loaded, undefined);
 });
 
 test("KeyValueStoreSaver > list returns all thread IDs", async () => {
@@ -40,9 +41,9 @@ test("KeyValueStoreSaver > list returns all thread IDs", async () => {
   await saver.save(createTestCheckpoint("thread-2"));
   
   const threads = await saver.list();
-  expect(threads).toContain("thread-1");
-  expect(threads).toContain("thread-2");
-  expect(threads.length).toBe(2);
+  assert.ok(threads.includes("thread-1"));
+  assert.ok(threads.includes("thread-2"));
+  assert.strictEqual(threads.length, 2);
 });
 
 test("KeyValueStoreSaver > delete removes checkpoint", async () => {
@@ -50,17 +51,17 @@ test("KeyValueStoreSaver > delete removes checkpoint", async () => {
   await saver.delete("thread-1");
   
   const loaded = await saver.load("thread-1");
-  expect(loaded).toBeUndefined();
+  assert.strictEqual(loaded, undefined);
 });
 
 test("KeyValueStoreSaver > exists returns correct value", async () => {
-  expect(await saver.exists("thread-1")).toBe(false);
+  assert.strictEqual(await saver.exists("thread-1"), false);
   
   await saver.save(createTestCheckpoint("thread-1"));
-  expect(await saver.exists("thread-1")).toBe(true);
+  assert.strictEqual(await saver.exists("thread-1"), true);
   
   await saver.delete("thread-1");
-  expect(await saver.exists("thread-1")).toBe(false);
+  assert.strictEqual(await saver.exists("thread-1"), false);
 });
 
 test("KeyValueStoreSaver > namespace isolates checkpoints", async () => {
@@ -69,14 +70,14 @@ test("KeyValueStoreSaver > namespace isolates checkpoints", async () => {
   
   await saver1.save(createTestCheckpoint("thread-1"));
   
-  expect(await saver1.exists("thread-1")).toBe(true);
-  expect(await saver2.exists("thread-1")).toBe(false);
+  assert.strictEqual(await saver1.exists("thread-1"), true);
+  assert.strictEqual(await saver2.exists("thread-1"), false);
   
   const list1 = await saver1.list();
   const list2 = await saver2.list();
   
-  expect(list1).toContain("thread-1");
-  expect(list2.length).toBe(0);
+  assert.ok(list1.includes("thread-1"));
+  assert.strictEqual(list2.length, 0);
 });
 
 test("KeyValueStoreSaver > overwrites existing checkpoint", async () => {
@@ -84,10 +85,10 @@ test("KeyValueStoreSaver > overwrites existing checkpoint", async () => {
   await saver.save(createTestCheckpoint("thread-1", 2));
   
   const loaded = await saver.load("thread-1");
-  expect(loaded?.step).toBe(2);
+  assert.strictEqual(loaded?.step, 2);
   
   const threads = await saver.list();
-  expect(threads.length).toBe(1);
+  assert.strictEqual(threads.length, 1);
 });
 
 test("KeyValueStoreSaver > updatedAt is set on save", async () => {
@@ -99,8 +100,8 @@ test("KeyValueStoreSaver > updatedAt is set on save", async () => {
   await saver.save(checkpoint);
   const loaded = await saver.load("thread-1");
   
-  expect(loaded?.updatedAt).toBeDefined();
-  expect(loaded?.updatedAt).not.toBe(originalUpdatedAt);
+  assert.notStrictEqual(loaded?.updatedAt, undefined);
+  assert.notStrictEqual(loaded?.updatedAt, originalUpdatedAt);
 });
 
 test("KeyValueStoreSaver > handles complex state", async () => {
@@ -131,8 +132,9 @@ test("KeyValueStoreSaver > handles complex state", async () => {
   await saver.save(checkpoint);
   const loaded = await saver.load("complex-thread");
   
-  expect(loaded?.state.todos).toHaveLength(2);
-  expect(loaded?.state.files["/test.txt"]).toBeDefined();
-  expect(loaded?.messages).toHaveLength(2);
+  assert.strictEqual(loaded?.state.todos.length, 2);
+  assert.notStrictEqual(loaded?.state.files["/test.txt"], undefined);
+  assert.strictEqual(loaded?.messages.length, 2);
 });
+
 

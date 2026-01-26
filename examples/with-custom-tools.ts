@@ -1,7 +1,7 @@
 /**
  * Example using custom tools alongside built-in tools.
  *
- * Run with: ANTHROPIC_API_KEY=your-key bun examples/with-custom-tools.ts
+ * Run with: ANTHROPIC_API_KEY=your-key node --import tsx examples/with-custom-tools.ts
  */
 
 import { tool } from "ai";

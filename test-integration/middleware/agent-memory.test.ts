@@ -1,10 +1,26 @@
-import { test, expect, beforeEach, afterEach } from "bun:test";
+import { test, beforeEach, afterEach } from "node:test";
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
 import os from "node:os";
 import { createAgentMemoryMiddleware } from "@/middleware/agent-memory.ts";
 import { createDeepAgent } from "@/agent.ts";
 import { createAnthropic } from '@ai-sdk/anthropic';
+import assert from "node:assert/strict";
+import { expect } from "expect";
+
+type TestCallback = () => void | Promise<void>;
+type TestOptions = { timeout?: number } & Record<string, unknown>;
+
+const skipIf = (condition: boolean) => {
+  const runner = condition ? test.skip : test;
+  return (name: string, fn: TestCallback, options?: TestOptions) => {
+    if (options) {
+      runner(name, options, fn);
+      return;
+    }
+    runner(name, fn);
+  };
+};
 
 const anthropic = createAnthropic({
   baseURL: 'https://api.anthropic.com/v1',
@@ -57,8 +73,8 @@ test("agent memory middleware - loads user-level memory", async () => {
     });
 
     // Middleware should have transformParams function
-    expect(middleware.transformParams).toBeDefined();
-    expect(middleware.specificationVersion).toBe("v3");
+    assert.notStrictEqual(middleware.transformParams, undefined);
+    assert.strictEqual(middleware.specificationVersion, "v3");
 
     // Simulate a model call with system prompt
     const result = await middleware.transformParams!({
@@ -74,9 +90,11 @@ test("agent memory middleware - loads user-level memory", async () => {
 
     // System prompt should include memory content
     const systemMessage = result.prompt.find((m: any) => m.role === "system");
-    expect(systemMessage).toBeDefined();
-    expect(systemMessage?.content).toContain(userMemoryContent);
-    expect(systemMessage?.content).toContain("Agent Memory (User-Level)");
+    assert.notStrictEqual(systemMessage, undefined);
+    assert.ok(systemMessage?.content);
+    const userContent = String(systemMessage.content);
+    assert.ok(userContent.includes(userMemoryContent));
+    expect(userContent).toContain("Agent Memory (User-Level)");
   } finally {
     // Restore original homedir
     Object.defineProperty(os, "homedir", {
@@ -122,9 +140,11 @@ test("agent memory middleware - loads project-level memory", async () => {
     });
 
     const systemMessage = result.prompt.find((m: any) => m.role === "system");
-    expect(systemMessage).toBeDefined();
-    expect(systemMessage?.content).toContain(projectMemoryContent);
-    expect(systemMessage?.content).toContain("Agent Memory (Project-Level)");
+    assert.notStrictEqual(systemMessage, undefined);
+    assert.ok(systemMessage?.content);
+    const projectContent = String(systemMessage.content);
+    assert.ok(projectContent.includes(projectMemoryContent));
+    expect(projectContent).toContain("Agent Memory (Project-Level)");
   } finally {
     Object.defineProperty(os, "homedir", {
       value: originalHome,
@@ -175,11 +195,13 @@ test("agent memory middleware - loads both user and project memory", async () =>
     });
 
     const systemMessage = result.prompt.find((m: any) => m.role === "system");
-    expect(systemMessage).toBeDefined();
-    expect(systemMessage?.content).toContain("User preference: concise responses");
-    expect(systemMessage?.content).toContain("Project context: TypeScript project");
-    expect(systemMessage?.content).toContain("Agent Memory (User-Level)");
-    expect(systemMessage?.content).toContain("Agent Memory (Project-Level)");
+    assert.notStrictEqual(systemMessage, undefined);
+    assert.ok(systemMessage?.content);
+    const combinedContent = String(systemMessage.content);
+    assert.ok(combinedContent.includes("User preference: concise responses"));
+    assert.ok(combinedContent.includes("Project context: TypeScript project"));
+    expect(combinedContent).toContain("Agent Memory (User-Level)");
+    expect(combinedContent).toContain("Agent Memory (Project-Level)");
   } finally {
     Object.defineProperty(os, "homedir", {
       value: originalHome,
@@ -230,13 +252,15 @@ test("agent memory middleware - handles additional .md files", async () => {
     });
 
     const systemMessage = result.prompt.find((m: any) => m.role === "system");
-    expect(systemMessage).toBeDefined();
-    expect(systemMessage?.content).toContain("Main memory");
-    expect(systemMessage?.content).toContain("decisions.md");
-    expect(systemMessage?.content).toContain("Decision log: Use React");
-    expect(systemMessage?.content).toContain("architecture.md");
-    expect(systemMessage?.content).toContain("Architecture: Microservices");
-    expect(systemMessage?.content).toContain("Additional Context Files");
+    assert.notStrictEqual(systemMessage, undefined);
+    assert.ok(systemMessage?.content);
+    const content = String(systemMessage.content);
+    assert.ok(content.includes("Main memory"));
+    assert.ok(content.includes("decisions.md"));
+    assert.ok(content.includes("Decision log: Use React"));
+    assert.ok(content.includes("architecture.md"));
+    assert.ok(content.includes("Architecture: Microservices"));
+    assert.ok(content.includes("Additional Context Files"));
   } finally {
     Object.defineProperty(os, "homedir", {
       value: originalHome,
@@ -277,7 +301,9 @@ test("agent memory middleware - caches memory after first load", async () => {
     });
 
     const systemMessage1 = result1.prompt.find((m: any) => m.role === "system");
-    expect(systemMessage1?.content).toContain("Original content");
+    assert.ok(systemMessage1?.content);
+    const content1 = String(systemMessage1.content);
+    assert.ok(content1.includes("Original content"));
 
     // Modify file after first load
     await fs.writeFile(
@@ -295,8 +321,10 @@ test("agent memory middleware - caches memory after first load", async () => {
     });
 
     const systemMessage2 = result2.prompt.find((m: any) => m.role === "system");
-    expect(systemMessage2?.content).toContain("Original content");
-    expect(systemMessage2?.content).not.toContain("Modified content");
+    assert.ok(systemMessage2?.content);
+    const content2 = String(systemMessage2.content);
+    assert.ok(content2.includes("Original content"));
+    assert.ok(!content2.includes("Modified content"));
   } finally {
     Object.defineProperty(os, "homedir", {
       value: originalHome,
@@ -305,7 +333,7 @@ test("agent memory middleware - caches memory after first load", async () => {
   }
 });
 
-test.skipIf(!hasApiKey)(
+skipIf(!hasApiKey)(
   "agent memory middleware - integrates with DeepAgent",
   async () => {
     const agentId = "integration-test-agent";
@@ -349,3 +377,4 @@ test.skipIf(!hasApiKey)(
   },
   { timeout: 30000 }
 );
+

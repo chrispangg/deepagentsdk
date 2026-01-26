@@ -4,7 +4,7 @@
  * This example demonstrates how to use advanced AI SDK v6 ToolLoopAgent features
  * through DeepAgent's new passthrough options.
  *
- * Run with: bun examples/with-tool-loop-passthrough.ts
+ * Run with: node --import tsx examples/with-tool-loop-passthrough.ts
  */
 
 import { createDeepAgent, type DeepAgentEvent, type BackendProtocol } from "../src";

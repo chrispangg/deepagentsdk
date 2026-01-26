@@ -1,8 +1,9 @@
-import { test, expect, beforeEach, afterEach } from "bun:test";
+import { test, beforeEach, afterEach } from "node:test";
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
 import os from "node:os";
 import { listSkills } from "@/skills/load.ts";
+import assert from "node:assert/strict";
 
 // Test directories
 const testUserDir = path.join(os.tmpdir(), `skills-agentid-test-${Date.now()}`);
@@ -52,10 +53,10 @@ This is a user skill.`
       workingDirectory: "/tmp", // Not a git repo
     });
 
-    expect(skills).toHaveLength(1);
-    expect(skills[0]?.name).toBe("user-skill");
-    expect(skills[0]?.description).toBe("A user-level skill");
-    expect(skills[0]?.source).toBe("user");
+    assert.strictEqual(skills.length, 1);
+    assert.strictEqual(skills[0]?.name, "user-skill");
+    assert.strictEqual(skills[0]?.description, "A user-level skill");
+    assert.strictEqual(skills[0]?.source, "user");
   } finally {
     Object.defineProperty(os, "homedir", {
       value: originalHome,
@@ -93,10 +94,10 @@ This is a project skill.`
       workingDirectory: testProjectDir,
     });
 
-    expect(skills).toHaveLength(1);
-    expect(skills[0]?.name).toBe("project-skill");
-    expect(skills[0]?.description).toBe("A project-level skill");
-    expect(skills[0]?.source).toBe("project");
+    assert.strictEqual(skills.length, 1);
+    assert.strictEqual(skills[0]?.name, "project-skill");
+    assert.strictEqual(skills[0]?.description, "A project-level skill");
+    assert.strictEqual(skills[0]?.source, "project");
   } finally {
     Object.defineProperty(os, "homedir", {
       value: originalHome,
@@ -147,10 +148,10 @@ description: Project version
     });
 
     // Should only have one skill (project overrides user)
-    expect(skills).toHaveLength(1);
-    expect(skills[0]?.name).toBe("shared-skill");
-    expect(skills[0]?.description).toBe("Project version");
-    expect(skills[0]?.source).toBe("project");
+    assert.strictEqual(skills.length, 1);
+    assert.strictEqual(skills[0]?.name, "shared-skill");
+    assert.strictEqual(skills[0]?.description, "Project version");
+    assert.strictEqual(skills[0]?.source, "project");
   } finally {
     Object.defineProperty(os, "homedir", {
       value: originalHome,
@@ -209,19 +210,19 @@ Content`
       workingDirectory: testProjectDir,
     });
 
-    expect(skills).toHaveLength(3);
+    assert.strictEqual(skills.length, 3);
 
     const skillNames = skills.map(s => s.name).sort();
-    expect(skillNames).toEqual([
+    assert.deepStrictEqual(skillNames, [
       "project-skill-1",
       "user-skill-1",
       "user-skill-2",
     ]);
 
     // Verify sources
-    expect(skills.find(s => s?.name === "user-skill-1")?.source).toBe("user");
-    expect(skills.find(s => s?.name === "user-skill-2")?.source).toBe("user");
-    expect(skills.find(s => s?.name === "project-skill-1")?.source).toBe("project");
+    assert.strictEqual(skills.find(s => s?.name === "user-skill-1")?.source, "user");
+    assert.strictEqual(skills.find(s => s?.name === "user-skill-2")?.source, "user");
+    assert.strictEqual(skills.find(s => s?.name === "project-skill-1")?.source, "project");
   } finally {
     Object.defineProperty(os, "homedir", {
       value: originalHome,
@@ -245,9 +246,10 @@ test("listSkills with agentId - shows deprecation warning when used with skillsD
     });
 
     // Should show deprecation warning
-    expect(warnings.length).toBeGreaterThan(0);
-    expect(warnings[0]).toContain("agentId parameter takes precedence");
-    expect(warnings[0]).toContain("deprecated");
+    assert.ok(warnings.length > 0);
+    assert.ok(warnings[0]);
+    assert.ok(warnings[0].includes("agentId parameter takes precedence"));
+    assert.ok(warnings[0].includes("deprecated"));
   } finally {
     console.warn = originalWarn;
   }
@@ -271,9 +273,9 @@ Content`
     projectSkillsDir: legacySkillsDir,
   });
 
-  expect(skills).toHaveLength(1);
-  expect(skills[0]?.name).toBe("legacy-skill");
-  expect(skills[0]?.source).toBe("project");
+  assert.strictEqual(skills.length, 1);
+  assert.strictEqual(skills[0]?.name, "legacy-skill");
+  assert.strictEqual(skills[0]?.source, "project");
 });
 
 test("listSkills with agentId - returns empty array when no skills exist", async () => {
@@ -291,7 +293,7 @@ test("listSkills with agentId - returns empty array when no skills exist", async
       workingDirectory: "/tmp", // Not a git repo
     });
 
-    expect(skills).toHaveLength(0);
+    assert.strictEqual(skills.length, 0);
   } finally {
     Object.defineProperty(os, "homedir", {
       value: originalHome,
@@ -299,3 +301,4 @@ test("listSkills with agentId - returns empty array when no skills exist", async
     });
   }
 });
+

@@ -7,13 +7,29 @@
  * Purpose: Prove that the documentation claiming middleware doesn't work is incorrect.
  */
 
-import { test, expect, beforeEach, afterEach } from "bun:test";
+import { test, beforeEach, afterEach } from "node:test";
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
 import os from "node:os";
 import { createAgentMemoryMiddleware } from "@/middleware/agent-memory.ts";
 import { createDeepAgent } from "@/agent.ts";
 import { createAnthropic } from '@ai-sdk/anthropic';
+import assert from "node:assert/strict";
+import { expect } from "expect";
+
+type TestCallback = () => void | Promise<void>;
+type TestOptions = { timeout?: number } & Record<string, unknown>;
+
+const skipIf = (condition: boolean) => {
+  const runner = condition ? test.skip : test;
+  return (name: string, fn: TestCallback, options?: TestOptions) => {
+    if (options) {
+      runner(name, options, fn);
+      return;
+    }
+    runner(name, fn);
+  };
+};
 
 const anthropic = createAnthropic({
   baseURL: 'https://api.anthropic.com/v1',
@@ -33,7 +49,7 @@ afterEach(async () => {
   await fs.rm(testUserDir, { recursive: true, force: true });
 });
 
-test.skipIf(!hasApiKey)(
+skipIf(!hasApiKey)(
   "VALIDATION: Memory middleware works with createDeepAgent",
   async () => {
     // 1. Setup: Create specific memory content that will affect behavior
@@ -88,7 +104,7 @@ You are a validation testing agent.
       console.log("==============================\n");
 
       // 6. Assert: If middleware works, the agent will follow the memory instruction
-      expect(result.text).toContain(uniqueMarker);
+      assert.ok(result.text.includes(uniqueMarker));
 
       // Additional validation: Check that memory wasn't just echoed, but understood
       expect(result.text.toLowerCase()).toMatch(/memory|loaded|see/);
@@ -104,7 +120,7 @@ You are a validation testing agent.
   { timeout: 30000 }
 );
 
-test.skipIf(!hasApiKey)(
+skipIf(!hasApiKey)(
   "VALIDATION: Memory middleware modifies system prompt before model sees it",
   async () => {
     // This test validates the mechanism: middleware intercepts and modifies params
@@ -153,8 +169,8 @@ Always start your responses with "Memory Loaded: " followed by a checkmark emoji
       console.log("=============================\n");
 
       // If middleware injects memory into system prompt, agent follows the format
-      expect(result.text).toMatch(/Memory Loaded:/i);
-      expect(result.text).toContain("✓");
+      assert.match(result.text, /Memory Loaded:/i);
+      assert.ok(result.text.includes("✓"));
 
     } finally {
       Object.defineProperty(os, "homedir", {
@@ -166,7 +182,7 @@ Always start your responses with "Memory Loaded: " followed by a checkmark emoji
   { timeout: 30000 }
 );
 
-test.skipIf(!hasApiKey)(
+skipIf(!hasApiKey)(
   "VALIDATION: Multiple memory files are loaded and combined",
   async () => {
     const agentId = "multi-file-agent";
@@ -214,8 +230,8 @@ test.skipIf(!hasApiKey)(
       console.log("==============================\n");
 
       // Both memory files should be loaded and influence the response
-      expect(result.text).toContain("ALPHA");
-      expect(result.text).toContain("BETA");
+      assert.ok(result.text.includes("ALPHA"));
+      assert.ok(result.text.includes("BETA"));
 
     } finally {
       Object.defineProperty(os, "homedir", {
@@ -227,7 +243,7 @@ test.skipIf(!hasApiKey)(
   { timeout: 30000 }
 );
 
-test.skipIf(!hasApiKey)(
+skipIf(!hasApiKey)(
   "CONTROL TEST: Agent without memory middleware doesn't follow memory instructions",
   async () => {
     // Control test: Prove that without middleware, memory isn't loaded
@@ -266,7 +282,7 @@ test.skipIf(!hasApiKey)(
       console.log("===========================\n");
 
       // Without middleware, the unique marker should NOT appear
-      expect(result.text).not.toContain(uniqueMarker);
+      assert.ok(!result.text.includes(uniqueMarker));
 
     } finally {
       Object.defineProperty(os, "homedir", {
@@ -277,3 +293,4 @@ test.skipIf(!hasApiKey)(
   },
   { timeout: 30000 }
 );
+

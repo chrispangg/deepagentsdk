@@ -42,18 +42,18 @@ This project reimplements LangChain's DeepAgents framework using Vercel AI SDK.
 
 ```bash
 # Run tests
-bun test
+npm test
 
 # Type checking
-bun run typecheck
+npm run typecheck
 
 # Run CLI (development)
-bun run cli
-bun run cli -- --model anthropic/claude-haiku-4-5-20251001 --dir ./workspace
+npm run cli
+npm run cli -- --model anthropic/claude-haiku-4-5-20251001 --dir ./workspace
 
 # Run examples
-bun examples/basic.ts
-bun examples/streaming.ts
+node --import tsx examples/basic.ts
+node --import tsx examples/streaming.ts
 ```
 
 ## Key Files
@@ -88,19 +88,21 @@ bun examples/streaming.ts
 
 ## Testing Patterns
 
-- Use `bun:test` (not Jest/Vitest)
-- Import: `import { test, expect } from "bun:test";`
+- Use Node's built-in test runner (`node:test`)
+- Import: `import { test } from "node:test";`
 - Co-locate tests with source files (`agent.test.ts`)
 - Test backends separately from agent logic
 
 ```typescript
-import { test, expect } from "bun:test";
+import { test } from "node:test";
+import assert from "node:assert/strict";
 import { createDeepAgent, StateBackend } from "deepagentsdk";
 
 test("agent behavior", async () => {
   const backend = new StateBackend();
   const agent = createDeepAgent({ model, backend });
   // ... test logic
+  assert.ok(agent);
 });
 ```
 
@@ -109,14 +111,14 @@ test("agent behavior", async () => {
 **Unit Tests** (`test/`):
 
 - Fast, isolated tests with no external dependencies
-- Run by default: `bun run test`
+- Run by default: `npm test`
 - Executed in CI on every push
 - Examples: `test/backends/utils.test.ts`, `test/approval.test.ts`
 
 **Integration Tests** (`test-integration/`):
 
 - Require API keys and external services (Anthropic, OpenAI)
-- Must be run explicitly: `bun run test:integration`
+- Must be run explicitly: `npm run test:integration`
 - Skipped in CI (manual or separate workflow only)
 - Examples: `test-integration/middleware.test.ts`, `test-integration/structured-output.test.ts`
 
@@ -124,13 +126,13 @@ test("agent behavior", async () => {
 
 ```bash
 # Unit tests (default, CI)
-bun run test
+npm test
 
 # Integration tests (requires ANTHROPIC_API_KEY)
-bun run test:integration
+npm run test:integration
 
 # All tests
-bun run test:all
+npm run test:all
 ```
 
 ## Publishing & Commit Messages
@@ -190,7 +192,7 @@ Workflow **ONLY** publishes when these files change:
 - `src/**` (source code)
 - `package.json`
 - `tsconfig.json`
-- `bun.lockb`
+- `package-lock.json`
 
 Workflow **SKIPS** publishing for:
 

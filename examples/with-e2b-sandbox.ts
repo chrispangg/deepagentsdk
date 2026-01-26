@@ -6,7 +6,7 @@
  *
  * The execute tool is AUTOMATICALLY added when using a SandboxBackendProtocol!
  *
- * Run with: E2B_API_KEY=your-key bun examples/with-e2b-sandbox.ts
+ * Run with: E2B_API_KEY=your-key node --import tsx examples/with-e2b-sandbox.ts
  *
  * Get your API key at: https://e2b.dev/docs
  *
@@ -133,7 +133,7 @@ You can:
 4. Run Python, Node.js, and other interpreted languages
 
 Available tools:
-- Node.js (node, npm, bun)
+- Node.js (node, npm)
 - Python (python3, pip)
 - Git
 
@@ -202,7 +202,7 @@ if (!process.env.E2B_API_KEY) {
   console.error("❌ E2B_API_KEY environment variable is required");
   console.error("\nGet your API key at: https://e2b.dev/docs");
   console.error("\nThen run:");
-  console.error("  E2B_API_KEY=your-key bun examples/with-e2b-sandbox.ts");
+  console.error("  E2B_API_KEY=your-key node --import tsx examples/with-e2b-sandbox.ts");
   process.exit(1);
 }
 

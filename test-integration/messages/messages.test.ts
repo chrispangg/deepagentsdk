@@ -9,12 +9,15 @@
  * messages parameters with proper priority logic: messages > prompt > checkpoint.
  */
 
-import { test, expect, describe, beforeEach } from "bun:test";
+import { test, describe, beforeEach } from "node:test";
 import { createDeepAgent, StateBackend, MemorySaver } from "@/index.ts";
 import type { ModelMessage } from "ai";
 import { tool } from "ai";
 import { z } from "zod";
 import { createAnthropic } from '@ai-sdk/anthropic';
+import assert from "node:assert/strict";
+import { isDeepStrictEqual } from "node:util";
+import { expect } from "expect";
 
 // ============================================================================
 // Test Setup & Configuration
@@ -26,8 +29,20 @@ const anthropic = createAnthropic({
 
 const hasApiKey = !!process.env.ANTHROPIC_API_KEY;
 
-// Use test.skip when no API key is available
-const testWithApiKey = hasApiKey ? test : test.skip;
+type TestCallback = () => void | Promise<void>;
+
+const testWithApiKey = (
+  name: string,
+  fn: TestCallback,
+  timeout?: number
+) => {
+  const runner = hasApiKey ? test : test.skip;
+  if (timeout !== undefined) {
+    runner(name, { timeout }, fn);
+    return;
+  }
+  runner(name, fn);
+};
 
 // Create a mock tool for testing
 const createMockTool = (name: string) =>
@@ -58,6 +73,14 @@ function createTestCheckpoint(
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   };
+}
+
+function assertContainsMessage(messages: ModelMessage[], expected: ModelMessage) {
+  assert.ok(messages.some(message => isDeepStrictEqual(message, expected)));
+}
+
+function assertNotContainsMessage(messages: ModelMessage[], expected: ModelMessage) {
+  assert.ok(!messages.some(message => isDeepStrictEqual(message, expected)));
 }
 
 // ============================================================================
@@ -99,10 +122,8 @@ describe("Phase 1: Core Message Handling", () => {
       }
 
       // Then: Messages should be included in final state
-      expect(doneEvent).not.toBeNull();
-      expect(doneEvent.messages).toContainEqual(
-        { role: "user", content: "Hello world" }
-      );
+      assert.notStrictEqual(doneEvent, null);
+      assertContainsMessage(doneEvent.messages, { role: "user", content: "Hello world" });
     }, 30000);
 
     testWithApiKey("handles multi-turn conversation with messages", async () => {
@@ -130,16 +151,16 @@ describe("Phase 1: Core Message Handling", () => {
       }
 
       // Then: Should respond with answer to last question
-      expect(textFound).toBe(true);
+      assert.strictEqual(textFound, true);
       // Messages should include original messages plus assistant response
-      expect(doneEvent.messages.length).toBeGreaterThan(messages.length);
+      assert.ok(doneEvent.messages.length > messages.length);
       // Original messages should be preserved
       messages.forEach(msg => {
-        expect(doneEvent.messages).toContainEqual(msg);
+        assertContainsMessage(doneEvent.messages, msg);
       });
     }, 30000);
 
-    test("accepts empty messages array", async () => {
+    test("accepts empty messages array", { timeout: 30000 }, async () => {
       // Given: Empty messages array
       const messages: ModelMessage[] = [];
 
@@ -156,9 +177,9 @@ describe("Phase 1: Core Message Handling", () => {
       }
 
       // Then: Should handle gracefully
-      expect(doneEvent).not.toBeNull();
-      expect(doneEvent.messages).toEqual([]);
-    }, 30000);
+      assert.notStrictEqual(doneEvent, null);
+      assert.deepStrictEqual(doneEvent.messages, []);
+    });
   });
 
   describe("Prompt Parameter (Backward Compatibility)", () => {
@@ -178,10 +199,8 @@ describe("Phase 1: Core Message Handling", () => {
       }
 
       // Then: Prompt should be converted to user message
-      expect(doneEvent).not.toBeNull();
-      expect(doneEvent.messages).toContainEqual(
-        { role: "user", content: "Hello from prompt" }
-      );
+      assert.notStrictEqual(doneEvent, null);
+      assertContainsMessage(doneEvent.messages, { role: "user", content: "Hello from prompt" });
     }, 30000);
 
     testWithApiKey("works with prompt and maxSteps", async () => {
@@ -206,10 +225,8 @@ describe("Phase 1: Core Message Handling", () => {
       }
 
       // Then: Should work with all options
-      expect(doneEvent).not.toBeNull();
-      expect(doneEvent.messages).toContainEqual(
-        { role: "user", content: "Create a todo item" }
-      );
+      assert.notStrictEqual(doneEvent, null);
+      assertContainsMessage(doneEvent.messages, { role: "user", content: "Create a todo item" });
     }, 30000);
   });
 
@@ -234,16 +251,12 @@ describe("Phase 1: Core Message Handling", () => {
       }
 
       // Then: Messages should take precedence
-      expect(doneEvent).not.toBeNull();
-      expect(doneEvent.messages).toContainEqual(
-        { role: "user", content: "This should be used" }
-      );
-      expect(doneEvent.messages).not.toContainEqual(
-        { role: "user", content: "This should be ignored" }
-      );
+      assert.notStrictEqual(doneEvent, null);
+      assertContainsMessage(doneEvent.messages, { role: "user", content: "This should be used" });
+      assertNotContainsMessage(doneEvent.messages, { role: "user", content: "This should be ignored" });
     }, 30000);
 
-    test("prompt is ignored when messages is provided even if empty", async () => {
+    test("prompt is ignored when messages is provided even if empty", { timeout: 30000 }, async () => {
       // Given: Empty messages but prompt has content
       const prompt = "Prompt content";
       const messages: ModelMessage[] = [];
@@ -261,12 +274,10 @@ describe("Phase 1: Core Message Handling", () => {
       }
 
       // Then: Empty messages should still take precedence
-      expect(doneEvent).not.toBeNull();
-      expect(doneEvent.messages).toEqual([]);
-      expect(doneEvent.messages).not.toContainEqual(
-        { role: "user", content: "Prompt content" }
-      );
-    }, 30000);
+      assert.notStrictEqual(doneEvent, null);
+      assert.deepStrictEqual(doneEvent.messages, []);
+      assertNotContainsMessage(doneEvent.messages, { role: "user", content: "Prompt content" });
+    });
   });
 
   describe("Checkpoint Integration", () => {
@@ -296,9 +307,9 @@ describe("Phase 1: Core Message Handling", () => {
       }
 
       // Then: Should load checkpoint messages
-      expect(doneEvent).not.toBeNull();
-      expect(doneEvent.messages.length).toBeGreaterThan(0);
-    }, 45000);
+      assert.notStrictEqual(doneEvent, null);
+      assert.ok(doneEvent.messages.length > 0);
+    });
 
     testWithApiKey("explicit messages replace checkpoint history", async () => {
       // Given: Existing checkpoint and new explicit messages
@@ -328,18 +339,14 @@ describe("Phase 1: Core Message Handling", () => {
       }
 
       // Then: Should use explicit messages, not checkpoint
-      expect(doneEvent).not.toBeNull();
-      expect(doneEvent.messages).toContainEqual(
-        { role: "user", content: "New explicit message" }
-      );
-      expect(doneEvent.messages).not.toContainEqual(
-        { role: "user", content: "Old checkpoint message" }
-      );
-    }, 45000);
+      assert.notStrictEqual(doneEvent, null);
+      assertContainsMessage(doneEvent.messages, { role: "user", content: "New explicit message" });
+      assertNotContainsMessage(doneEvent.messages, { role: "user", content: "Old checkpoint message" });
+    });
   });
 
   describe("Error Handling", () => {
-    test("handles neither prompt nor messages provided", async () => {
+    test("handles neither prompt nor messages provided", { timeout: 30000 }, async () => {
       // Given: No input parameters provided
       const options: any = {
         threadId: `test-error-${Date.now()}`,
@@ -348,14 +355,14 @@ describe("Phase 1: Core Message Handling", () => {
       // When: Attempting to stream without input
       // Then: Should handle gracefully (may error or use checkpoint)
       // Implementation-specific behavior expected
-      expect(async () => {
+      await assert.doesNotReject(async () => {
         for await (const event of agent.streamWithEvents(options)) {
           // Just consume events
         }
-      }).not.toThrow();
-    }, 30000);
+      });
+    });
 
-    test("preserves checkpoint when both inputs empty", async () => {
+    test("preserves checkpoint when both inputs empty", { timeout: 30000 }, async () => {
       // Given: Checkpoint exists but empty inputs provided
       const threadId = `test-preserve-${Date.now()}`;
 
@@ -380,8 +387,8 @@ describe("Phase 1: Core Message Handling", () => {
       }
 
       // Then: Should fallback to checkpoint or handle gracefully
-      expect(doneEvent).not.toBeNull();
-    }, 45000);
+      assert.notStrictEqual(doneEvent, null);
+    });
   });
 
   describe("Type Safety", () => {
@@ -393,15 +400,15 @@ describe("Phase 1: Core Message Handling", () => {
 
       // When: Streaming with typed messages
       // Then: Should compile and run without type errors
-      expect(async () => {
+      await assert.doesNotReject(async () => {
         for await (const event of agent.streamWithEvents({
           messages,
           threadId: `test-types-${Date.now()}`,
         })) {
           // Just consume events
         }
-      }).not.toThrow();
-    }, 30000);
+      });
+    });
 
     testWithApiKey("handles messages with complex content structures", async () => {
       // Given: Messages with potential complex content (future-proofing)
@@ -421,10 +428,8 @@ describe("Phase 1: Core Message Handling", () => {
       }
 
       // Then: Should handle without errors
-      expect(doneEvent).not.toBeNull();
-      expect(doneEvent.messages).toContainEqual(
-        { role: "user", content: "Complex message test" }
-      );
+      assert.notStrictEqual(doneEvent, null);
+      assertContainsMessage(doneEvent.messages, { role: "user", content: "Complex message test" });
     }, 30000);
   });
 });
@@ -479,9 +484,9 @@ describe("Phase 2: Integration & Event Handling", () => {
     }
 
     // Then: Should maintain expected event flow
-    expect(events.length).toBeGreaterThan(0);
-    expect(events).toContain("done");
-    expect(textGenerated).toBe(true);
+    assert.ok(events.length > 0);
+    assert.ok(events.includes("done"));
+    assert.strictEqual(textGenerated, true);
   }, 30000);
 
   testWithApiKey("preserves thread ID consistency with messages", async () => {
@@ -504,7 +509,7 @@ describe("Phase 2: Integration & Event Handling", () => {
     }
 
     // Then: Thread ID should be preserved in events
-    expect(checkpointThreadId).toBe(threadId);
+    assert.strictEqual(checkpointThreadId, threadId);
   }, 30000);
 
   testWithApiKey("handles large conversation contexts efficiently", async () => {
@@ -534,10 +539,10 @@ describe("Phase 2: Integration & Event Handling", () => {
     const duration = Date.now() - startTime;
 
     // Then: Should complete within reasonable time
-    expect(duration).toBeLessThan(60000); // 60 seconds max
+    assert.ok(duration < 60000); // 60 seconds max
     expect(doneEvent).not.toBeNull();
     // Should include all original messages plus assistant response
-    expect(doneEvent.messages.length).toBeGreaterThan(messages.length);
+    assert.ok(doneEvent.messages.length > messages.length);
   }, 60000);
 });
 
@@ -573,7 +578,7 @@ describe("Phase 3: Migration & Deprecation", () => {
     if (typeof console !== 'undefined') {
       const originalWarn = console.warn;
       consoleWarnSpy = {
-        mockRestore: () => { /* No-op for bun */ },
+        mockRestore: () => { /* No-op for node */ },
         mock: { calls: [] }
       };
       console.warn = (...args: any[]) => {
@@ -676,10 +681,10 @@ describe("Phase 3: Migration & Deprecation", () => {
     }
 
     // Then: All scenarios should work
-    expect(results.length).toBe(3);
+    assert.strictEqual(results.length, 3);
     results.forEach((result, index) => {
       expect(result).not.toBeNull();
-      expect(result.messages).toBeDefined();
+      assert.notStrictEqual(result.messages, undefined);
     });
 
     // Verify priority logic in mixed scenario

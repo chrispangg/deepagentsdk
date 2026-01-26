@@ -1,7 +1,7 @@
 /**
  * Example using subagents for task delegation.
  *
- * Run with: bun examples/with-subagents.ts
+ * Run with: node --import tsx examples/with-subagents.ts
  *
  * Requires ANTHROPIC_API_KEY environment variable.
  */

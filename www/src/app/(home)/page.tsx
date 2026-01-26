@@ -42,7 +42,7 @@ const stats = [
 
 const specs = [
   { label: 'Framework', value: 'Vercel AI SDK v6' },
-  { label: 'Runtime', value: 'Bun' },
+  { label: 'Runtime', value: 'Node.js' },
   { label: 'Language', value: 'TypeScript 5.9+' },
   { label: 'Model Providers', value: 'Anthropic, OpenAI, Azure, etc.' },
   {

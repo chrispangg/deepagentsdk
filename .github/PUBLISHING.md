@@ -63,7 +63,7 @@ The workflow (`publish.yml`) automatically:
    - `src/**` (source code)
    - `package.json`
    - `tsconfig.json`
-   - `bun.lockb`
+   - `package-lock.json`
 
 2. **Skips documentation changes** - Does NOT trigger for:
    - `examples/**` (example files)
@@ -74,8 +74,8 @@ The workflow (`publish.yml`) automatically:
    - `docs/**` (documentation)
 
 3. **Runs quality checks**:
-   - Type checking (`bun run typecheck`)
-   - Unit tests (`bun test`)
+   - Type checking (`npm run typecheck`)
+   - Unit tests (`npm test`)
 
 4. **Determines version bump** by analyzing ALL commits since last version tag:
    - **Major** (1.0.0 → 2.0.0): ANY commit contains "breaking" or "major"
@@ -150,8 +150,8 @@ git checkout main
 git pull
 
 # Run quality checks
-bun run typecheck
-bun test
+npm run typecheck
+npm test
 
 # Bump version (major, minor, or patch)
 npm version patch -m "chore: bump version to %s"

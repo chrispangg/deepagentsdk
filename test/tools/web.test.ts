@@ -1,10 +1,11 @@
 /**
  * Unit tests for web tools (web_search, http_request, fetch_url).
  */
-import { test, expect, describe, beforeEach, afterEach, mock } from "bun:test";
+import { test, describe, beforeEach, afterEach, mock } from "node:test";
 import { createWebTools } from "@/tools/web.ts";
 import type { DeepAgentState, DeepAgentEvent } from "@/types.ts";
 import { StateBackend } from "@/backends/state.ts";
+import assert from "node:assert/strict";
 
 // Store original fetch to restore after tests
 const originalFetch = globalThis.fetch;
@@ -36,7 +37,7 @@ function createEventCollector() {
  * Mock fetch to return a successful JSON response.
  */
 function mockFetchJsonResponse(data: any, status = 200) {
-  (globalThis.fetch as any) = mock(async (url: any, options: any) => {
+  (globalThis.fetch as any) = mock.fn(async (url: any, options: any) => {
     // Simulate abort signal check
     if (options?.signal?.aborted) {
       throw new Error("Request aborted");
@@ -52,7 +53,7 @@ function mockFetchJsonResponse(data: any, status = 200) {
  * Mock fetch to return HTML content.
  */
 function mockFetchHtmlResponse(html: string, status = 200) {
-  (globalThis.fetch as any) = mock(async (url: any, options: any) => {
+  (globalThis.fetch as any) = mock.fn(async (url: any, options: any) => {
     // Simulate abort signal check
     if (options?.signal?.aborted) {
       throw new Error("Request aborted");
@@ -68,7 +69,7 @@ function mockFetchHtmlResponse(html: string, status = 200) {
  * Mock fetch to return an HTTP error.
  */
 function mockFetchErrorResponse(status: number, statusText: string) {
-  (globalThis.fetch as any) = mock(async (url: any, options: any) => {
+  (globalThis.fetch as any) = mock.fn(async (url: any, options: any) => {
     // Simulate abort signal check
     if (options?.signal?.aborted) {
       throw new Error("Request aborted");
@@ -84,7 +85,7 @@ function mockFetchErrorResponse(status: number, statusText: string) {
  * Mock fetch to timeout.
  */
 function mockFetchTimeout() {
-  (globalThis.fetch as any) = mock(async () => {
+  (globalThis.fetch as any) = mock.fn(async () => {
     await new Promise((resolve) => setTimeout(resolve, 100));
     const error = new Error("Request timed out");
     error.name = "TimeoutError";
@@ -127,7 +128,7 @@ describe("createWebTools - Tool Creation", () => {
     console.warn = () => {};
 
     const tools = createWebTools(mockState, { tavilyApiKey: undefined });
-    expect(Object.keys(tools)).toHaveLength(0);
+    assert.strictEqual(Object.keys(tools).length, 0);
 
     console.warn = originalWarn;
     process.env.TAVILY_API_KEY = originalKey;
@@ -139,15 +140,16 @@ describe("createWebTools - Tool Creation", () => {
     delete process.env.TAVILY_API_KEY;
 
     const originalWarn = console.warn;
-    const warnMock = mock((...args: any[]) => {});
+    const warnMock = mock.fn((...args: any[]) => {});
     (console as any).warn = warnMock;
 
     createWebTools(mockState, { tavilyApiKey: undefined });
 
-    expect(warnMock).toHaveBeenCalled();
-    const firstCall = warnMock.mock.calls[0];
-    if (firstCall && firstCall.length > 0) {
-      expect(firstCall[0]).toContain("Tavily API key not found");
+    const calls = warnMock.mock.calls as unknown as Array<{ arguments: unknown[] }>;
+    assert.ok(calls.length > 0);
+    const firstCallArgs = calls[0]?.arguments ?? [];
+    if (firstCallArgs.length > 0) {
+      assert.ok(String(firstCallArgs[0]).includes("Tavily API key not found"));
     }
 
     console.warn = originalWarn;
@@ -157,43 +159,43 @@ describe("createWebTools - Tool Creation", () => {
   test("returns all three tools when API key provided", () => {
     const tools = createWebTools(mockState, { tavilyApiKey: "tvly-test-key" });
 
-    expect(Object.keys(tools)).toHaveLength(3);
-    expect("web_search" in tools).toBe(true);
-    expect("http_request" in tools).toBe(true);
-    expect("fetch_url" in tools).toBe(true);
+    assert.strictEqual(Object.keys(tools).length, 3);
+    assert.strictEqual("web_search" in tools, true);
+    assert.strictEqual("http_request" in tools, true);
+    assert.strictEqual("fetch_url" in tools, true);
   });
 
   test("tools have correct input schemas", () => {
     const tools = createWebTools(mockState, { tavilyApiKey: "tvly-test-key" });
 
     // Check web_search schema - validate by parsing test input
-    expect(tools.web_search.inputSchema).toBeDefined();
+    assert.notStrictEqual(tools.web_search.inputSchema, undefined);
     const webSearchParse = tools.web_search.inputSchema.safeParse({
       query: "test query",
       max_results: 5,
       topic: "general",
       include_raw_content: false,
     });
-    expect(webSearchParse.success).toBe(true);
+    assert.strictEqual(webSearchParse.success, true);
 
     // Check http_request schema - validate by parsing test input
-    expect(tools.http_request.inputSchema).toBeDefined();
+    assert.notStrictEqual(tools.http_request.inputSchema, undefined);
     const httpRequestParse = tools.http_request.inputSchema.safeParse({
       url: "https://example.com",
       method: "GET",
       headers: {},
       timeout: 30,
     });
-    expect(httpRequestParse.success).toBe(true);
+    assert.strictEqual(httpRequestParse.success, true);
 
     // Check fetch_url schema - validate by parsing test input
-    expect(tools.fetch_url.inputSchema).toBeDefined();
+    assert.notStrictEqual(tools.fetch_url.inputSchema, undefined);
     const fetchUrlParse = tools.fetch_url.inputSchema.safeParse({
       url: "https://example.com",
       timeout: 30,
       extract_article: true,
     });
-    expect(fetchUrlParse.success).toBe(true);
+    assert.strictEqual(fetchUrlParse.success, true);
   });
 });
 
@@ -222,15 +224,15 @@ describe("http_request tool", () => {
       { toolCallId: "test-1" }
     );
 
-    expect(result).toContain("Status: 200");
-    expect(result).toContain("success");
-    expect(result).toContain("Success: true");
+    assert.ok(result.includes("Status: 200"));
+    assert.ok(result.includes("success"));
+    assert.ok(result.includes("Success: true"));
   });
 
   test("executes POST request with JSON body", async () => {
     let capturedRequest: any = null;
 
-    (globalThis.fetch as any) = mock(async (url: any, options: any) => {
+    (globalThis.fetch as any) = mock.fn(async (url: any, options: any) => {
       capturedRequest = { url, options };
       return new Response(JSON.stringify({ id: 1 }), {
         status: 201,
@@ -249,16 +251,16 @@ describe("http_request tool", () => {
       { toolCallId: "test-2" }
     );
 
-    expect(result).toContain("Status: 201");
-    expect(capturedRequest).not.toBeNull();
-    expect(capturedRequest.options.method).toBe("POST");
-    expect(capturedRequest.options.body).toContain("test");
+    assert.ok(result.includes("Status: 201"));
+    assert.notStrictEqual(capturedRequest, null);
+    assert.strictEqual(capturedRequest.options.method, "POST");
+    assert.ok(capturedRequest.options.body.includes("test"));
   });
 
   test("adds query parameters to URL", async () => {
     let capturedUrl: string | null = null;
 
-    (globalThis.fetch as any) = mock(async (url: any, options: any) => {
+    (globalThis.fetch as any) = mock.fn(async (url: any, options: any) => {
       capturedUrl = typeof url === "string" ? url : url.toString();
       return new Response(JSON.stringify({ data: [] }), {
         status: 200,
@@ -277,9 +279,9 @@ describe("http_request tool", () => {
       { toolCallId: "test-3" }
     );
 
-    expect(capturedUrl).not.toBeNull();
-    expect(capturedUrl!).toContain("q=test");
-    expect(capturedUrl!).toContain("limit=10");
+    assert.notStrictEqual(capturedUrl, null);
+    assert.ok(capturedUrl!.includes("q=test"));
+    assert.ok(capturedUrl!.includes("limit=10"));
   });
 
   test("handles HTTP error status codes", async () => {
@@ -291,13 +293,13 @@ describe("http_request tool", () => {
       { toolCallId: "test-4" }
     );
 
-    expect(result).toContain("Status: 404");
-    expect(result).toContain("Success: false");
+    assert.ok(result.includes("Status: 404"));
+    assert.ok(result.includes("Success: false"));
   });
 
   test("handles timeout errors", async () => {
     // Mock fetch to throw timeout error
-    (globalThis.fetch as any) = mock(async () => {
+    (globalThis.fetch as any) = mock.fn(async () => {
       const error: any = new Error("Request timed out after 1 seconds");
       error.name = "TimeoutError";
       throw error;
@@ -312,7 +314,7 @@ describe("http_request tool", () => {
       { toolCallId: "test-5" }
     );
 
-    expect(result).toContain("timed out");
+    assert.ok(result.includes("timed out"));
   });
 
   test("parses JSON responses correctly", async () => {
@@ -324,13 +326,13 @@ describe("http_request tool", () => {
       { toolCallId: "test-6" }
     );
 
-    expect(result).toContain('"id": 42');
-    expect(result).toContain('"name": "Test Item"');
-    expect(result).toContain('"active": true');
+    assert.ok(result.includes('"id": 42'));
+    assert.ok(result.includes('"name": "Test Item"'));
+    assert.ok(result.includes('"active": true'));
   });
 
   test("returns plain text for non-JSON responses", async () => {
-    (globalThis.fetch as any) = mock(async () => {
+    (globalThis.fetch as any) = mock.fn(async () => {
       return new Response("<html><body>Hello</body></html>", {
         status: 200,
         headers: { "Content-Type": "text/html" },
@@ -343,8 +345,8 @@ describe("http_request tool", () => {
       { toolCallId: "test-7" }
     );
 
-    expect(result).toContain("<html>");
-    expect(result).toContain("Hello");
+    assert.ok(result.includes("<html>"));
+    assert.ok(result.includes("Hello"));
   });
 
   test("emits http-request-start and http-request-finish events", async () => {
@@ -364,16 +366,16 @@ describe("http_request tool", () => {
     const startEvent = events.find((e) => e.type === "http-request-start");
     const finishEvent = events.find((e) => e.type === "http-request-finish");
 
-    expect(startEvent).toBeDefined();
-    expect(finishEvent).toBeDefined();
+    assert.notStrictEqual(startEvent, undefined);
+    assert.notStrictEqual(finishEvent, undefined);
 
     if (startEvent && startEvent.type === "http-request-start") {
-      expect(startEvent.url).toContain("api.example.com");
-      expect(startEvent.method).toBe("GET");
+      assert.ok(startEvent.url.includes("api.example.com"));
+      assert.strictEqual(startEvent.method, "GET");
     }
 
     if (finishEvent && finishEvent.type === "http-request-finish") {
-      expect(finishEvent.statusCode).toBe(200);
+      assert.strictEqual(finishEvent.statusCode, 200);
     }
   });
 });
@@ -406,10 +408,10 @@ describe("fetch_url tool", () => {
     );
 
     // Should contain markdown-formatted heading
-    expect(result).toContain("Test Title");
-    expect(result).toContain("Test content paragraph");
+    assert.ok(result.includes("Test Title"));
+    assert.ok(result.includes("Test content paragraph"));
     // Markdown uses # for headings
-    expect(result).toMatch(/^#/m);
+    assert.match(result, /^#/m);
   });
 
   test("extracts article content with Readability", async () => {
@@ -434,8 +436,8 @@ describe("fetch_url tool", () => {
       { toolCallId: "test-10" }
     );
 
-    expect(result).toContain("Main Article Title");
-    expect(result).toContain("main article content");
+    assert.ok(result.includes("Main Article Title"));
+    assert.ok(result.includes("main article content"));
   });
 
   test("handles 404 errors gracefully", async () => {
@@ -447,13 +449,13 @@ describe("fetch_url tool", () => {
       { toolCallId: "test-11" }
     );
 
-    expect(result).toContain("404");
-    expect(result).toContain("Not Found");
+    assert.ok(result.includes("404"));
+    assert.ok(result.includes("Not Found"));
   });
 
   test("handles timeout errors", async () => {
     // Mock fetch to throw timeout error
-    (globalThis.fetch as any) = mock(async () => {
+    (globalThis.fetch as any) = mock.fn(async () => {
       const error: any = new Error("Request timed out after 1 seconds");
       error.name = "TimeoutError";
       throw error;
@@ -468,7 +470,7 @@ describe("fetch_url tool", () => {
       { toolCallId: "test-12" }
     );
 
-    expect(result).toContain("timed out");
+    assert.ok(result.includes("timed out"));
   });
 
   test("falls back to full HTML when Readability fails", async () => {
@@ -482,8 +484,8 @@ describe("fetch_url tool", () => {
     );
 
     // Should still return content (fallback to full HTML conversion)
-    expect(result).toContain("Simple content");
-    expect(typeof result).toBe("string");
+    assert.ok(result.includes("Simple content"));
+    assert.strictEqual(typeof result, "string");
   });
 
   test("emits fetch-url-start and fetch-url-finish events", async () => {
@@ -503,15 +505,15 @@ describe("fetch_url tool", () => {
     const startEvent = events.find((e) => e.type === "fetch-url-start");
     const finishEvent = events.find((e) => e.type === "fetch-url-finish");
 
-    expect(startEvent).toBeDefined();
-    expect(finishEvent).toBeDefined();
+    assert.notStrictEqual(startEvent, undefined);
+    assert.notStrictEqual(finishEvent, undefined);
 
     if (startEvent && startEvent.type === "fetch-url-start") {
-      expect(startEvent.url).toContain("example.com");
+      assert.ok(startEvent.url.includes("example.com"));
     }
 
     if (finishEvent && finishEvent.type === "fetch-url-finish") {
-      expect(finishEvent.success).toBe(true);
+      assert.strictEqual(finishEvent.success, true);
     }
   });
 
@@ -531,9 +533,9 @@ describe("fetch_url tool", () => {
 
     const finishEvent = events.find((e) => e.type === "fetch-url-finish");
 
-    expect(finishEvent).toBeDefined();
+    assert.notStrictEqual(finishEvent, undefined);
     if (finishEvent && finishEvent.type === "fetch-url-finish") {
-      expect(finishEvent.success).toBe(false);
+      assert.strictEqual(finishEvent.success, false);
     }
   });
 });
@@ -577,12 +579,12 @@ describe("Result Eviction", () => {
     );
 
     // Result should be a pointer message
-    expect(result).toContain("saved to");
-    expect(result).toContain("/large_tool_results/");
+    assert.ok(result.includes("saved to"));
+    assert.ok(result.includes("/large_tool_results/"));
 
     // Check that content was written to backend
     const files = backend.lsInfo("/large_tool_results");
-    expect(files.length).toBeGreaterThan(0);
+    assert.ok(files.length > 0);
   });
 
   test("small results are not evicted", async () => {
@@ -600,12 +602,12 @@ describe("Result Eviction", () => {
     );
 
     // Result should contain actual content (not evicted)
-    expect(result).toContain("Small content");
-    expect(result).not.toContain("saved to");
+    assert.ok(result.includes("Small content"));
+    assert.ok(!result.includes("saved to"));
 
     // No files should be created in eviction directory
     const files = backend.lsInfo("/large_tool_results");
-    expect(files.length).toBe(0);
+    assert.strictEqual(files.length, 0);
   });
 });
 
@@ -618,8 +620,8 @@ describe("web_search tool", () => {
     const mockState = createMockState();
     const tools = createWebTools(mockState, { tavilyApiKey: "tvly-test-key" });
 
-    expect(tools.web_search).toBeDefined();
-    expect(tools.web_search.description).toContain("Search the web");
+    assert.notStrictEqual(tools.web_search, undefined);
+    assert.ok(tools.web_search.description.includes("Search the web"));
   });
 
   // Note: Full integration tests for web_search would require mocking the
@@ -645,9 +647,9 @@ describe("Integration", () => {
     const mockState = createMockState();
     const tools = createWebTools(mockState, { tavilyApiKey: "tvly-test-key" });
 
-    expect(tools.web_search.description).toContain("Search the web");
-    expect(tools.http_request.description).toContain("HTTP requests");
-    expect(tools.fetch_url.description).toContain("Fetch web page");
+    assert.ok(tools.web_search.description.includes("Search the web"));
+    assert.ok(tools.http_request.description.includes("HTTP requests"));
+    assert.ok(tools.fetch_url.description.includes("Fetch web page"));
   });
 
   test("tools use default timeout when not specified", async () => {
@@ -665,6 +667,7 @@ describe("Integration", () => {
       { toolCallId: "test-18" }
     );
 
-    expect(result).toContain("Status: 200");
+    assert.ok(result.includes("Status: 200"));
   });
 });
+

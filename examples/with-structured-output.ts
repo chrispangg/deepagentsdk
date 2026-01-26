@@ -4,7 +4,7 @@
  * Demonstrates using structured output with Deep Agent.
  * The agent returns typed, validated objects alongside text responses.
  *
- * Run with: bun examples/with-structured-output.ts
+ * Run with: node --import tsx examples/with-structured-output.ts
  * Requires: OPENAI_API_KEY environment variable in .env file
  */
 

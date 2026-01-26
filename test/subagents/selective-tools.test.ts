@@ -9,7 +9,7 @@
  * Test coverage: Individual builtin tool selection for subagents
  */
 
-import { test, expect, describe, beforeEach, afterEach, mock } from "bun:test";
+import { test, describe, beforeEach, afterEach, mock } from "node:test";
 import { createDeepAgent } from "@/agent";
 import { createSubagentTool } from "@/tools/subagent";
 import type { DeepAgentState, SubAgent } from "@/types";
@@ -17,6 +17,7 @@ import type { ToolSet } from "ai";
 import { tool } from "ai";
 import { z } from "zod";
 import { StateBackend } from "@/backends/state";
+import assert from "node:assert/strict";
 import {
   web_search,
   http_request,
@@ -88,39 +89,39 @@ function createMockBackend(state?: DeepAgentState) {
 describe("Individual Builtin Tool Exports", () => {
   test("exports individual web tools", async () => {
     // Given: Individual web tools are imported
-    expect(web_search).toBeDefined();
-    expect(http_request).toBeDefined();
-    expect(fetch_url).toBeDefined();
+    assert.notStrictEqual(web_search, undefined);
+    assert.notStrictEqual(http_request, undefined);
+    assert.notStrictEqual(fetch_url, undefined);
 
     // Then: Each tool should be a function (tool creator)
-    expect(typeof web_search).toBe("function");
-    expect(typeof http_request).toBe("function");
-    expect(typeof fetch_url).toBe("function");
+    assert.strictEqual(typeof web_search, "function");
+    assert.strictEqual(typeof http_request, "function");
+    assert.strictEqual(typeof fetch_url, "function");
   });
 
   test("exports individual filesystem tools", async () => {
     // Given: Individual filesystem tools are imported
-    expect(ls).toBeDefined();
-    expect(read_file).toBeDefined();
-    expect(write_file).toBeDefined();
-    expect(edit_file).toBeDefined();
-    expect(glob).toBeDefined();
-    expect(grep).toBeDefined();
+    assert.notStrictEqual(ls, undefined);
+    assert.notStrictEqual(read_file, undefined);
+    assert.notStrictEqual(write_file, undefined);
+    assert.notStrictEqual(edit_file, undefined);
+    assert.notStrictEqual(glob, undefined);
+    assert.notStrictEqual(grep, undefined);
 
     // Then: Each tool should be a function (tool creator)
-    expect(typeof ls).toBe("function");
-    expect(typeof read_file).toBe("function");
-    expect(typeof write_file).toBe("function");
+    assert.strictEqual(typeof ls, "function");
+    assert.strictEqual(typeof read_file, "function");
+    assert.strictEqual(typeof write_file, "function");
   });
 
   test("exports individual utility tools", async () => {
     // Given: Individual utility tools are imported
-    expect(write_todos).toBeDefined();
-    expect(execute).toBeDefined();
+    assert.notStrictEqual(write_todos, undefined);
+    assert.notStrictEqual(execute, undefined);
 
     // Then: Each tool should be a function (tool creator)
-    expect(typeof write_todos).toBe("function");
-    expect(typeof execute).toBe("function");
+    assert.strictEqual(typeof write_todos, "function");
+    assert.strictEqual(typeof execute, "function");
   });
 });
 
@@ -160,13 +161,13 @@ describe("Subagent Tool Configuration", () => {
     });
 
     // Then: Agent should be created successfully
-    expect(agent).toBeDefined();
+    assert.notStrictEqual(agent, undefined);
 
     // And: Subagent should be registered
     const agentWithSubagents = agent as any;
-    expect(agentWithSubagents.subagentOptions).toBeDefined();
-    expect(agentWithSubagents.subagentOptions.subagents).toBeDefined();
-    expect(Array.isArray(agentWithSubagents.subagentOptions.subagents)).toBe(true);
+    assert.notStrictEqual(agentWithSubagents.subagentOptions, undefined);
+    assert.notStrictEqual(agentWithSubagents.subagentOptions.subagents, undefined);
+    assert.ok(Array.isArray(agentWithSubagents.subagentOptions.subagents));
   });
 
   test("configures subagent with multiple filesystem tools", async () => {
@@ -188,7 +189,7 @@ describe("Subagent Tool Configuration", () => {
     });
 
     // Then: Agent should be created successfully
-    expect(agent).toBeDefined();
+    assert.notStrictEqual(agent, undefined);
   });
 
   test("configures subagent with mixed tool types", async () => {
@@ -211,7 +212,7 @@ describe("Subagent Tool Configuration", () => {
     });
 
     // Then: Agent should be created successfully
-    expect(agent).toBeDefined();
+    assert.notStrictEqual(agent, undefined);
   });
 
   test("configures multiple subagents with different tool sets", async () => {
@@ -245,10 +246,10 @@ describe("Subagent Tool Configuration", () => {
     });
 
     // Then: Agent should be created with all subagents
-    expect(agent).toBeDefined();
+    assert.notStrictEqual(agent, undefined);
     const agentWithSubagents = agent as any;
-    expect(agentWithSubagents.subagentOptions.subagents).toBeDefined();
-    expect(agentWithSubagents.subagentOptions.subagents.length).toBe(3);
+    assert.notStrictEqual(agentWithSubagents.subagentOptions.subagents, undefined);
+    assert.strictEqual(agentWithSubagents.subagentOptions.subagents.length, 3);
   });
 });
 
@@ -276,7 +277,7 @@ describe("Default Behavior and Backward Compatibility", () => {
     });
 
     // Then: Should create agent without errors
-    expect(agent).toBeDefined();
+    assert.notStrictEqual(agent, undefined);
   });
 
   test("accepts legacy ToolSet format for tools", async () => {
@@ -303,7 +304,7 @@ describe("Default Behavior and Backward Compatibility", () => {
     });
 
     // Then: Should create agent without errors
-    expect(agent).toBeDefined();
+    assert.notStrictEqual(agent, undefined);
   });
 
   test("accepts empty tools array", async () => {
@@ -325,7 +326,7 @@ describe("Default Behavior and Backward Compatibility", () => {
     });
 
     // Then: Should create agent without errors
-    expect(agent).toBeDefined();
+    assert.notStrictEqual(agent, undefined);
   });
 });
 
@@ -353,7 +354,7 @@ describe("Error Handling and Edge Cases", () => {
     });
 
     // Then: Should create agent without errors
-    expect(agent).toBeDefined();
+    assert.notStrictEqual(agent, undefined);
   });
 
   test("handles undefined tools gracefully", async () => {
@@ -375,7 +376,7 @@ describe("Error Handling and Edge Cases", () => {
     });
 
     // Then: Should create agent without errors
-    expect(agent).toBeDefined();
+    assert.notStrictEqual(agent, undefined);
   });
 
   test("handles invalid tool objects in array", async () => {
@@ -394,7 +395,7 @@ describe("Error Handling and Edge Cases", () => {
     // When/Then: Should handle gracefully (implementation dependent)
     // This test documents the expected behavior - actual error handling
     // may vary based on implementation
-    expect(() => {
+    assert.doesNotThrow(() => {
       const agent = createDeepAgent({
         model: mockModel as any,
         backend: createMockBackend(),
@@ -403,8 +404,8 @@ describe("Error Handling and Edge Cases", () => {
         ]
       });
       // Either creates successfully or throws meaningful error
-      expect(agent).toBeDefined();
-    }).not.toThrow();
+      assert.notStrictEqual(agent, undefined);
+    });
   });
 });
 
@@ -416,8 +417,8 @@ describe("Type Safety and TypeScript Integration", () => {
   test("provides correct TypeScript types for individual tools", () => {
     // Given: Imported individual tools
     // Then: TypeScript should infer correct types (functions, not objects)
-    expect(typeof web_search).toBe("function");
-    expect(web_search.name).toBe("createWebSearchTool");
+    assert.strictEqual(typeof web_search, "function");
+    assert.strictEqual(web_search.name, "createWebSearchTool");
   });
 
   test("allows tool arrays in subagent configuration", () => {
@@ -429,8 +430,8 @@ describe("Type Safety and TypeScript Integration", () => {
       tools: [web_search, read_file] // TypeScript should accept this
     };
 
-    expect(subagent.tools).toBeDefined();
-    expect(Array.isArray(subagent.tools)).toBe(true);
+    assert.notStrictEqual(subagent.tools, undefined);
+    assert.ok(Array.isArray(subagent.tools));
   });
 
   test("maintains type safety with mixed tool formats", () => {
@@ -446,7 +447,7 @@ describe("Type Safety and TypeScript Integration", () => {
       tools: [web_search, customTools] // Should be type-safe
     };
 
-    expect(subagent.tools).toBeDefined();
+    assert.notStrictEqual(subagent.tools, undefined);
   });
 });
 
@@ -484,7 +485,7 @@ describe("Integration with Existing Features", () => {
     });
 
     // Then: Should create agent with all configurations
-    expect(agent).toBeDefined();
+    assert.notStrictEqual(agent, undefined);
   });
 
   test("works with structured output", async () => {
@@ -515,7 +516,7 @@ describe("Integration with Existing Features", () => {
     });
 
     // Then: Should create agent with structured output
-    expect(agent).toBeDefined();
+    assert.notStrictEqual(agent, undefined);
   });
 
   test("works with interrupt configuration", async () => {
@@ -541,6 +542,6 @@ describe("Integration with Existing Features", () => {
     });
 
     // Then: Should create agent with interrupt configuration
-    expect(agent).toBeDefined();
+    assert.notStrictEqual(agent, undefined);
   });
 });

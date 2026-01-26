@@ -2,7 +2,8 @@
  * Tests for src/utils/summarization.ts
  */
 
-import { test, describe, expect, mock } from "bun:test";
+import { test, describe, mock } from "node:test";
+import assert from "node:assert/strict";
 import type { LanguageModel } from "ai";
 import type { ModelMessage } from "@/types";
 import {
@@ -14,7 +15,7 @@ import {
 } from "@/utils/summarization";
 
 // Mock the generateText function from AI SDK
-const mockGenerateText = mock(() =>
+const mockGenerateText = mock.fn(() =>
   Promise.resolve({
     text: "Summary: Conversation about testing",
     usage: { promptTokens: 100, completionTokens: 20 },
@@ -35,8 +36,8 @@ describe("utils/summarization", () => {
         { role: "assistant", content: "Hi there!" },
       ];
       const result = estimateMessagesTokens(messages);
-      expect(result).toBeGreaterThan(0);
-      expect(typeof result).toBe("number");
+      assert.ok(result > 0);
+      assert.strictEqual(typeof result, "number");
     });
 
     test("should handle array content messages", () => {
@@ -50,7 +51,7 @@ describe("utils/summarization", () => {
         },
       ];
       const result = estimateMessagesTokens(messages);
-      expect(result).toBeGreaterThan(0);
+      assert.ok(result > 0);
     });
 
     test("should handle mixed content types", () => {
@@ -69,7 +70,7 @@ describe("utils/summarization", () => {
         },
       ];
       const result = estimateMessagesTokens(messages);
-      expect(result).toBeGreaterThan(0);
+      assert.ok(result > 0);
     });
 
     test("should handle empty content array", () => {
@@ -77,12 +78,12 @@ describe("utils/summarization", () => {
         { role: "user", content: [] },
       ];
       const result = estimateMessagesTokens(messages);
-      expect(result).toBe(0);
+      assert.strictEqual(result, 0);
     });
 
     test("should handle empty messages array", () => {
       const result = estimateMessagesTokens([]);
-      expect(result).toBe(0);
+      assert.strictEqual(result, 0);
     });
 
     test("should handle tool results in array content", () => {
@@ -97,7 +98,7 @@ describe("utils/summarization", () => {
       const result = estimateMessagesTokens(messages);
       // The getMessageText returns "[Tool result]" which has fixed length
       // So we check that it returns a number (could be 0 for very short strings)
-      expect(typeof result).toBe("number");
+      assert.strictEqual(typeof result, "number");
     });
   });
 
@@ -107,7 +108,7 @@ describe("utils/summarization", () => {
         { role: "user", content: "Small message" },
       ];
       const result = needsSummarization(messages);
-      expect(result).toBe(false);
+      assert.strictEqual(result, false);
     });
 
     test("should return true for large token counts", () => {
@@ -118,7 +119,7 @@ describe("utils/summarization", () => {
         { role: "user", content: longContent },
       ];
       const result = needsSummarization(messages, DEFAULT_SUMMARIZATION_THRESHOLD);
-      expect(result).toBe(true);
+      assert.strictEqual(result, true);
     });
 
     test("should use custom threshold", () => {
@@ -128,7 +129,7 @@ describe("utils/summarization", () => {
         { role: "user", content: "This is a much longer test message that should exceed the token threshold" },
       ];
       const result = needsSummarization(messages, 10); // Very low threshold
-      expect(result).toBe(true);
+      assert.strictEqual(result, true);
     });
 
     test("should use default threshold when not specified", () => {
@@ -136,7 +137,7 @@ describe("utils/summarization", () => {
         { role: "user", content: "Test message" },
       ];
       const result = needsSummarization(messages);
-      expect(result).toBe(false);
+      assert.strictEqual(result, false);
     });
   });
 
@@ -156,10 +157,10 @@ describe("utils/summarization", () => {
         tokenThreshold: 1000000, // Very high threshold
       });
 
-      expect(result.summarized).toBe(false);
-      expect(result.messages).toEqual(messages);
-      expect(result.tokensBefore).toBeDefined();
-      expect(result.tokensAfter).toBeUndefined();
+      assert.strictEqual(result.summarized, false);
+      assert.deepStrictEqual(result.messages, messages);
+      assert.notStrictEqual(result.tokensBefore, undefined);
+      assert.strictEqual(result.tokensAfter, undefined);
     });
 
     test("should return original when not enough messages to keep", async () => {
@@ -173,8 +174,8 @@ describe("utils/summarization", () => {
         keepMessages: 6, // More messages than we have
       });
 
-      expect(result.summarized).toBe(false);
-      expect(result.messages).toEqual(messages);
+      assert.strictEqual(result.summarized, false);
+      assert.deepStrictEqual(result.messages, messages);
     });
 
     test("should include token counts when not summarizing", () => {
@@ -186,8 +187,8 @@ describe("utils/summarization", () => {
         model: mockModel,
         tokenThreshold: 1000000,
       }).then((result) => {
-        expect(result.tokensBefore).toBeDefined();
-        expect(typeof result.tokensBefore).toBe("number");
+        assert.notStrictEqual(result.tokensBefore, undefined);
+        assert.strictEqual(typeof result.tokensBefore, "number");
       });
     });
 
@@ -203,7 +204,7 @@ describe("utils/summarization", () => {
       });
 
       // Should not summarize since message is still small
-      expect(result.summarized).toBe(false);
+      assert.strictEqual(result.summarized, false);
     });
 
     test("should use custom keepMessages value", async () => {
@@ -219,8 +220,8 @@ describe("utils/summarization", () => {
         keepMessages: 10,
       });
 
-      expect(result.summarized).toBe(false);
-      expect(result.messages).toEqual(messages);
+      assert.strictEqual(result.summarized, false);
+      assert.deepStrictEqual(result.messages, messages);
     });
 
     test("should handle generationOptions parameter", async () => {
@@ -234,7 +235,7 @@ describe("utils/summarization", () => {
         generationOptions: { temperature: 0.5 },
       });
 
-      expect(result.summarized).toBe(false);
+      assert.strictEqual(result.summarized, false);
     });
 
     test("should handle advancedOptions parameter", async () => {
@@ -248,17 +249,17 @@ describe("utils/summarization", () => {
         advancedOptions: { maxTokens: 1000 },
       });
 
-      expect(result.summarized).toBe(false);
+      assert.strictEqual(result.summarized, false);
     });
   });
 
   describe("constants", () => {
     test("DEFAULT_SUMMARIZATION_THRESHOLD should be 170000", () => {
-      expect(DEFAULT_SUMMARIZATION_THRESHOLD).toBe(170000);
+      assert.strictEqual(DEFAULT_SUMMARIZATION_THRESHOLD, 170000);
     });
 
     test("DEFAULT_KEEP_MESSAGES should be 6", () => {
-      expect(DEFAULT_KEEP_MESSAGES).toBe(6);
+      assert.strictEqual(DEFAULT_KEEP_MESSAGES, 6);
     });
   });
 });

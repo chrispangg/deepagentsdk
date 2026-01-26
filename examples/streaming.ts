@@ -1,7 +1,7 @@
 /**
  * Streaming example demonstrating real-time events from Deep Agent.
  *
- * Run with: ANTHROPIC_API_KEY=your-key bun examples/streaming.ts
+ * Run with: ANTHROPIC_API_KEY=your-key node --import tsx examples/streaming.ts
  */
 
 import { createDeepAgent, type DeepAgentEvent, type CreateDeepAgentParams, type BackendProtocol } from "../src/index";

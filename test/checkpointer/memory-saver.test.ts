@@ -1,6 +1,7 @@
-import { test, expect, beforeEach } from "bun:test";
+import { test, beforeEach } from "node:test";
 import { MemorySaver } from "@/checkpointer/memory-saver.ts";
 import type { Checkpoint } from "@/checkpointer/types.ts";
+import assert from "node:assert/strict";
 
 const createTestCheckpoint = (threadId: string, step = 1): Checkpoint => ({
   threadId,
@@ -22,14 +23,14 @@ test("MemorySaver > save and load checkpoint", async () => {
   await saver.save(checkpoint);
   
   const loaded = await saver.load("thread-1");
-  expect(loaded).toBeDefined();
-  expect(loaded?.threadId).toBe("thread-1");
-  expect(loaded?.step).toBe(1);
+  assert.notStrictEqual(loaded, undefined);
+  assert.strictEqual(loaded?.threadId, "thread-1");
+  assert.strictEqual(loaded?.step, 1);
 });
 
 test("MemorySaver > load returns undefined for non-existent thread", async () => {
   const loaded = await saver.load("non-existent");
-  expect(loaded).toBeUndefined();
+  assert.strictEqual(loaded, undefined);
 });
 
 test("MemorySaver > list returns all thread IDs", async () => {
@@ -37,9 +38,9 @@ test("MemorySaver > list returns all thread IDs", async () => {
   await saver.save(createTestCheckpoint("thread-2"));
   
   const threads = await saver.list();
-  expect(threads).toContain("thread-1");
-  expect(threads).toContain("thread-2");
-  expect(threads.length).toBe(2);
+  assert.ok(threads.includes("thread-1"));
+  assert.ok(threads.includes("thread-2"));
+  assert.strictEqual(threads.length, 2);
 });
 
 test("MemorySaver > delete removes checkpoint", async () => {
@@ -47,17 +48,17 @@ test("MemorySaver > delete removes checkpoint", async () => {
   await saver.delete("thread-1");
   
   const loaded = await saver.load("thread-1");
-  expect(loaded).toBeUndefined();
+  assert.strictEqual(loaded, undefined);
 });
 
 test("MemorySaver > exists returns correct value", async () => {
-  expect(await saver.exists("thread-1")).toBe(false);
+  assert.strictEqual(await saver.exists("thread-1"), false);
   
   await saver.save(createTestCheckpoint("thread-1"));
-  expect(await saver.exists("thread-1")).toBe(true);
+  assert.strictEqual(await saver.exists("thread-1"), true);
   
   await saver.delete("thread-1");
-  expect(await saver.exists("thread-1")).toBe(false);
+  assert.strictEqual(await saver.exists("thread-1"), false);
 });
 
 test("MemorySaver > save overwrites existing checkpoint", async () => {
@@ -65,7 +66,7 @@ test("MemorySaver > save overwrites existing checkpoint", async () => {
   await saver.save(createTestCheckpoint("thread-1", 2));
   
   const loaded = await saver.load("thread-1");
-  expect(loaded?.step).toBe(2);
+  assert.strictEqual(loaded?.step, 2);
 });
 
 test("MemorySaver > namespace isolates checkpoints", async () => {
@@ -74,39 +75,39 @@ test("MemorySaver > namespace isolates checkpoints", async () => {
   
   await saver1.save(createTestCheckpoint("thread-1"));
   
-  expect(await saver1.exists("thread-1")).toBe(true);
-  expect(await saver2.exists("thread-1")).toBe(false);
+  assert.strictEqual(await saver1.exists("thread-1"), true);
+  assert.strictEqual(await saver2.exists("thread-1"), false);
   
   const list1 = await saver1.list();
   const list2 = await saver2.list();
   
-  expect(list1).toContain("thread-1");
-  expect(list2).not.toContain("thread-1");
+  assert.ok(list1.includes("thread-1"));
+  assert.ok(!list2.includes("thread-1"));
 });
 
 test("MemorySaver > clear removes all checkpoints", async () => {
   await saver.save(createTestCheckpoint("thread-1"));
   await saver.save(createTestCheckpoint("thread-2"));
   
-  expect(saver.size()).toBe(2);
+  assert.strictEqual(saver.size(), 2);
   
   saver.clear();
   
-  expect(saver.size()).toBe(0);
-  expect(await saver.list()).toEqual([]);
+  assert.strictEqual(saver.size(), 0);
+  assert.deepStrictEqual(await saver.list(), []);
 });
 
 test("MemorySaver > size returns correct count", async () => {
-  expect(saver.size()).toBe(0);
+  assert.strictEqual(saver.size(), 0);
   
   await saver.save(createTestCheckpoint("thread-1"));
-  expect(saver.size()).toBe(1);
+  assert.strictEqual(saver.size(), 1);
   
   await saver.save(createTestCheckpoint("thread-2"));
-  expect(saver.size()).toBe(2);
+  assert.strictEqual(saver.size(), 2);
   
   await saver.delete("thread-1");
-  expect(saver.size()).toBe(1);
+  assert.strictEqual(saver.size(), 1);
 });
 
 test("MemorySaver > updatedAt is set on save", async () => {
@@ -119,7 +120,8 @@ test("MemorySaver > updatedAt is set on save", async () => {
   await saver.save(checkpoint);
   const loaded = await saver.load("thread-1");
   
-  expect(loaded?.updatedAt).toBeDefined();
-  expect(loaded?.updatedAt).not.toBe(originalUpdatedAt);
+  assert.notStrictEqual(loaded?.updatedAt, undefined);
+  assert.notStrictEqual(loaded?.updatedAt, originalUpdatedAt);
 });
+
 
