@@ -9,7 +9,7 @@
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/chrispangg/deepagentsdk)
 [![Documentation](https://img.shields.io/badge/docs-ai--sdk--deepagent-blue)](https://deepagentsdk.dev/docs)
 
-> **Note:** This package requires [Bun](https://bun.sh) runtime. It uses Bun-specific features and TypeScript imports.
+> **Note:** This package works with both **Node.js (18+)** and **Bun**. While development uses Bun, the published npm package is fully compatible with Node.js. [See Node.js usage guide](./docs/NODEJS-USAGE.md).
 
 A TypeScript library for building controllable AI agents using [Vercel AI SDK](https://ai-sdk.dev/). This is a reimplementation of [deepagentsjs](https://github.com/langchain-ai/deepagentsjs) without any LangChain/LangGraph dependencies.
 
@@ -28,7 +28,37 @@ Deep Agent addresses these limitations through four core architectural component
 
 ## Installation
 
-This package requires Bun runtime:
+<details>
+<summary><b>Using Node.js (Recommended for production)</b></summary>
+
+```bash
+# Using npm
+npm install deepagentsdk @ai-sdk/anthropic @ai-sdk/openai
+
+# Using yarn
+yarn add deepagentsdk @ai-sdk/anthropic @ai-sdk/openai
+
+# Using pnpm
+pnpm add deepagentsdk @ai-sdk/anthropic @ai-sdk/openai
+```
+
+**Run your agent:**
+```bash
+# With tsx (recommended)
+npx tsx your-agent.ts
+
+# Or with ts-node
+npx ts-node your-agent.ts
+```
+
+📖 **[Complete Node.js Usage Guide](./docs/NODEJS-USAGE.md)** - Setup, examples, troubleshooting, and deployment.
+
+⚡ **[Quick Reference](./NODEJS-QUICKREF.md)** - 30-second setup, common commands, and code snippets.
+
+</details>
+
+<details>
+<summary><b>Using Bun (Faster for development)</b></summary>
 
 ```bash
 # Install Bun if you haven't already
@@ -41,7 +71,16 @@ bun add deepagentsdk
 bun add -g deepagentsdk
 ```
 
-**Why Bun?** This package publishes TypeScript source directly and uses Bun-specific optimizations for better performance.
+**Run your agent:**
+```bash
+bun run your-agent.ts
+```
+
+</details>
+
+**Which runtime should I use?**
+- **Node.js**: Production applications, existing Node.js projects, Docker deployments
+- **Bun**: Faster development iteration, contributing to the library
 
 ## Quick Start
 

@@ -30,28 +30,80 @@ This combination enables agents to handle complex, multi-step tasks that would o
 
 <Callout title="Before You Begin" type="info">Ensure you have the following ready:</Callout>
 
-- **Bun runtime** (>= 1.0.0) - This package requires Bun for TypeScript features and performance
-- **Node.js** compatible environment
+- **Runtime**: Node.js (>= 18.0.0) **or** Bun (>= 1.0.0)
 - **API Key** for at least one of:
   - Anthropic (Claude) - Recommended
   - OpenAI (GPT)
   - Azure OpenAI
   - Or any AI SDK v6 compatible provider
 
-### Install Bun (if needed)
+<Callout title="Which Runtime?" type="idea">
+- **Node.js 18+**: Recommended for production applications
+- **Bun**: Faster for development and testing
+- Both work perfectly with the published npm package!
+</Callout>
 
-```bash
-# Install Bun
-curl -fsSL https://bun.sh/install | bash
+### Install Runtime (if needed)
 
-# Verify installation
-bun --version
-```
+<Tabs items={['Node.js', 'Bun']}>
+  <Tab value="Node.js">
+    ```bash
+    # Check if Node.js is installed
+    node --version
+    
+    # If not installed, download from https://nodejs.org
+    # Or use nvm (recommended)
+    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash
+    nvm install 20
+    nvm use 20
+    ```
+  </Tab>
+  <Tab value="Bun">
+    ```bash
+    # Install Bun
+    curl -fsSL https://bun.sh/install | bash
+    
+    # Verify installation
+    bun --version
+    ```
+  </Tab>
+</Tabs>
 
 ## Installation
 
-<Tabs items={['New Project', 'Existing Project', 'CLI Global']}>
-  <Tab value="New Project">
+<Tabs items={['Node.js (npm)', 'Node.js (yarn/pnpm)', 'Bun', 'CLI Global']}>
+  <Tab value="Node.js (npm)">
+    ```bash
+    # Create a new project
+    mkdir my-agent-project
+    cd my-agent-project
+    npm init -y
+
+    # Install the package
+    npm install deepagentsdk
+
+    # Install AI SDK providers
+    npm install @ai-sdk/anthropic @ai-sdk/openai
+
+    # Install dotenv for environment variables
+    npm install dotenv
+
+    # Install tsx for TypeScript execution (dev)
+    npm install --save-dev tsx typescript @types/node
+    ```
+  </Tab>
+  <Tab value="Node.js (yarn/pnpm)">
+    ```bash
+    # Using yarn
+    yarn add deepagentsdk @ai-sdk/anthropic @ai-sdk/openai dotenv
+    yarn add -D tsx typescript @types/node
+
+    # Using pnpm
+    pnpm add deepagentsdk @ai-sdk/anthropic @ai-sdk/openai dotenv
+    pnpm add -D tsx typescript @types/node
+    ```
+  </Tab>
+  <Tab value="Bun">
     ```bash
     # Create a new project
     mkdir my-agent-project
@@ -65,15 +117,12 @@ bun --version
     bun add @ai-sdk/anthropic @ai-sdk/openai
     ```
   </Tab>
-  <Tab value="Existing Project">
-    ```bash
-    cd your-project
-    bun add deepagentsdk
-    ```
-  </Tab>
   <Tab value="CLI Global">
     ```bash
-    # Install globally
+    # Node.js
+    npm install -g deepagentsdk
+    
+    # Bun
     bun add -g deepagentsdk
 
     # Now you can run from anywhere
@@ -81,6 +130,10 @@ bun --version
     ```
   </Tab>
 </Tabs>
+
+<Callout title="📖 Complete Node.js Guide" type="info">
+  See **[Node.js Usage Guide](../../../NODEJS-USAGE.md)** for detailed Node.js setup, examples, and troubleshooting.
+</Callout>
 
 ## Configuration
 
@@ -133,17 +186,43 @@ const model5 = openai('gpt-4o');
 
 Ensure your `tsconfig.json` has these settings:
 
-```json title="tsconfig.json"
-{
-  "compilerOptions": {
-    "target": "ESNext",
-    "module": "ESNext",
-    "moduleResolution": "bundler",
-    "types": ["bun-types"],
-    "strict": true
-  }
-}
-```
+<Tabs items={['Node.js', 'Bun']}>
+  <Tab value="Node.js">
+    ```json title="tsconfig.json"
+    {
+      "compilerOptions": {
+        "target": "ES2022",
+        "module": "ESNext",
+        "moduleResolution": "node",
+        "esModuleInterop": true,
+        "strict": true,
+        "skipLibCheck": true,
+        "resolveJsonModule": true
+      }
+    }
+    ```
+    
+    And add `"type": "module"` to your `package.json`:
+    ```json title="package.json"
+    {
+      "type": "module"
+    }
+    ```
+  </Tab>
+  <Tab value="Bun">
+    ```json title="tsconfig.json"
+    {
+      "compilerOptions": {
+        "target": "ESNext",
+        "module": "ESNext",
+        "moduleResolution": "bundler",
+        "types": ["bun-types"],
+        "strict": true
+      }
+    }
+    ```
+  </Tab>
+</Tabs>
 </Step>
 </Steps>
 
@@ -177,9 +256,26 @@ console.log('Files:', Object.keys(result.state.files));
 
 Run it:
 
-```bash
-ANTHROPIC_API_KEY=your-key bun run agent.ts
-```
+<Tabs items={['Node.js', 'Bun']}>
+  <Tab value="Node.js">
+    ```bash
+    # Make sure to add 'dotenv' import at the top of agent.ts
+    # import 'dotenv/config';
+    
+    # Run with tsx
+    npx tsx agent.ts
+    
+    # Or with ts-node
+    npx ts-node agent.ts
+    ```
+  </Tab>
+  <Tab value="Bun">
+    ```bash
+    # Bun auto-loads .env
+    bun run agent.ts
+    ```
+  </Tab>
+</Tabs>
 
 ### Streaming Example
 
@@ -519,16 +615,30 @@ for await (const event of agent.streamWithEvents({
   <Accordion title="Cannot find module 'deepagentsdk'">
     **Problem:** TypeScript cannot resolve the module.
 
-    **Solution:** Ensure you're using Bun runtime:
+    **Solutions:**
 
+    1. **Verify installation:**
     ```bash
-    # Run with Bun (not node or tsx)
-    bun run your-script.ts
+    npm list deepagentsdk
+    # If not found, install it:
+    npm install deepagentsdk
+    ```
 
-    # Not
-    node your-script.ts
-    # or
-    tsx your-script.ts
+    2. **Check tsconfig.json:**
+    ```json
+    {
+      "compilerOptions": {
+        "moduleResolution": "node"  // For Node.js
+        // or
+        "moduleResolution": "bundler"  // For Bun
+      }
+    }
+    ```
+
+    3. **Ensure proper imports:**
+    ```typescript
+    // Use ESM imports
+    import { createDeepAgent } from 'deepagentsdk';
     ```
   </Accordion>
 
@@ -743,14 +853,37 @@ bun run examples/basic.ts
 
 Interactive CLI for quick prototyping:
 
+<Tabs items={['Node.js', 'Bun']}>
+  <Tab value="Node.js">
+    ```bash
+    # Start CLI (one-time)
+    npx deepagentsdk
+
+    # Or install globally
+    npm install -g deepagentsdk
+    deep-agent
+
+    # With specific model
+    npx deepagentsdk --model anthropic/claude-sonnet-4-5-20250929
+    ```
+  </Tab>
+  <Tab value="Bun">
+    ```bash
+    # Start CLI (one-time)
+    bunx deepagentsdk
+
+    # Or install globally
+    bun add -g deepagentsdk
+    deep-agent
+
+    # With specific model
+    bunx deepagentsdk --model anthropic/claude-sonnet-4-5-20250929
+    ```
+  </Tab>
+</Tabs>
+
+**CLI Commands:**
 ```bash
-# Start CLI
-bunx deepagentsdk
-
-# Or with specific model
-bunx deepagentsdk --model anthropic/claude-sonnet-4-5-20250929
-
-# CLI Commands
 /help          # Show all commands
 /todos         # Show todo list
 /files         # List files
@@ -817,7 +950,7 @@ console.log(result.output?.summary); // Fully typed!
 <Callout type="success">
 You now have everything you need to build your first Deep Agent:
 
-- ✅ Installed the package with Bun
+- ✅ Installed the package with Node.js or Bun
 - ✅ Configured API keys
 - ✅ Created your first agent
 - ✅ Understood core concepts (todos, files, subagents)
@@ -825,4 +958,6 @@ You now have everything you need to build your first Deep Agent:
 - ✅ Troubleshooting common issues
 
 **Ready to build?** Start with the basic example, then explore more advanced patterns as you need them. Happy building!
+
+**Node.js users:** Check out the **[Complete Node.js Usage Guide](../../../NODEJS-USAGE.md)** for production deployment patterns, Docker setup, and framework integrations.
 </Callout>
