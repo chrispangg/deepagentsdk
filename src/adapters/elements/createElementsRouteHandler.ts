@@ -264,6 +264,11 @@ export function mapEventToProtocol(
           type: 'text-start',
           id: textId
         });
+        writer.write({
+          type: 'text-delta',
+          id: textId,
+          delta: event.text
+        });
         return textId;
       }
       writer.write({
