@@ -62,7 +62,7 @@
     "@ai-sdk/react": "^3.0.9",
     "@daytonaio/sdk": "^0.129.0",
     "@e2b/code-interpreter": "^2.3.3",
-    "@inkjs/ui": "^1.0.0",
+    "@inkjs/ui": "^2.0.0",
     "@mozilla/readability": "^0.6.0",
     "@runloop/api-client": "^1.0.0",
     "@tavily/core": "^0.6.1",
