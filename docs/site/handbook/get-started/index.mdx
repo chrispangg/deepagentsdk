@@ -30,57 +30,51 @@ This combination enables agents to handle complex, multi-step tasks that would o
 
 <Callout title="Before You Begin" type="info">Ensure you have the following ready:</Callout>
 
-- **Bun runtime** (>= 1.0.0) - This package requires Bun for TypeScript features and performance
-- **Node.js** compatible environment
+- **Node.js** (>= 18) or **Bun** (>= 1.0.0)
 - **API Key** for at least one of:
   - Anthropic (Claude) - Recommended
   - OpenAI (GPT)
   - Azure OpenAI
   - Or any AI SDK v6 compatible provider
 
-### Install Bun (if needed)
-
-```bash
-# Install Bun
-curl -fsSL https://bun.sh/install | bash
-
-# Verify installation
-bun --version
-```
-
 ## Installation
 
-<Tabs items={['New Project', 'Existing Project', 'CLI Global']}>
-  <Tab value="New Project">
+<Tabs items={['npm', 'pnpm', 'bun', 'yarn']}>
+  <Tab value="npm">
     ```bash
-    # Create a new project
-    mkdir my-agent-project
-    cd my-agent-project
-    bun init -y
+    npm install deepagentsdk
 
-    # Install the package
-    bun add deepagentsdk
-
-    # Install AI SDK providers
-    bun add @ai-sdk/anthropic @ai-sdk/openai
+    # CLI usage
+    npx deepagentsdk
     ```
   </Tab>
-  <Tab value="Existing Project">
+  <Tab value="pnpm">
     ```bash
-    cd your-project
-    bun add deepagentsdk
+    pnpm add deepagentsdk
+
+    # CLI usage
+    pnpm dlx deepagentsdk
     ```
   </Tab>
-  <Tab value="CLI Global">
+  <Tab value="bun">
     ```bash
-    # Install globally
-    bun add -g deepagentsdk
+    bun add deepagentsdk
 
-    # Now you can run from anywhere
-    deep-agent
+    # CLI usage
+    bunx deepagentsdk
+    ```
+  </Tab>
+  <Tab value="yarn">
+    ```bash
+    yarn add deepagentsdk
+
+    # CLI usage
+    yarn dlx deepagentsdk
     ```
   </Tab>
 </Tabs>
+
+<Callout type="info">The CLI can be run without installing using `npx`, `pnpm dlx`, `bunx`, or `yarn dlx`.</Callout>
 
 ## Configuration
 
@@ -139,7 +133,6 @@ Ensure your `tsconfig.json` has these settings:
     "target": "ESNext",
     "module": "ESNext",
     "moduleResolution": "bundler",
-    "types": ["bun-types"],
     "strict": true
   }
 }
@@ -178,7 +171,7 @@ console.log('Files:', Object.keys(result.state.files));
 Run it:
 
 ```bash
-ANTHROPIC_API_KEY=your-key bun run agent.ts
+ANTHROPIC_API_KEY=your-key npx tsx agent.ts
 ```
 
 ### Streaming Example
@@ -519,17 +512,15 @@ for await (const event of agent.streamWithEvents({
   <Accordion title="Cannot find module 'deepagentsdk'">
     **Problem:** TypeScript cannot resolve the module.
 
-    **Solution:** Ensure you're using Bun runtime:
+    **Solution:** Ensure the package is installed and your TypeScript config is correct:
 
     ```bash
-    # Run with Bun (not node or tsx)
-    bun run your-script.ts
-
-    # Not
-    node your-script.ts
-    # or
-    tsx your-script.ts
+    # Install the package
+    npm install deepagentsdk
+    # or: pnpm add deepagentsdk, bun add deepagentsdk, yarn add deepagentsdk
     ```
+
+    Check your `tsconfig.json` has proper module resolution settings.
   </Accordion>
 
   <Accordion title="API Key Not Found">
@@ -736,7 +727,7 @@ Check out the `/examples` directory for working code:
 
 ```bash
 # Run any example
-bun run examples/basic.ts
+npx tsx examples/basic.ts
 ```
 
 ### Try the CLI
@@ -744,11 +735,11 @@ bun run examples/basic.ts
 Interactive CLI for quick prototyping:
 
 ```bash
-# Start CLI
-bunx deepagentsdk
+# Start CLI (works with any package manager)
+npx deepagentsdk
 
 # Or with specific model
-bunx deepagentsdk --model anthropic/claude-sonnet-4-5-20250929
+npx deepagentsdk --model anthropic/claude-sonnet-4-5-20250929
 
 # CLI Commands
 /help          # Show all commands
@@ -817,7 +808,7 @@ console.log(result.output?.summary); // Fully typed!
 <Callout type="success">
 You now have everything you need to build your first Deep Agent:
 
-- ✅ Installed the package with Bun
+- ✅ Installed the package
 - ✅ Configured API keys
 - ✅ Created your first agent
 - ✅ Understood core concepts (todos, files, subagents)

@@ -55,45 +55,25 @@ The CLI is ideal for:
 
 ### Prerequisites
 
-<Callout title="Bun Required" type="warn">The CLI requires [Bun](https://bun.sh) runtime (>= 1.0.0)</Callout>
+<Callout title="Runtime Required" type="info">The CLI works with Node.js (>= 18) or Bun (>= 1.0.0)</Callout>
 
-```bash title="install-bun.sh"
-# Install Bun
-curl -fsSL https://bun.sh/install | bash
+### Run the CLI
+
+```bash
+# npm (recommended)
+npx deepagentsdk
+
+# pnpm
+pnpm dlx deepagentsdk
+
+# bun
+bunx deepagentsdk
+
+# yarn
+yarn dlx deepagentsdk
 ```
 
-### Installation Options
-
-<Tabs items={['Run without installing', 'Install globally', 'Install locally', 'From source']}>
-  <Tab value="Run without installing">
-    **Recommended for quick use**
-
-    ```bash
-    bunx deepagentsdk
-    ```
-  </Tab>
-  <Tab value="Install globally">
-    ```bash
-    bun add -g deepagentsdk
-    deep-agent
-    ```
-  </Tab>
-  <Tab value="Install locally">
-    ```bash
-    cd your-project
-    bun add deepagentsdk
-    bunx deep-agent
-    ```
-  </Tab>
-  <Tab value="From source">
-    ```bash
-    git clone https://github.com/chrispangg/deepagentsdk.git
-    cd deepagentsdk
-    bun install
-    bun run cli
-    ```
-  </Tab>
-</Tabs>
+<Callout type="tip">Run without installing using `npx`, `pnpm dlx`, `bunx`, or `yarn dlx`.</Callout>
 
 ## Quick Start
 
@@ -121,7 +101,7 @@ export TAVILY_API_KEY=tvly-...     # For web search capabilities
 ### Start the CLI
 
 ```bash
-bunx deepagentsdk
+npx deepagentsdk
 ```
 </Step>
 
@@ -197,10 +177,10 @@ Save and resume conversations:
 
 ```bash
 # Start a new session
-bunx deepagentsdk --session my-project
+npx deepagentsdk --session my-project
 
 # Later, resume the session
-bunx deepagentsdk --session my-project
+npx deepagentsdk --session my-project
 ```
 
 ### Performance Features
@@ -295,9 +275,9 @@ The CLI is built with:
 
 <Accordions type="single">
   <Accordion title="CLI won't start">
-    - Ensure you're using Bun runtime (not Node.js)
     - Check that API keys are set correctly
     - Verify network connectivity
+    - Ensure Node.js >= 18 or Bun >= 1.0.0 is installed
   </Accordion>
 
   <Accordion title="Tools not working">
