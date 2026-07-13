@@ -3,7 +3,7 @@ name: 1_research_codebase
 description: Document codebase as-is with research directory for historical context
 model: claude-sonnet-4-5-20250929
 allowed-tools: AskUserQuestion, Edit, Task, TodoWrite, Write, Bash(git:*), Bash(gh:*), Bash(basename:*), Bash(date:*)
-argument-hint: [research-question]
+argument-hint: "[research-question]"
 ---
 
 # Research Codebase

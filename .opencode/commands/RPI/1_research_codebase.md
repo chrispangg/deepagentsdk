@@ -2,7 +2,7 @@
 name: 1_research_codebase
 description: Document codebase as-is with research directory for historical context
 allowed-tools: AskUserQuestion, Edit, Task, TodoWrite, Write, Bash(git:*), Bash(gh:*), Bash(basename:*), Bash(date:*)
-argument-hint: [research-question]
+argument-hint: "[research-question]"
 ---
 
 # Research Codebase

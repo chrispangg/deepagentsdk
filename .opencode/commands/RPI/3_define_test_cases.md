@@ -2,7 +2,7 @@
 name: 3_define_test_cases
 description: Generate executable BDD tests using Given-When-Then structure with minimal abstraction
 allowed-tools: AskUserQuestion, Edit, Task, TodoWrite, Write, Bash(git:*), Bash(gh:*), Bash(basename:*), Bash(date:*)
-argument-hint: [feature-to-test]
+argument-hint: "[feature-to-test]"
 ---
 
 # Define Test Cases Command

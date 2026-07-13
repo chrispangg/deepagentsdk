@@ -2,7 +2,7 @@
 name: 7_save_progress
 description: Create comprehensive progress checkpoint when pausing work on a feature
 allowed-tools: AskUserQuestion, Edit, Task, TodoWrite, Write, Bash(git:*), Bash(gh:*), Bash(basename:*), Bash(date:*)
-argument-hint: [optional-context]
+argument-hint: "[optional-context]"
 ---
 
 # Save Progress

@@ -2,7 +2,7 @@
 name: 6_iterate_implementation
 description: Iterate on implementation to fix bugs, address deviations, and refine features until completion
 allowed-tools: AskUserQuestion, Edit, Task, TodoWrite, Write, Bash(git:*), Bash(gh:*), Bash(basename:*), Bash(date:*)
-argument-hint: [plan-path]
+argument-hint: "[plan-path]"
 ---
 
 # Iterate Implementation
