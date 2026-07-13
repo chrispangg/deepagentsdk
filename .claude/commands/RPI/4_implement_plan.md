@@ -3,7 +3,7 @@ name: 4_implement_plan
 description: Implement approved technical plan from docs/tickets/TICKET-NAME/plan.md
 model: claude-sonnet-4-5-20250929
 allowed-tools: AskUserQuestion, Edit, Task, TodoWrite, Write, Bash(git:*), Bash(gh:*), Bash(basename:*), Bash(date:*)
-argument-hint: [plan-path]
+argument-hint: "[plan-path]"
 ---
 
 # Implement Plan

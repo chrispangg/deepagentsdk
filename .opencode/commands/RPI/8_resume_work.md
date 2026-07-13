@@ -2,7 +2,7 @@
 name: 8_resume_work
 description: Resume previously saved work by restoring full context and continuing implementation
 allowed-tools: AskUserQuestion, Edit, Task, TodoWrite, Write, Bash(git:*), Bash(gh:*), Bash(basename:*), Bash(date:*)
-argument-hint: [session-summary-path]
+argument-hint: "[session-summary-path]"
 ---
 
 # Resume Work

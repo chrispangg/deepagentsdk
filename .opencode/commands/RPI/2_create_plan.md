@@ -2,7 +2,7 @@
 name: 2_create_plan
 description: Create detailed implementation plans through interactive, iterative process
 allowed-tools: AskUserQuestion, Edit, Task, TodoWrite, Write, Bash(git:*), Bash(gh:*), Bash(basename:*), Bash(date:*)
-argument-hint: [plan-path-or-feature-description]
+argument-hint: "[plan-path-or-feature-description]"
 ---
 
 # Create Implementation Plan

@@ -2,7 +2,7 @@
 name: 5_validate_implementation
 description: Validate that an implementation plan was correctly executed, verifying all success criteria
 allowed-tools: AskUserQuestion, Edit, Task, TodoWrite, Write, Bash(git:*), Bash(gh:*), Bash(basename:*), Bash(date:*)
-argument-hint: [plan-path]
+argument-hint: "[plan-path]"
 ---
 
 # Validate Plan
