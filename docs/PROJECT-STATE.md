@@ -6,6 +6,7 @@ Tracks feature parity with LangChain's DeepAgents framework. Reference implement
 
 ## ✅ Implemented
 
+- [x] **Parallel Search MCP Example** - Opt-in HTTP MCP search/fetch through custom AI SDK tools, with prefixed names to preserve Tavily's built-in tools; see `examples/parallel-search.md`.
 - [x] **DeepAgent Core** - Main agent class with generate/stream/streamWithEvents
 - [x] **Todo Planning Tool** - `write_todos` with merge/replace strategies
 - [x] **Filesystem Tools** - `ls`, `read_file`, `write_file`, `edit_file`, `glob`, `grep`

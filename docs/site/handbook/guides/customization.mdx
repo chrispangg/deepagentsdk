@@ -159,6 +159,14 @@ const agent = createDeepAgent({
 
 ## 3. Adding Custom Tools
 
+### MCP Web Research Example
+
+The [Parallel Search example](https://github.com/chrispangg/deepagentsdk/blob/main/examples/parallel-search.md)
+loads search and page extraction tools from an HTTP MCP server and passes them
+through `createDeepAgent({ tools })`. Parallel Search MCP supports free anonymous
+use within rate limits. The example prefixes tool names with `parallel_` so they
+can coexist with Tavily's built-in web tools. See the example for setup and tests.
+
 ### Basic Custom Tool
 
 Use AI SDK's `tool()` function:

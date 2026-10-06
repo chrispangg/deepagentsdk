@@ -79,6 +79,7 @@
     "zod": "^3.25.0"
   },
   "devDependencies": {
+    "@ai-sdk/mcp": "1.0.5",
     "@langfuse/otel": "^4.5.1",
     "@langfuse/tracing": "^4.5.1",
     "@opentelemetry/api-logs": "^0.208.0",
